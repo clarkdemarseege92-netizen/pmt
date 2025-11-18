@@ -75,7 +75,7 @@ export default function Navbar() {
                  {user.email || '用户'}
               </li>
               <li>
-                <Link href="/my/orders" className="justify-between">
+                <Link href="/client/orders" className="justify-between">
                   <span className="flex items-center gap-2"><HiTicket className="w-4 h-4" /> 我的订单</span>
                   {/* 可以在这里加个 badge 显示待使用数量 */}
                   {/* <span className="badge">New</span> */}

@@ -113,7 +113,7 @@ export async function POST(request: Request) {
         p_order_amount: coupon.selling_price
       });
 
-      return NextResponse.json({ url: `${request.headers.get("origin")}/my/orders?success=true` });
+      return NextResponse.json({ url: `${request.headers.get("origin")}/client/orders?success=true` });
     }
 
     // --- 分支 B: 真实 Stripe 模式 ---
@@ -133,7 +133,7 @@ export async function POST(request: Request) {
         },
       ],
       mode: "payment",
-      success_url: `${request.headers.get("origin")}/my/orders?success=true`,
+      success_url: `${request.headers.get("origin")}/client/orders?success=true`,
       cancel_url: `${request.headers.get("origin")}/coupon/${couponId}?canceled=true`,
       metadata: {
         userId: user.id,
