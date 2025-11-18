@@ -1,7 +1,7 @@
 // 文件: /app/merchant/layout.tsx
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
-import MerchantSidebar from "@/components/MerchantSidebar"; // 引入新组件
+import MerchantLayoutWrapper from "@/components/MerchantLayoutWrapper"; // 引入包装器
 
 export default async function MerchantLayout({
   children,
@@ -11,39 +11,26 @@ export default async function MerchantLayout({
 
   const supabase = await createSupabaseServerClient(); 
 
-  // --- 服务器端守卫逻辑 (保持不变) ---
-
-  // 1. 检查会话
+  // 1. 检查会话 (这依然是必须的，未登录不能进 merchant 目录)
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) {
     redirect("/login");
   }
 
-  // 2. 检查角色
+  // 2. 获取角色
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== 'merchant') {
-    redirect("/");
-  }
-  // ----------------------------------
+  // 判断是否为商家
+  const isMerchant = profile?.role === 'merchant';
 
+  // 3. 将判断结果交给客户端包装器处理
   return (
-    // 使用 Flex 布局：左侧是侧边栏，右侧是主内容区
-    <div className="flex h-screen bg-base-100 overflow-hidden">
-      
-      {/* 左侧：可收缩的侧边栏 (客户端组件) */}
-      <MerchantSidebar />
-
-      {/* 右侧：主要内容区域 (可滚动) */}
-      <main className="flex-1 overflow-y-auto overflow-x-hidden bg-base-100 p-4 lg:p-8 relative">
-         {/* 这里的 children 就是 dashboard, products 等页面 */}
-         {children}
-      </main>
-      
-    </div>
+    <MerchantLayoutWrapper isMerchant={isMerchant}>
+      {children}
+    </MerchantLayoutWrapper>
   );
 }

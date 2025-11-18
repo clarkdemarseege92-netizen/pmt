@@ -4,9 +4,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient"; 
-// 假设您已经添加了图标，例如 react-icons
-import { FaGoogle } from "react-icons/fa";
-import { Provider } from '@supabase/supabase-js'; // 导入 Provider 类型
+import { Provider } from '@supabase/supabase-js'; 
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
@@ -17,23 +15,27 @@ export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  // ----- 新：社交账号登录处理 -----
+  // ----- 社交账号登录处理 -----
   const handleOAuthLogin = async (provider: Provider) => {
     setLoading(true);
     setError(null);
+    const redirectTo = `${window.location.origin}/auth/callback`;
+    
+    console.log("LOGIN PAGE: 正在启动 OAuth 登录, Provider:", provider, "RedirectTo:", redirectTo);
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider: provider,
       options: {
-        // 确保回调 URL 在您的 Supabase 仪表板中已列入白名单
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: redirectTo,
       },
     });
 
     if (error) {
+      console.error("LOGIN PAGE: OAuth 启动失败:", error);
       setError(error.message);
       setLoading(false);
     }
-    // 用户将被重定向，因此无需停止加载
+    console.log("LOGIN PAGE: 等待 OAuth 重定向...");
   };
 
   // ----- 邮箱/密码登录 -----
@@ -48,8 +50,8 @@ export default function LoginPage() {
     if (error) {
       setError(error.message);
     } else {
-      // 登录成功，跳转到控制台
-      router.push(`/merchant/dashboard`);
+      // 【修改 1】登录成功跳转到首页
+      router.push(`/`); 
     }
     setLoading(false);
   };
@@ -59,7 +61,7 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
 
-    const { data, error } = await supabase.auth.signUp({
+    const { error } = await supabase.auth.signUp({
       email: email,
       password: password,
     });
@@ -70,23 +72,9 @@ export default function LoginPage() {
       return;
     }
 
-    if (data.user) {
-      const { error: rpcError } = await supabase.rpc('set_role_to_merchant', { 
-            user_uuid: data.user.id 
-        });
-
-        if (rpcError) {
-             console.error("RPC 角色升级失败:", rpcError);
-             setError("注册成功，但角色升级失败。请联系管理员。");
-             setLoading(false);
-             return;
-      }
-    }
-
-    // 【关键修改】
-    // 注册并设置角色后，直接重定向到控制台
-    // dashboard 页面已包含 OnboardingForm 逻辑
-    router.push(`/merchant/dashboard`); 
+    // 【修改 2】移除自动升级 RPC 代码
+    // 注册成功直接跳转首页
+    router.push(`/`); 
     setLoading(false);
   };
 
@@ -96,20 +84,17 @@ export default function LoginPage() {
         <div className="card w-full shadow-2xl bg-base-100">
           <div className="card-body">
             
-            <h1 className="card-title text-2xl text-center">商家控制台登录</h1>
+            <h1 className="card-title text-2xl text-center">欢迎来到 PMT</h1>
             
-            {/* ----- 新：社交登录按钮 ----- */}
+            {/* ----- 社交登录按钮 ----- */}
             <div className="space-y-2 my-4">
               <button 
                 className="btn btn-outline w-full" 
                 onClick={() => handleOAuthLogin('google')}
                 disabled={loading}
               >
-                <FaGoogle />
                 使用 Google 登录
               </button>
-
-              {/* 您可以按需添加 Facebook 等 */}
             </div>
 
             <div className="divider">或使用邮箱</div>
@@ -143,7 +128,6 @@ export default function LoginPage() {
                 onClick={handleEmailLogin} 
                 disabled={loading}
               >
-                {loading && <span className="loading loading-spinner"></span>}
                 登录
               </button>
               <button 
@@ -151,7 +135,6 @@ export default function LoginPage() {
                 onClick={handleEmailSignUp} 
                 disabled={loading}
               >
-                {loading && <span className="loading loading-spinner"></span>}
                 注册
               </button>
             </div>
