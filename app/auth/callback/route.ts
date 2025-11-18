@@ -1,33 +1,77 @@
 // 文件: /app/auth/callback/route.ts
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
-// 这个路由处理器用于处理客户端的登录/注册成功后的重定向
 export async function GET(request: Request) {
+  console.log("AUTH CALLBACK: 路由处理器被命中");
+
+  // --- 【新日志】 打印完整的 URL ---
+  console.log("AUTH CALLBACK: 完整的请求 URL:", request.url);
+  // ---------------------------------
+
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");
-
-  // 我们需要一个目标 URL 来重定向用户
+  const errorFromGoogle = searchParams.get("error"); // <-- 新增检查
   const nextUrl = searchParams.get("next") || "/merchant/dashboard";
 
-  if (code) {
-    // 1. 创建服务器端客户端 (确保它能读取到当前请求的 Cookie)
-    const cookieStore = await cookies();
-    const supabase = createSupabaseServerClient(cookieStore);
+  // --- 【新增】 检查来自 Google 的错误 ---
+  if (errorFromGoogle) {
+    console.error("AUTH CALLBACK: Google/OAuth 提供商返回了一个错误:", errorFromGoogle, "错误描述:", searchParams.get("error_description"));
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(errorFromGoogle)}`, request.url));
+  }
+  // -----------------------------------
 
-    // 2. 交换 Auth Code 获取会话
-    // 虽然 signInWithPassword/OTP 已经设置了会话，但这一步是确保会话在服务器上正确同步的最安全方式
+  if (code) {
+    // 为了日志整洁，我们只打印 code 的前 10 个字符
+    console.log("AUTH CALLBACK: 发现授权码(code):", code.substring(0, 10) + "..."); 
+    
+    // 这是我们上一轮修复的 (移除了 cookieStore)
+    const supabase = await createSupabaseServerClient();
+
+    console.log("AUTH CALLBACK: ----------------------------------------------------");
+    console.log("AUTH CALLBACK: 关键步骤：正在尝试交换 code 获取 session...");
+    console.log("AUTH CALLBACK: ----------------------------------------------------");
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // 3. 成功交换代码后，重定向到目标页面
+      console.log("AUTH CALLBACK: 交换 code 成功！正在检查用户角色...");
+
+      // 检查角色
+      const { data: { user } } = await supabase.auth.getUser();
+
+      if (user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("role")
+          .eq("id", user.id)
+          .single();
+
+        if (!profile || profile.role !== 'merchant') {
+          console.log(`AUTH CALLBACK: 用户 ${user.id} 缺少商家角色，正在通过 RPC 升级...`);
+          const { error: rpcError } = await supabase.rpc('set_role_to_merchant', { 
+            user_uuid: user.id 
+          });
+
+          if (rpcError) {
+             console.error("AUTH CALLBACK: RPC 角色升级失败:", rpcError);
+          }
+        }
+      }
+      
+      console.log("AUTH CALLBACK: 操作完成，重定向到:", nextUrl);
       return redirect(nextUrl);
     }
+
+    // --- 【这是最关键的日志】 ---
+    console.error("AUTH CALLBACK: 交换 code 失败。Supabase 错误:", error);
+    console.error("AUTH CALLBACK: 失败详情 (Message):", error.message); // <-- 打印更详细的错误
+  
+  } else {
+     console.warn("AUTH CALLBACK: 访问 /auth/callback，但 URL 中没有 code (也没有 errorFromGoogle)");
   }
 
   // 4. 如果没有 code 或发生错误，重定向回登录页
-  // 这里我们使用 next/server 的 NextResponse 重定向，因为这是 route.ts (API 路由)
+  console.log("AUTH CALLBACK: 重定向到登录页并显示 AUTH_ERROR");
   return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent('AUTH_ERROR')}`, request.url));
 }

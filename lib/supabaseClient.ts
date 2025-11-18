@@ -1,11 +1,13 @@
-// 文件: /lib/supabaseClient.ts
-"use client"; // 确保这个文件只在客户端运行
+// 文件: /lib/supabaseClient.ts (使用 @supabase/ssr 修复)
+"use client";
 
-import { createClient } from "@supabase/supabase-js";
+// 【关键修改】从 '@supabase/ssr' 导入 createBrowserClient
+import { createBrowserClient } from "@supabase/ssr";
 
 // 【重要】从您的 Supabase 项目仪表板中获取这些值
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
-// 创建一个可以在我们所有 "use client" 组件中使用的 Supabase 客户端
-export const supabase = createClient(supabaseUrl, supabaseKey);
+// 【关键修改】使用 createBrowserClient
+// 这将创建一个与服务器端 @supabase/ssr helpers 兼容的客户端
+export const supabase = createBrowserClient(supabaseUrl, supabaseKey);

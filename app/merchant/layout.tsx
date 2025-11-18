@@ -1,9 +1,7 @@
-// 文件: /app/merchant/layout.tsx (极简服务器守卫)
-
+// 文件: /app/merchant/layout.tsx
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-
+import MerchantSidebar from "@/components/MerchantSidebar"; // 引入新组件
 
 export default async function MerchantLayout({
   children,
@@ -13,7 +11,7 @@ export default async function MerchantLayout({
 
   const supabase = await createSupabaseServerClient(); 
 
-  // --- 极简守卫 ---
+  // --- 服务器端守卫逻辑 (保持不变) ---
 
   // 1. 检查会话
   const { data: { user } } = await supabase.auth.getUser();
@@ -21,7 +19,7 @@ export default async function MerchantLayout({
     redirect("/login");
   }
 
-  // 2. 检查角色 (这是我们 RPC 设置的)
+  // 2. 检查角色
   const { data: profile } = await supabase
     .from("profiles")
     .select("role")
@@ -29,38 +27,23 @@ export default async function MerchantLayout({
     .single();
 
   if (profile?.role !== 'merchant') {
-    // 如果他们不是商家 (例如，是 'customer')，踢回首页
     redirect("/");
   }
-
-
+  // ----------------------------------
 
   return (
-    <div className="drawer lg:drawer-open">
-      <input id="my-drawer-2" type="checkbox" className="drawer-toggle" />
+    // 使用 Flex 布局：左侧是侧边栏，右侧是主内容区
+    <div className="flex h-screen bg-base-100 overflow-hidden">
+      
+      {/* 左侧：可收缩的侧边栏 (客户端组件) */}
+      <MerchantSidebar />
 
-      <div className="drawer-content flex flex-col items-center p-4 lg:p-8">
-        <label 
-          htmlFor="my-drawer-2" 
-          className="btn btn-primary drawer-button lg:hidden mb-4"
-        >
-          打开菜单
-        </label>
-        {children} {/* children 将是 dashboard 页面 */}
-      </div> 
-
-      <div className="drawer-side">
-        <label htmlFor="my-drawer-2" aria-label="close sidebar" className="drawer-overlay"></label> 
-        <ul className="menu p-4 w-80 min-h-full bg-base-200 text-base-content">
-          <li className="menu-title"><span>商家控制台</span></li>
-          <li><Link href="/merchant/dashboard">仪表板</Link></li>
-          <li><Link href="/merchant/products">商品目录</Link></li>
-          <li><Link href="/merchant/coupons">优惠券管理</Link></li>
-          <li><Link href="/merchant/reviews">评价管理</Link></li>
-          <div className="divider"></div> 
-          <li><Link href="/">返回主站</Link></li>
-        </ul>
-      </div>
+      {/* 右侧：主要内容区域 (可滚动) */}
+      <main className="flex-1 overflow-y-auto overflow-x-hidden bg-base-100 p-4 lg:p-8 relative">
+         {/* 这里的 children 就是 dashboard, products 等页面 */}
+         {children}
+      </main>
+      
     </div>
   );
 }
