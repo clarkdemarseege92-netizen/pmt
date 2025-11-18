@@ -10,6 +10,7 @@ import {
   HiShoppingBag,         // 商品
   HiTicket,              // 优惠券
   HiChatBubbleLeftRight, // 评价
+  HiWallet,
   HiCog6Tooth,           // 设置
   HiChevronLeft,         // 收起箭头
   HiChevronRight,        // 展开箭头
@@ -44,6 +45,11 @@ export default function MerchantSidebar() {
       name: "评价管理",
       href: "/merchant/reviews",
       icon: <HiChatBubbleLeftRight className="w-6 h-6" />,
+    },
+        {
+      name: "钱包",
+      href: "/merchant/wallet",
+      icon: <HiWallet className="w-6 h-6" />,
     },
     {
       name: "账户设置",

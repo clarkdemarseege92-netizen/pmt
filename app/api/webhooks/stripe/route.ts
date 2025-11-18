@@ -1,4 +1,4 @@
-// 文件: /app/api/webhooks/stripe/route.ts
+// 文件: /app/api/webhooks/stripe/route.ts (已更新支持充值)
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { NextResponse } from "next/server";
 import { headers } from "next/headers";
@@ -26,11 +26,33 @@ export async function POST(request: Request) {
 
   const supabase = await createSupabaseServerClient();
 
+  // --- 仅处理支付成功事件 ---
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
     const metadata = session.metadata;
 
-    if (metadata) {
+    if (!metadata) return NextResponse.json({ error: "Missing metadata" }, { status: 400 });
+
+    // --- 核心分流逻辑 ---
+    
+    // 场景 A: 充值事件 (Top Up)
+    if (metadata.type === 'TOPUP' && metadata.topUpAmount && metadata.merchantId) {
+        
+        const topUpAmount = parseFloat(metadata.topUpAmount);
+
+        // 调用我们稍后要创建的 RPC 函数来增加余额和记录流水
+        await supabase.rpc("add_top_up_balance", { 
+            p_merchant_id: metadata.merchantId,
+            p_amount: topUpAmount
+        });
+        
+        console.log(`WEBHOOK: 充值成功处理 - 商户: ${metadata.merchantId}, 金额: ฿${topUpAmount}`);
+        return NextResponse.json({ received: true, type: 'TOPUP' });
+    }
+
+    // 场景 B: 优惠券购买事件 (Commission) - 沿用旧逻辑
+    if (metadata.couponId && metadata.merchantId) {
+      
       const redemptionCode = `PMT-${Math.random().toString(36).substr(2, 8).toUpperCase()}`;
       const amountTotal = session.amount_total ? session.amount_total / 100 : 0;
 
@@ -45,25 +67,19 @@ export async function POST(request: Request) {
         payment_intent_id: session.payment_intent as string,
       }).select('order_id').single();
 
-      if (error) {
-         console.error("Error creating order:", error);
-         return NextResponse.json({ error: error.message }, { status: 500 });
-      }
+      if (error) throw error; 
 
-      // 2. 减少库存
+      // 2. 减少库存 and 扣除佣金 (process_order_commission RPC handles both)
       await supabase.rpc("decrement_stock", { row_id: metadata.couponId });
-
-      // 3. 【新增】扣除佣金 & 记录流水
-      // 调用我们在 3.1 中创建的 SQL 函数
-      if (order) {
-        await supabase.rpc("process_order_commission", { 
-          p_merchant_id: metadata.merchantId,
-          p_order_id: order.order_id,
-          p_order_amount: amountTotal
-        });
-      }
+      await supabase.rpc("process_order_commission", { 
+        p_merchant_id: metadata.merchantId,
+        p_order_id: order.order_id,
+        p_order_amount: amountTotal
+      });
+      
+      return NextResponse.json({ received: true, type: 'COMMISSION' });
     }
   }
 
-  return NextResponse.json({ received: true });
+  return NextResponse.json({ received: true, error: 'Event not handled' });
 }
