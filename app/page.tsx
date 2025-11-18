@@ -1,5 +1,5 @@
 // 文件: /app/page.tsx (Sprint 2 - 首页)
-
+import Navbar from "@/components/Navbar";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import Link from "next/link";
@@ -60,7 +60,7 @@ export default async function Home() {
   // 2. 渲染页面 (使用 daisyUI 组件)
   return (
     <main className="flex min-h-screen flex-col items-center">
-      
+      <Navbar />
       {/* Sprint 2 - Hero (顶部 Banner)  */}
       <div className="hero min-h-[300px] bg-base-200" style={{ backgroundImage: 'url(https://img.daisyui.com/images/stock/photo-1507358522600-9f71e620c44e.webp)' }}>
         <div className="hero-overlay bg-opacity-60"></div>
@@ -96,13 +96,13 @@ export default async function Home() {
           {coupons && coupons.map((coupon: Coupon) => (
             <div key={coupon.coupon_id} className="card bg-base-100 shadow-xl transition-transform hover:scale-105">
               <figure className="h-48 relative">
-                <Image
-                  // <--- 修复 3: 从数组中获取第一张图，并提供备用
-                  src={(coupon.image_urls && coupon.image_urls.length > 0) ? coupon.image_urls[0] : '/placeholder.jpg'} 
-                  alt={getLangName(coupon.name, lang)}
-                  layout="fill"
-                  objectFit="cover"
-                />
+<Image
+  src={(coupon.image_urls && coupon.image_urls.length > 0) ? coupon.image_urls[0] : '/placeholder.jpg'} 
+  alt={getLangName(coupon.name, lang)}
+  fill                    // <--- 新写法 (布尔值)
+  className="object-cover" // <--- 新写法 (使用 Tailwind 类控制 object-fit)
+  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw" // (可选) 优化性能
+/>
               </figure>
               <div className="card-body p-4">
                 <h3 className="card-title text-lg truncate" title={getLangName(coupon.name, lang)}>

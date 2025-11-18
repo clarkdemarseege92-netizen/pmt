@@ -134,13 +134,13 @@ export default async function SearchPage({
             coupons.map((coupon: Coupon) => (
               <div key={coupon.coupon_id} className="card bg-base-100 shadow-xl transition-transform hover:scale-105">
                 <figure className="h-48 relative">
-                  <Image
-                    src={(coupon.image_urls && coupon.image_urls.length > 0) ? coupon.image_urls[0] : '/placeholder.jpg'}
-                    alt={getLangName(coupon.name, lang)}
-                    layout="fill"
-                    objectFit="cover"
-                    unoptimized // 防止因未配置图片域名导致的错误
-                  />
+<Image
+  src={(coupon.image_urls && coupon.image_urls.length > 0) ? coupon.image_urls[0] : '/placeholder.jpg'}
+  alt={getLangName(coupon.name, lang)}
+  fill
+  className="object-cover"
+  sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 25vw"
+/>
                 </figure>
                 <div className="card-body p-4">
                   <h3 className="card-title text-lg truncate" title={getLangName(coupon.name, lang)}>
