@@ -1,9 +1,10 @@
-// 文件: /app/coupon/[id]/page.tsx (路径务必正确)
+// 文件: /app/coupon/[id]/page.tsx
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { HiShoppingCart, HiCheckCircle, HiClock } from "react-icons/hi2";
 import BuyButton from "@/components/BuyButton";
+
 // ----- 类型定义 -----
 
 type MultiLangName = {
@@ -25,7 +26,7 @@ type CouponProductRelation = {
   products: ProductDetail;
 };
 
-// 优惠券完整信息
+// 【修改 1】: 更新类型定义，添加 merchants 关联信息
 type CouponDetail = {
   coupon_id: string;
   name: MultiLangName;
@@ -35,7 +36,14 @@ type CouponDetail = {
   image_urls: string[];
   rules: MultiLangName;
   description?: MultiLangName;
+  usage_instructions?: string; // 兼容旧字段名
   coupon_products: CouponProductRelation[];
+  // 新增商户信息
+  merchants: {
+    merchant_id: string;
+    shop_name: string;
+    promptpay_id: string;
+  } | null;
 };
 
 // 辅助函数
@@ -49,15 +57,12 @@ export default async function CouponDetailPage({
 }: { 
   params: Promise<{ id: string }> 
 }) {
-  // --- 【调试日志 1】检查页面是否被加载 ---
-  console.log(">>> 详情页路由被命中！正在解析 Params...");
   const { id } = await params;
-  // --- 【调试日志 2】检查 ID 是否正确接收 ---
-  console.log(">>> 正在查询优惠券 ID:", id);
   const supabase = await createSupabaseServerClient();
-  const lang = 'th';
+  const lang = 'th'; // 实际项目中可从 cookie 或 header 获取
 
   // 1. 核心查询
+  // 【修改 2】: 在 select 中增加 merchants 的联表查询
   const { data: couponRaw, error } = await supabase
     .from('coupons')
     .select(`
@@ -69,40 +74,42 @@ export default async function CouponDetailPage({
           original_price,
           image_urls
         )
+      ),
+      merchants (
+        merchant_id,
+        shop_name,
+        promptpay_id
       )
     `)
     .eq('coupon_id', id)
     .single();
-// --- 【调试日志 3】检查数据库返回结果 ---
-  if (error) {
-    console.error(">>> Supabase 查询错误:", error);
-  }
-  if (!couponRaw) {
-    console.error(">>> 数据库未找到该 ID 的记录 (couponRaw is null)");
-  } else {
-    console.log(">>> 查询成功，数据已获取。");
-  }
+
+  // 错误处理：确保 coupon 存在且商户 PromptPay ID 存在
+  // 注意：如果商户没设置 PromptPay，可能导致无法购买，这里我们允许页面加载但按钮可能会报错
   if (error || !couponRaw) {
     console.error("Error fetching coupon:", error);
     notFound();
   }
 
   const coupon = couponRaw as unknown as CouponDetail;
-  // 防止除以零错误
+  
+  // 计算折扣率
   const discountPercentage = coupon.original_value > 0 
     ? Math.round(((coupon.original_value - coupon.selling_price) / coupon.original_value) * 100)
     : 0;
 
+  // 获取商户收款码 (如果为空则设为空字符串，由 BuyButton 处理错误)
+  const merchantPromptPayId = coupon.merchants?.promptpay_id || '';
+
   return (
     <main className="min-h-screen bg-base-200 pb-24">
-      {/* 1. 顶部轮播图 */}
+      {/* 1. 顶部轮播图 (保留原样) */}
       <div className="w-full bg-white">
         <div className="carousel w-full h-[300px] md:h-[400px]">
           {coupon.image_urls && coupon.image_urls.length > 0 ? (
             coupon.image_urls.map((url, index) => (
               <div key={index} id={`slide${index}`} className="carousel-item relative w-full">
                 <div className="relative w-full h-full">
-                   {/* 修复：移除了 unoptimized，利用 next.config.ts 的配置 */}
                    <Image 
                       src={url} 
                       alt="Coupon Image" 
@@ -129,12 +136,18 @@ export default async function CouponDetailPage({
       </div>
 
       <div className="max-w-4xl mx-auto">
-        {/* 2. 核心信息卡片 */}
+        {/* 2. 核心信息卡片 (保留原样) */}
         <div className="bg-base-100 p-6 shadow-sm md:rounded-b-xl mb-4">
           <div className="flex justify-between items-start gap-4">
-             <h1 className="text-2xl font-bold text-base-content">
-                {getLangName(coupon.name, lang)}
-             </h1>
+             <div>
+                <h1 className="text-2xl font-bold text-base-content">
+                    {getLangName(coupon.name, lang)}
+                </h1>
+                {/* 显示店铺名称 */}
+                <p className="text-sm text-base-content/60 mt-1">
+                    店铺: {coupon.merchants?.shop_name}
+                </p>
+             </div>
              <div className="badge badge-outline badge-sm shrink-0 mt-1">
                库存: {coupon.stock_quantity}
              </div>
@@ -154,7 +167,7 @@ export default async function CouponDetailPage({
           </p>
         </div>
 
-        {/* 3. 详情与须知 (Tabs) */}
+        {/* 3. 详情与须知 (Tabs) (保留原样) */}
         <div className="bg-base-100 shadow-sm md:rounded-xl overflow-hidden">
           <div role="tablist" className="tabs tabs-bordered tabs-lg grid grid-cols-2">
             <input type="radio" name="coupon_tabs" role="tab" className="tab" aria-label="套餐详情" defaultChecked />
@@ -220,7 +233,12 @@ export default async function CouponDetailPage({
                <span className="text-xs text-base-content/60">总价</span>
                <span className="text-2xl font-bold text-primary">฿{coupon.selling_price}</span>
             </div>
-            <BuyButton couponId={coupon.coupon_id} />   
+            {/* 【修改 3】: 传递 sellingPrice 和 merchantPromptPayId */}
+            <BuyButton 
+                couponId={coupon.coupon_id} 
+                sellingPrice={coupon.selling_price}
+                merchantPromptPayId={merchantPromptPayId}
+            />   
          </div>
       </div>
 

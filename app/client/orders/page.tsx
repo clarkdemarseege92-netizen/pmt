@@ -3,7 +3,7 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import OrderTabs from "@/components/OrderTabs"; // 引入 Client 组件
 
-// 类型定义（与 OrderTabs.tsx 保持一致，但这里我们从 DB 接收所有字段）
+// 类型定义（已修正，与 OrderTabs.tsx 保持一致）
 type CouponData = {
     name: { th: string; en: string; };
     image_urls: string[];
@@ -16,7 +16,10 @@ type Order = {
     purchase_price: number;
     status: 'paid' | 'used' | 'expired';
     created_at: string;
-    coupons: CouponData; 
+    // 修复 1: 增加 coupon_id 字段 (OrderTabs 需要)
+    coupon_id: string; 
+    // 修复 2: 将类型从 CouponData 改为 CouponData[] (匹配 Supabase 联表返回结构)
+    coupons: CouponData[]; 
 };
 
 
@@ -41,6 +44,7 @@ export default async function MyOrdersPage() {
             purchase_price,
             status,
             created_at,
+            coupon_id,  
             coupons (
                 name,
                 image_urls
@@ -55,6 +59,7 @@ export default async function MyOrdersPage() {
     }
 
     // 3. 渲染 Client Component
+    // 这里的类型断言现在与 OrderTabs.tsx 兼容
     return (
         <main className="max-w-4xl mx-auto p-4 lg:p-8">
             <h1 className="text-3xl font-bold mb-6">我的订单</h1>

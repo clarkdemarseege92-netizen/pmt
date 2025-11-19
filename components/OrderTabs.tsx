@@ -2,10 +2,10 @@
 "use client";
 
 import { useState } from 'react';
-import Link from 'next/link';
+// import Link from 'next/link';
 import QRCode from 'react-qr-code'; // 引入二维码库
 import Image from 'next/image';
-import { HiTicket, HiStar, HiCheckCircle, HiClock, HiArrowLeftOnRectangle } from 'react-icons/hi2';
+import { HiTicket, HiStar, HiClock, } from 'react-icons/hi2';
 
 // --- 类型定义 (与 Server Component 共享) ---
 type CouponData = {
@@ -20,7 +20,7 @@ type Order = {
     purchase_price: number;
     status: 'paid' | 'used' | 'expired';
     created_at: string;
-    coupons: CouponData; // 嵌套的优惠券详情
+    coupons: CouponData[]; // 嵌套的优惠券详情
 };
 
 const statusMap = {
@@ -33,10 +33,10 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
     const [activeTab, setActiveTab] = useState('paid'); // 默认显示待使用
     const [modalOrder, setModalOrder] = useState<Order | null>(null);
 
-    const filteredOrders = orders.filter(order => order.status === activeTab);
+    // const filteredOrders = orders.filter(order => order.status === activeTab);
 
     // 过滤订单状态
-    const renderOrders = (status: 'paid' | 'used' | 'expired') => {
+const renderOrders = (status: 'paid' | 'used' | 'expired') => {
         const list = orders.filter(order => order.status === status);
         if (list.length === 0) {
             return <p className="text-center py-10 text-base-content/60">该分类下暂无订单记录。</p>;
@@ -44,52 +44,62 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
 
         return (
             <div className="space-y-4">
-                {list.map(order => (
-                    <div key={order.order_id} className="card card-side bg-base-100 shadow-md border border-base-200">
-                        
-                        <figure className="relative w-32 h-32 md:w-48 shrink-0">
-                            <Image 
-                                src={order.coupons.image_urls?.[0] || '/placeholder.jpg'} 
-                                alt="Coupon Image" 
-                                fill 
-                                className="object-cover"
-                                unoptimized
-                            />
-                        </figure>
+                {list.map(order => { // 修正: 使用 {} 显式返回，以便定义 coupon 变量
+                    
+                    // 定义 coupon 变量
+                    const coupon = order.coupons?.[0]; 
+                    
+                    if (!coupon) return null; // 如果数据错误，跳过渲染
 
-                        <div className="card-body p-4 justify-between">
-                            <div>
-                                <h2 className="card-title text-lg">
-                                    {order.coupons.name.th}
-                                </h2>
-                                <p className="text-sm text-base-content/60">
-                                    {statusMap[order.status].label} | ฿{order.purchase_price}
-                                </p>
-                            </div>
+                    return (
+                        <div key={order.order_id} className="card card-side bg-base-100 shadow-md border border-base-200">
+                            
+                            <figure className="relative w-32 h-32 md:w-48 shrink-0">
+                                <Image 
+                                    // 修正: 使用定义的 coupon 变量
+                                    src={coupon.image_urls?.[0] || '/placeholder.jpg'} 
+                                    alt="Coupon Image" 
+                                    fill 
+                                    className="object-cover"
+                                    unoptimized
+                                />
+                            </figure>
 
-                            <div className="card-actions justify-end">
-                                {order.status === 'paid' && (
-                                    <button 
-                                        className="btn btn-sm btn-primary"
-                                        onClick={() => setModalOrder(order)} // 打开模态框
-                                    >
-                                        <HiTicket className="w-4 h-4" /> 立即核销
-                                    </button>
-                                )}
-                                {order.status === 'used' && (
-                                    <button className="btn btn-sm btn-warning">
-                                        <HiStar className="w-4 h-4" /> 待评价
-                                    </button>
-                                )}
-                                {order.status === 'expired' && (
-                                    <span className="text-sm text-base-content/50 flex items-center gap-1">
-                                        <HiClock className="w-4 h-4" /> 交易已过期
-                                    </span>
-                                )}
+                            <div className="card-body p-4 justify-between">
+                                <div>
+                                    <h2 className="card-title text-lg">
+                                        {/* 修正: 使用定义的 coupon 变量 */}
+                                        {coupon.name.th}
+                                    </h2>
+                                    <p className="text-sm text-base-content/60">
+                                        {statusMap[order.status].label} | ฿{order.purchase_price}
+                                    </p>
+                                </div>
+
+                                <div className="card-actions justify-end">
+                                    {order.status === 'paid' && (
+                                        <button 
+                                            className="btn btn-sm btn-primary"
+                                            onClick={() => setModalOrder(order)}
+                                        >
+                                            <HiTicket className="w-4 h-4" /> 立即核销
+                                        </button>
+                                    )}
+                                    {order.status === 'used' && (
+                                        <button className="btn btn-sm btn-warning">
+                                            <HiStar className="w-4 h-4" /> 待评价
+                                        </button>
+                                    )}
+                                    {order.status === 'expired' && (
+                                        <span className="text-sm text-base-content/50 flex items-center gap-1">
+                                            <HiClock className="w-4 h-4" /> 交易已过期
+                                        </span>
+                                    )}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                ))}
+                    )
+                })} 
             </div>
         );
     };

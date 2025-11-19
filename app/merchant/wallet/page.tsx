@@ -1,27 +1,58 @@
 // 文件: /app/merchant/wallet/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, ChangeEvent } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { HiWallet, HiBellAlert, HiArrowUp, HiArrowDown } from "react-icons/hi2";
+import { HiWallet, HiArrowUp, HiArrowDown, HiCheckCircle, HiXCircle } from "react-icons/hi2"; 
+import QRCode from 'react-qr-code';
+import { PostgrestError } from '@supabase/supabase-js'; 
 
-// --- 类型定义 ---
+// --- 原始类型定义 ---
 interface Transaction {
   id: number;
-  type: 'bonus' | 'top_up' | 'commission';
+  type: 'top_up' | 'commission' | 'withdraw' | 'bonus'; 
   amount: number;
   balance_after: number;
   description: string;
   created_at: string;
 }
 
+// --- 新增：联表查询的嵌套类型 ---
+interface FetchedMerchant {
+    merchant_id: string;
+    shop_name: string;
+    status: string;
+    is_suspended: boolean;
+}
+
+// 联表查询结果的最终类型 (Profile Data)
+interface FetchedProfileData {
+    id: string; // profiles 表的主键
+    balance: number; // 假设 profiles 表有 balance 字段
+    // 联表结果：merchant 是单对象数组，transactions 是数组
+    merchants: FetchedMerchant[]; 
+    transactions: Transaction[]; 
+}
+
 interface MerchantInfo {
   merchant_id: string;
   shop_name: string;
-  platform_balance: number;
+  platform_balance: number; 
   is_suspended: boolean;
   status: string;
-  merchant_transactions: Transaction[]; // 嵌套交易流水
+  merchant_transactions: Transaction[]; 
+}
+
+// --- 充值流程状态类型 ---
+type RechargeStep = 'input' | 'payment' | 'verifying' | 'result';
+interface CurrentTransaction {
+  transactionId: string;
+  promptpayPayload: string;
+  amount: number;
+}
+interface Message {
+    type: 'success' | 'error' | 'info';
+    text: string;
 }
 
 // 辅助函数：格式化日期
@@ -32,6 +63,21 @@ const formatDate = (dateString: string) => {
   });
 };
 
+// 辅助函数：获取交易类型图标
+const getTransactionIcon = (type: Transaction['type']) => {
+    switch (type) {
+        case 'top_up':
+        case 'bonus':
+            return <HiArrowUp className="w-5 h-5 text-success" />;
+        case 'commission':
+        case 'withdraw':
+            return <HiArrowDown className="w-5 h-5 text-error" />;
+        default:
+            return <HiWallet className="w-5 h-5" />;
+    }
+};
+
+
 export default function WalletPage() {
   const [loading, setLoading] = useState(true);
   const [merchant, setMerchant] = useState<MerchantInfo | null>(null);
@@ -40,225 +86,385 @@ export default function WalletPage() {
   const [isTopUpModalOpen, setIsTopUpModalOpen] = useState(false);
   const [topUpAmount, setTopUpAmount] = useState<string>("1000");
 
+  // --- 充值流程所需状态 ---
+  const [rechargeStep, setRechargeStep] = useState<RechargeStep>('input');
+  const [currentTransaction, setCurrentTransaction] = useState<CurrentTransaction | null>(null);
+  const [slipFile, setSlipFile] = useState<File | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [message, setMessage] = useState<Message | null>(null); 
+
   // 1. 获取数据 (联表查询，一次性获取余额和流水)
-  useEffect(() => {
-    const fetchData = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+
+    if (!user) {
         setLoading(false);
         return;
-      }
+    }
 
-      const { data: mData, error } = await supabase
-        .from('merchants')
-        .select(`
-          merchant_id, 
-          shop_name, 
-          platform_balance, 
-          is_suspended, 
-          status, 
-          merchant_transactions (*)
-        `)
-        .eq('owner_id', user.id)
-        .single();
+    try {
+        const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select(`
+                id, balance,
+                merchants (merchant_id, shop_name, status, is_suspended),
+                transactions (id, type, amount, balance_after, description, created_at)
+            `)
+            .eq('id', user.id)
+            .single() as { data: FetchedProfileData | null, error: PostgrestError | null }; 
         
-      if (error) console.error("Error fetching merchant wallet data:", error);
+        if (error) throw error;
 
-      // PostgREST 返回的嵌套数组需要手动排序
-      if (mData?.merchant_transactions) {
-         mData.merchant_transactions.sort((a, b) => 
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-         );
-      }
-      
-      setMerchant(mData as MerchantInfo);
-      setLoading(false);
-    };
-    fetchData();
+        // 结构化数据
+        if (profileData && profileData.merchants && profileData.merchants.length > 0) {
+            setMerchant({
+                merchant_id: profileData.merchants[0].merchant_id,
+                shop_name: profileData.merchants[0].shop_name,
+                platform_balance: profileData.balance || 0,
+                is_suspended: profileData.merchants[0].is_suspended,
+                status: profileData.merchants[0].status,
+                // 使用正确的类型进行映射
+                merchant_transactions: profileData.transactions.map((tx: Transaction) => ({ 
+                    id: tx.id,
+                    type: tx.type,
+                    amount: tx.amount,
+                    balance_after: tx.balance_after,
+                    description: tx.description,
+                    created_at: tx.created_at,
+                })).sort((a: Transaction, b: Transaction) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+            });
+        }
+
+    } catch (e) {
+        console.error('Error fetching merchant data:', e);
+        setMessage({ type: 'error', text: '无法加载商户数据。' });
+    }
+    setLoading(false);
   }, []);
 
-  // 辅助函数：确定图标和颜色
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
-      case 'top_up':
-      case 'bonus':
-        return <HiArrowUp className="text-success" />;
-      case 'commission':
-        return <HiArrowDown className="text-error" />;
-      default:
-        return null;
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  // --- 充值流程函数 ---
+
+  // 提交充值金额 (步骤 1)
+  const handleTopUpSubmit = async () => {
+    const amount = parseFloat(topUpAmount);
+    if (isNaN(amount) || amount < 500) {
+      setMessage({ type: 'error', text: '充值金额无效，最低 500 泰铢。' });
+      return;
+    }
+    
+    setIsProcessing(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/merchant/recharge', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ amount }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setCurrentTransaction({
+          transactionId: data.transactionId,
+          promptpayPayload: data.promptpayPayload,
+          amount: data.paymentAmount,
+        });
+        setRechargeStep('payment'); 
+      } else {
+        setMessage({ type: 'error', text: data.message || '发起充值请求失败。' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: '网络错误，请稍后再试。' });
+      console.error('Recharge Initiation Error:', error);
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-// 2. 处理充值请求 (连接到 /api/topup-checkout)
-const handleTopUpSubmit = async () => {
-  const amount = parseFloat(topUpAmount);
-  if (amount < 500 || isNaN(amount)) {
-      alert("最低充值金额为 500 泰铢。");
+  // 处理文件选择
+  const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setSlipFile(e.target.files[0]);
+    } else {
+      setSlipFile(null);
+    }
+  };
+
+  // 提交支付凭证 (步骤 2)
+  const handleVerifySlip = async () => {
+    if (!slipFile || !currentTransaction) {
+      setMessage({ type: 'error', text: '请上传支付凭证图片。' });
       return;
-  }
-  if (!merchant?.merchant_id) {
-      alert("错误：无法获取商家ID。");
-      return;
-  }
+    }
+
+    setRechargeStep('verifying');
+    setIsProcessing(true);
+    setMessage(null);
+
+    const formData = new FormData();
+    formData.append('transactionId', currentTransaction.transactionId);
+    formData.append('file', slipFile);
+
+    try {
+      const response = await fetch('/api/merchant/verify-recharge', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const data = await response.json();
+      
+      setRechargeStep('result');
+
+      if (data.success) {
+        setMessage({ type: 'success', text: '充值成功！您的余额已更新。' });
+        fetchData(); 
+      } else {
+        setMessage({ type: 'error', text: data.message || '凭证验证失败，请重新尝试。' });
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: '网络错误，无法连接到验证服务。' });
+      console.error('Slip Verification Error:', error);
+      setRechargeStep('result');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
   
-  setLoading(true);
+  // 重置模态框状态
+  const resetModal = () => {
+      setIsTopUpModalOpen(false);
+      setRechargeStep('input');
+      setCurrentTransaction(null);
+      setSlipFile(null);
+      setIsProcessing(false);
+      setMessage(null);
+      setTopUpAmount("1000");
+  };
 
-  try {
-     const res = await fetch("/api/topup-checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-           merchantId: merchant.merchant_id, // 传递商家ID
-           amount: amount 
-        }),
-     });
-     
-     const data = await res.json();
-
-     if (!res.ok) throw new Error(data.error || "充值初始化失败");
-
-     // 跳转到支付页面 (Stripe 或 Mock URL)
-     if (data.url) {
-        window.location.href = data.url;
-     }
-
-  } catch (error: unknown) {
-     console.error("TopUp Checkout Error:", error);
-     let alertMessage = "发起充值失败，请重试";
-     let extractedMessage = ""; // 用于存储提取到的具体错误信息
-
-     // 1. 安全提取错误信息
-     if (error instanceof Error) {
-        extractedMessage = error.message;
-     } else if (typeof error === 'object' && error !== null && 'message' in error) {
-        // 提取来自 API 响应的错误信息
-        extractedMessage = (error as { message: string }).message; 
-     }
-     
-     // 2. 拼接最终提示信息
-     if (extractedMessage) {
-        alertMessage += ": " + extractedMessage;
-     }
-
-     alert(alertMessage);
-  } finally {
-     setLoading(false);
+  // --- 页面渲染部分 ---
+  
+  if (loading) {
+    return (
+        <div className="flex justify-center items-center h-96">
+            <span className="loading loading-spinner loading-lg text-primary"></span>
+        </div>
+    );
   }
-};
-
-  if (loading) return <div className="p-10 text-center"><span className="loading loading-spinner loading-lg"></span></div>;
-  if (!merchant) return <div className="p-10 text-center text-error">未找到商家账户信息。</div>;
-
-  const isBelowThreshold = merchant.platform_balance < 500;
-  const cardClass = isBelowThreshold ? 'bg-error text-error-content' : 'bg-success text-success-content';
 
   return (
-    <div className="w-full max-w-6xl mx-auto space-y-6">
-      <h1 className="text-3xl font-bold">我的钱包 ({merchant.shop_name})</h1>
+    <div className="container mx-auto p-4 md:p-8">
+      <h1 className="text-3xl font-bold mb-6 flex items-center gap-3">
+        <HiWallet className="w-8 h-8" /> 钱包与财务
+      </h1>
 
-      {/* --- 1. 余额概览卡片 --- */}
-      <div className={`card shadow-lg ${cardClass}`}>
-        <div className="card-body p-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <p className="text-sm opacity-80 flex items-center gap-2">
-                <HiWallet className="w-5 h-5"/> 平台余额 (THB)
-              </p>
-              <h2 className="card-title text-5xl mt-2">
-                ฿{merchant.platform_balance.toFixed(2)}
-              </h2>
-            </div>
-            
-            <button 
-              className={`btn ${isBelowThreshold ? 'btn-outline text-error-content' : 'btn-success'}`}
-              onClick={() => setIsTopUpModalOpen(true)}
-            >
-              充值 / Top Up
+      {/* --- 1. 余额卡片 --- */}
+      <div className="card w-full bg-primary text-primary-content shadow-xl mb-8">
+        <div className="card-body">
+          <h2 className="card-title text-2xl opacity-80">当前平台余额</h2>
+          <p className="text-5xl font-extrabold my-2">
+            ฿{merchant?.platform_balance.toFixed(2) || '0.00'}
+          </p>
+          <div className="card-actions justify-end">
+            <button className="btn btn-warning" onClick={() => setMessage({ type: 'info', text: '提现功能正在开发中。' })}>
+                申请提现
+            </button>
+            <button className="btn btn-success" onClick={() => setIsTopUpModalOpen(true)}>
+              <HiArrowUp className="w-5 h-5" /> 充值
             </button>
           </div>
-
-          {/* 状态警告 */}
-          {merchant.is_suspended && (
-             <div className="mt-4 flex items-center gap-2 font-bold bg-error-content/20 p-2 rounded-lg">
-                <HiBellAlert className="w-6 h-6 text-error"/>
-                <span>服务已暂停：余额低于警戒线 (฿500)。请立即充值！</span>
-             </div>
-          )}
-          {!merchant.is_suspended && isBelowThreshold && (
-             <div className="mt-4 flex items-center gap-2 font-bold bg-warning-content/20 text-warning p-2 rounded-lg">
-                <HiBellAlert className="w-6 h-6"/>
-                <span>警告：余额低于 ฿500。请尽快充值以避免服务暂停。</span>
-             </div>
-          )}
         </div>
       </div>
+      
+      {/* 状态提示 */}
+      {message && (
+        <div role="alert" className={`alert mb-4 ${message.type === 'error' ? 'alert-error' : message.type === 'success' ? 'alert-success' : 'alert-info'}`}>
+          {message.type === 'success' && <HiCheckCircle className="w-6 h-6" />}
+          {message.type === 'error' && <HiXCircle className="w-6 h-6" />}
+          <span>{message.text}</span>
+        </div>
+      )}
 
-      {/* --- 2. 交易流水历史 --- */}
-      <div className="bg-base-100 p-6 rounded-lg shadow-md space-y-4">
-        <h2 className="text-xl font-bold border-b pb-2">交易历史记录</h2>
-        <div className="overflow-x-auto">
-          <table className="table table-zebra w-full">
-            <thead>
-              <tr>
-                <th>日期</th>
-                <th>类型</th>
-                <th>说明</th>
-                <th className="text-right">金额 (฿)</th>
-                <th className="text-right">交易后余额</th>
-              </tr>
-            </thead>
-            <tbody>
-              {merchant.merchant_transactions.length === 0 ? (
-                <tr><td colSpan={5} className="text-center py-4">暂无交易记录。</td></tr>
-              ) : (
-                merchant.merchant_transactions.map((tx) => (
-                  <tr key={tx.id}>
-                    <td>{formatDate(tx.created_at)}</td>
-                    <td>
-                      <span className={`badge ${tx.type === 'commission' ? 'badge-error' : 'badge-success'}`}>
-                        {tx.type.toUpperCase()}
-                      </span>
-                    </td>
-                    <td>{tx.description}</td>
-                    <td className={`text-right font-bold ${tx.amount > 0 ? 'text-success' : 'text-error'} flex items-center justify-end gap-2`}>
-                    {getTransactionIcon(tx.type)}
-                    {tx.amount > 0 ? `+฿${tx.amount.toFixed(2)}` : `-฿${Math.abs(tx.amount).toFixed(2)}`}
-                    </td>
-                    <td className="text-right">฿{tx.balance_after.toFixed(2)}</td>
+      {/* --- 2. 交易记录 --- */}
+      <div className="card bg-base-100 shadow-xl">
+        <div className="card-body">
+          <h2 className="card-title text-xl mb-4">交易流水</h2>
+          
+          <div className="overflow-x-auto">
+            <table className="table w-full">
+              <thead>
+                <tr>
+                  <th className="w-1/4">日期与时间</th>
+                  <th className="w-1/4">类型与描述</th>
+                  <th className="w-1/4 text-right">金额</th>
+                  <th className="w-1/4 text-right">交易后余额</th>
+                </tr>
+              </thead>
+              <tbody>
+                {merchant?.merchant_transactions.length === 0 ? (
+                  <tr>
+                    <td colSpan={4} className="text-center text-base-content/60">暂无交易记录</td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
+                ) : (
+                  merchant?.merchant_transactions.map((tx) => (
+                    <tr key={tx.id}>
+                      <td>{formatDate(tx.created_at)}</td>
+                      <td>
+                        <span className="badge badge-outline">{tx.type}</span>
+                        <p className="text-sm text-base-content/70 mt-1">{tx.description}</p>
+                      </td>
+                      <td className={`text-right font-semibold flex items-center justify-end gap-2`}>
+                        {getTransactionIcon(tx.type)}
+                        {tx.amount > 0 ? `+฿${tx.amount.toFixed(2)}` : `-฿${Math.abs(tx.amount).toFixed(2)}`}
+                      </td>
+                      <td className="text-right">฿{tx.balance_after.toFixed(2)}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       {/* --- 3. 充值模态框 (Modal) --- */}
       {isTopUpModalOpen && (
         <dialog className="modal modal-open">
-          <div className="modal-box">
-            <h3 className="font-bold text-lg">发起充值请求</h3>
-            <p className="py-4">请指定您希望充值的金额（最低 500 泰铢）。</p>
+          <div className="modal-box w-11/12 max-w-lg">
             
-            <div className="form-control">
-                <label className="label">
-                   <span className="label-text">充值金额 (฿)</span>
-                </label>
-                <input 
-                   type="number" 
-                   className="input input-bordered input-lg" 
-                   value={topUpAmount}
-                   min={500}
-                   onChange={(e) => setTopUpAmount(e.target.value)}
-                />
-            </div>
-            <div className="modal-action">
-              <button className="btn" onClick={() => setIsTopUpModalOpen(false)}>取消</button>
-              <button className="btn btn-primary" onClick={handleTopUpSubmit}>
-                 确认充值
-              </button>
-            </div>
+            <h3 className="font-bold text-xl mb-4 text-center">商户充值 - PromptPay</h3>
+            
+            {/* 步骤 1: 金额输入 */}
+            {rechargeStep === 'input' && (
+              <>
+                <p className="py-4 text-base-content/80">请指定您希望充值的金额（最低 500 泰铢）。</p>
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">充值金额 (฿)</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    className="input input-bordered input-lg" 
+                    value={topUpAmount}
+                    min={500}
+                    onChange={(e) => setTopUpAmount(e.target.value)}
+                    disabled={isProcessing}
+                  />
+                </div>
+                
+                <div className="modal-action mt-6">
+                  <button className="btn btn-ghost" onClick={resetModal} disabled={isProcessing}>取消</button>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handleTopUpSubmit}
+                    disabled={isProcessing || parseFloat(topUpAmount) < 500}
+                  >
+                    {isProcessing && <span className="loading loading-spinner"></span>}
+                    确认充值并获取收款码
+                  </button>
+                </div>
+              </>
+            )}
+
+            {/* 步骤 2: 支付与上传凭证 */}
+            {rechargeStep === 'payment' && currentTransaction && (
+              <div className='flex flex-col items-center text-center'>
+                <p className='text-lg font-bold mb-4 text-primary'>
+                    待支付金额: ฿{currentTransaction.amount.toFixed(2)}
+                </p>
+                
+                {/* QR Code Display */}
+                <div className="p-4 bg-white rounded-lg shadow-lg mb-6">
+                    <QRCode 
+                        value={currentTransaction.promptpayPayload} 
+                        size={256}
+                        level="M"
+                    />
+                </div>
+                <p className='text-sm text-base-content/70 mb-8'>
+                    请使用手机银行App扫描上方二维码完成转账，然后上传支付凭证。
+                </p>
+
+                <h4 className='font-semibold mb-3 w-full border-t pt-4'>--- 上传支付凭证 (Slip) 进行验证 ---</h4>
+
+                <div className="form-control w-full max-w-xs">
+                    <input 
+                       type="file" 
+                       accept="image/*"
+                       className="file-input file-input-bordered w-full"
+                       onChange={handleFileChange}
+                       disabled={isProcessing}
+                    />
+                    {slipFile && (
+                        <p className='text-xs text-success mt-2 truncate'>已选择文件: {slipFile.name}</p>
+                    )}
+                    {!slipFile && (
+                         <p className='text-xs text-base-content/70 mt-2'>支持 JPG, PNG 格式。</p>
+                    )}
+                </div>
+
+                <div className="modal-action w-full mt-6 justify-center sm:justify-end">
+                  <button 
+                    className="btn btn-ghost" 
+                    onClick={() => setRechargeStep('input')}
+                    disabled={isProcessing}
+                  >
+                    返回修改金额
+                  </button>
+                  <button 
+                    className="btn btn-success" 
+                    onClick={handleVerifySlip}
+                    disabled={isProcessing || !slipFile}
+                  >
+                    {isProcessing && <span className="loading loading-spinner"></span>}
+                    {isProcessing ? '验证中...' : '上传并验证支付'}
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {/* 步骤 3 & 4: 验证中/结果显示 */}
+            {(rechargeStep === 'verifying' || rechargeStep === 'result') && (
+              <div className='flex flex-col items-center text-center py-8'>
+                
+                {/* 验证中状态 */}
+                {rechargeStep === 'verifying' && (
+                    <div role="status" className="flex flex-col items-center">
+                        <span className="loading loading-spinner loading-lg text-primary mb-4"></span>
+                        <p className='text-lg font-semibold'>正在连接 Slip2Go 进行验证...</p>
+                        <p className='text-sm text-base-content/70 mt-2'>请稍候，通常需要 5-10 秒。</p>
+                    </div>
+                )}
+                
+                {/* 结果状态 */}
+                {rechargeStep === 'result' && message && (
+                    <div className={`alert ${message.type === 'success' ? 'alert-success' : 'alert-error'} w-full`}>
+                        {message.type === 'success' ? <HiCheckCircle className="w-6 h-6" /> : <HiXCircle className="w-6 h-6" />}
+                        <span>{message.text}</span>
+                    </div>
+                )}
+                
+                <div className="modal-action w-full mt-6 justify-center">
+                  {/* 成功后关闭，失败后可以重新尝试或关闭 */}
+                  {message?.type === 'error' && (
+                       <button className="btn btn-warning" onClick={() => setRechargeStep('payment')}>重新上传凭证</button>
+                  )}
+                  <button className="btn" onClick={resetModal}>
+                    {message?.type === 'success' ? '完成' : '关闭'}
+                  </button>
+                </div>
+              </div>
+            )}
+            
+            {/* 关闭按钮 (在右上角, 用于关闭整个 modal) */}
+            <form method="dialog">
+              <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={resetModal}>✕</button>
+            </form>
           </div>
         </dialog>
       )}

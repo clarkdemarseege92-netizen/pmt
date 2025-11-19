@@ -11,6 +11,7 @@ import {
   HiTicket,              // 优惠券
   HiChatBubbleLeftRight, // 评价
   HiWallet,
+  HiQrCode,
   HiCog6Tooth,           // 设置
   HiChevronLeft,         // 收起箭头
   HiChevronRight,        // 展开箭头
@@ -55,6 +56,11 @@ export default function MerchantSidebar() {
       name: "账户设置",
       href: "/merchant/settings",
       icon: <HiCog6Tooth className="w-6 h-6" />,
+    },
+    {
+      name: "订单核销", 
+      href: "/merchant/redeem",
+      icon: <HiQrCode className="w-6 h-6" />, 
     },
   ];
 

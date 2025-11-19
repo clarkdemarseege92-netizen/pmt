@@ -4,11 +4,11 @@ import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { NextResponse } from 'next/server';
 import { generatePromptPayPayload } from '@/lib/promptpay'; 
 import { v4 as uuidv4 } from 'uuid'; 
-// FIX: 移除未使用的 PostgrestError 导入
+// FIX 1: 移除未使用的 PostgrestError 导入
 
 const PLATFORM_PROMPTPAY_ID = process.env.PLATFORM_PROMPTPAY_ID;
 
-// 定义 merchant_transactions 表的插入结构
+// 【新增类型】: 定义 merchant_transactions 表的插入结构，消除 'any'
 interface MerchantTransactionInsert {
     merchant_id: string;
     type: 'top_up' | 'commission' | 'withdraw' | 'bonus';
@@ -16,6 +16,7 @@ interface MerchantTransactionInsert {
     status: 'pending' | 'completed' | 'failed'; 
     related_order_id: string;
     description: string;
+    // id, balance_after, created_at 由数据库自动管理/触发器计算
 }
 
 // 请求体：仅接收充值金额
@@ -67,7 +68,8 @@ export async function POST(request: Request) {
             description: `充值请求 (Ref: ${topUpId.slice(0, 8)})`,
         };
 
-        // 3. 插入充值记录到 merchant_transactions 表
+        // 3. 【核心修复】插入充值记录到 merchant_transactions 表
+        // 不再需要 'as any'
         const { error: transactionError } = await supabase
             .from('merchant_transactions') 
             .insert(transactionData); 

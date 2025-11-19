@@ -12,11 +12,13 @@ interface Merchant {
   owner_id: string;
   status: string;
   id_card_number?: string;
-  bank_name?: string;
-  bank_account_name?: string;
-  bank_account_number?: string;
+  // 银行账户字段已注释 (预留给未来升级)
+  // bank_name?: string; 
+  // bank_account_name?: string; 
+  // bank_account_number?: string; 
   id_card_image_url?: string;
-  bank_book_image_url?: string;
+  // bank_book_image_url?: string; 
+  promptpay_id?: string;
 }
 
 export default function SettingsPage() {
@@ -33,11 +35,12 @@ export default function SettingsPage() {
   const [merchant, setMerchant] = useState<Merchant | null>(null); 
   const [kycForm, setKycForm] = useState({
     idCardNumber: "",
-    bankName: "",
+    // bankName: "", // 银行信息已注释
     bankAccountName: "",
-    bankAccountNumber: "",
+    // bankAccountNumber: "", // 银行信息已注释
     idCardImg: "",
-    bankBookImg: ""
+    // bankBookImg: "", // 银行信息已注释
+    promptpayId: ""
   });
   const [ocrLoading, setOcrLoading] = useState(false);
   const [saveKycLoading, setSaveKycLoading] = useState(false);
@@ -46,7 +49,8 @@ useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      if (user?.phone) setPhone(user.phone);
+      // 注意: user.phone 已经是带 +66 的国际格式
+      if (user?.phone) setPhone(user.phone); 
 
       // 获取商户信息
       if (user) {
@@ -60,11 +64,12 @@ useEffect(() => {
           setMerchant(m as Merchant);
           setKycForm({
             idCardNumber: m.id_card_number || "",
-            bankName: m.bank_name || "",
+            // bankName: m.bank_name || "", // 银行信息已注释
             bankAccountName: m.bank_account_name || "",
-            bankAccountNumber: m.bank_account_number || "",
+            // bankAccountNumber: m.bank_account_number || "", // 银行信息已注释
             idCardImg: m.id_card_image_url || "",
-            bankBookImg: m.bank_book_image_url || ""
+            // bankBookImg: m.bank_book_image_url || "", // 银行信息已注释
+            promptpayId: m.promptpay_id || "" 
           });
         }
       }
@@ -77,9 +82,11 @@ useEffect(() => {
     setLoading(true);
     setMessage(null);
     let formattedPhone = phone.trim();
+    // 确保本地输入格式（09x-xxx-xxxx）被转换为国际格式（+669x-xxx-xxxx）
     if (formattedPhone.startsWith('0')) {
       formattedPhone = `+66${formattedPhone.substring(1)}`;
     }
+    setPhone(formattedPhone); // 更新状态以使用国际格式
 
     // 将手机号更新到用户元数据，并发送 OTP
     const { error: updateError } = await supabase.auth.updateUser({ 
@@ -120,7 +127,7 @@ useEffect(() => {
     } else {
       setMessage({ type: 'success', text: '手机号验证成功！' });
       setOtpView(false);
-      // 刷新用户信息
+      // 刷新用户信息，user.phone_confirmed_at 将更新
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
     }
@@ -156,15 +163,18 @@ useEffect(() => {
               setKycForm(prev => ({ ...prev, idCardNumber: data.extractedId }));
               alertMessage += "证件号码；";
             }
-            // 【核心新增】提取姓名并更新 bankAccountName
+            // 提取姓名并更新 bankAccountName
             if (data.extractedName) {
               setKycForm(prev => ({ ...prev, bankAccountName: data.extractedName }));
               alertMessage += "账户名。";
             }
-          } else if (type === 'bank_book' && data.extractedId) {
+          } 
+          /* 银行存折/银行卡 OCR 逻辑已注释
+          else if (type === 'bank_book' && data.extractedId) {
             setKycForm(prev => ({ ...prev, bankAccountNumber: data.extractedId }));
             alertMessage += "银行账号。";
           }
+          */
           
           if (alertMessage === "已自动识别，请核对：") {
              alert("图片上传成功，但未在图片中找到清晰的号码和姓名，请手动填写。");
@@ -183,7 +193,8 @@ useEffect(() => {
         if (!uploadError) {
            const { data: { publicUrl } } = supabase.storage.from('products').getPublicUrl(fileName);
            if (type === 'id_card') setKycForm(prev => ({ ...prev, idCardImg: publicUrl }));
-           if (type === 'bank_book') setKycForm(prev => ({ ...prev, bankBookImg: publicUrl }));
+           // 银行卡图片 URL 设置已注释
+           // if (type === 'bank_book') setKycForm(prev => ({ ...prev, bankBookImg: publicUrl }));
         }
       };
     } catch (error) {
@@ -203,11 +214,13 @@ useEffect(() => {
       .from('merchants')
       .update({
         id_card_number: kycForm.idCardNumber,
-        bank_name: kycForm.bankName,
-        bank_account_name: kycForm.bankAccountName,
-        bank_account_number: kycForm.bankAccountNumber,
+        // 银行账户字段已注释
+        // bank_name: kycForm.bankName,
+        // bank_account_name: kycForm.bankAccountName,
+        // bank_account_number: kycForm.bankAccountNumber,
         id_card_image_url: kycForm.idCardImg,
-        bank_book_image_url: kycForm.bankBookImg,
+        // bank_book_image_url: kycForm.bankBookImg,
+        promptpay_id: kycForm.promptpayId, 
       })
       .eq('merchant_id', merchant.merchant_id);
 
@@ -219,6 +232,11 @@ useEffect(() => {
     }
     setSaveKycLoading(false);
   };
+  
+  // 检查 KYC 是否已填写必要字段 (只依赖身份证号)
+  const isKycDataFilled = !!kycForm.idCardNumber;
+  // 检查手机号是否已验证
+  const isPhoneVerified = !!user?.phone_confirmed_at;
 
   if (loading) {
     return <span className="loading loading-spinner loading-lg"></span>;
@@ -247,7 +265,7 @@ useEffect(() => {
           实名认证 (KYC)
         </div>
         <div className="collapse-content space-y-4">
-           {/* 身份证部分 */}
+           {/* 身份证部分 (保留) */}
            <div className="form-control">
               <label className="label"><span className="label-text font-bold">1. 身份证/护照</span></label>
               <div className="flex flex-col md:flex-row gap-4 items-start">
@@ -259,6 +277,7 @@ useEffect(() => {
                       ) : (
                         <span className="text-xs text-base-content/40">上传照片自动识别</span>
                       )}
+                      {/* 注意: type="file" 上的 onChange 函数仍然允许上传 bank_book 类型，但在 handleOcrUpload 内部已被注释 */}
                       <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" 
                         onChange={(e) => handleOcrUpload(e, 'id_card')} disabled={ocrLoading} />
                    </div>
@@ -275,11 +294,11 @@ useEffect(() => {
                          placeholder="自动识别或手动输入" 
                       />
                    </div>
-                   {/* 【新增】证件姓名输入框 */}
+                   {/* 证件姓名输入框 (保留，用于确认身份) */}
                    <div>
                       <label className="label pt-0"><span className="label-text-alt">证件姓名 (带称谓)</span></label>
                       <input type="text" className="input input-bordered w-full" 
-                         value={kycForm.bankAccountName} // 绑定到与银行账户名相同的字段
+                         value={kycForm.bankAccountName} // 仍然用这个字段存储实名
                          onChange={(e) => setKycForm({...kycForm, bankAccountName: e.target.value})}
                          placeholder="自动识别或手动输入 (必须与银行账户名一致)" 
                       />
@@ -288,72 +307,83 @@ useEffect(() => {
               </div>
            </div>
 
+           {/* ---------------------------------------------------- */}
+           {/* 银行账户部分已注释 (预留给未来升级) */}
+           {/* ---------------------------------------------------- */}
+           {/*
            <div className="divider"></div>
-
-           {/* 银行账户部分 */}
            <div className="form-control">
-              <label className="label"><span className="label-text font-bold">2. 提现银行账户</span></label>
-              <div className="flex flex-col md:flex-row gap-4 items-start">
-                {/* 图片预览 */}
-                <div className="flex-none w-full md:w-1/3">
-                   <div className="relative aspect-video bg-base-100 rounded-lg border-2 border-dashed border-base-300 flex items-center justify-center overflow-hidden">
-                      {kycForm.bankBookImg ? (
-                        <Image src={kycForm.bankBookImg} alt="Bank Book" fill className="object-cover" unoptimized />
-                      ) : (
-                        <span className="text-xs text-base-content/40">上传存折自动识别</span>
-                      )}
-                      <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" 
-                        onChange={(e) => handleOcrUpload(e, 'bank_book')} disabled={ocrLoading} />
-                   </div>
-                </div>
-                {/* 输入框组 */}
-                <div className="flex-1 w-full space-y-3">
-                   <div>
-                      <label className="label pt-0"><span className="label-text-alt">银行名称</span></label>
-                        <select className="select select-bordered w-full" 
-                        value={kycForm.bankName}
-                        onChange={(e) => setKycForm({...kycForm, bankName: e.target.value})}>
-                         <option value="">请选择银行</option>
-                         <option value="kbank">Kasikorn Bank (กสิกรไทย)</option>
-                         <option value="scb">Siam Commercial Bank (ไทยพาณิชย์)</option>
-                         <option value="bbl">Bangkok Bank (กรุงเทพ)</option>
-                         <option value="ktb">Krungthai Bank (กรุงไทย)</option>
-                         <option value="bay">Krungsri / Bank of Ayudhya (กรุงศรี)</option>
-                         <option value="ttb">TMBThanachart (ทีทีบี)</option>
-                         <option value="uob">United Overseas Bank (ยูโอบี)</option>
-                         <option value="cimb">CIMB Thai (ซีไอเอ็มบี ไทย)</option>
-                         <option value="tisco">Tisco Bank (ทิสโก้)</option>
-                         <option value="kkp">Kiatnakin Bank (เกียรตินาคิน)</option>
-                      </select>
-                   </div>
-                   <div>
-                      <label className="label pt-0"><span className="label-text-alt">银行账号</span></label>
-                      <input type="text" className="input input-bordered w-full" 
-                         value={kycForm.bankAccountNumber}
-                         onChange={(e) => setKycForm({...kycForm, bankAccountNumber: e.target.value})}
-                         placeholder="自动识别或手动输入"
-                      />
-                   </div>
-                   <div>
-                      <label className="label pt-0"><span className="label-text-alt">账户名 (必须与实名一致)</span></label>
-                      <input type="text" className="input input-bordered w-full" 
-                         value={kycForm.bankAccountName}
-                         onChange={(e) => setKycForm({...kycForm, bankAccountName: e.target.value})}
-                         placeholder="自动识别身份证姓名"
-                      />
-                   </div>
-                </div>
-              </div>
+              <label className="label"><span className="label-text font-bold">2. 提现银行账户 (已禁用)</span></label>
+              <p className="text-warning text-sm">银行账户认证功能已暂时禁用，请使用 PromptPay 收款。</p>
            </div>
-
-           <div className="flex justify-end pt-4">
-              <button className="btn btn-primary" onClick={saveKycInfo} disabled={saveKycLoading}>
-                 {saveKycLoading ? "保存中..." : "保存认证信息"}
-              </button>
-           </div>
+           */}
+           
         </div>
       </div>
-      {/* --- 邮箱信息 --- */}
+      
+      {/* 3. PromptPay 收款设置 (保留) */}
+      <div className="collapse collapse-arrow bg-base-200">
+        <input type="checkbox" defaultChecked /> 
+        <div className="collapse-title text-xl font-medium">
+          PromptPay 收款设置
+        </div>
+        <div className="collapse-content space-y-4">
+            <p>1/手机号验证；2/身份证验证；3/设置您的PromptPay</p>
+            {/* 检查 PromptPay 设置的前提条件 */}
+            {!isPhoneVerified && <p className="text-error">错误：请先完成手机号验证。</p>}
+            {!isKycDataFilled && <p className="text-error">错误：请先完成 KYC 中的证件号填写。</p>}
+
+            {isPhoneVerified && isKycDataFilled ? (
+                <>
+                    <p className="text-sm text-base-content/70">
+                        请选择一个已验证的 ID 作为客户付款的 PromptPay 收款账户 ID。
+                    </p>
+                    <div className="form-control">
+                        <label className="label">
+                            <span className="label-text font-bold">PromptPay 收款 ID</span>
+                        </label>
+                        <select 
+                            className="select select-bordered w-full" 
+                            value={kycForm.promptpayId || ''}
+                            onChange={(e) => setKycForm({...kycForm, promptpayId: e.target.value})}
+                            required
+                        >
+                            <option value="" disabled>请选择一个 ID</option>
+                            {/* 选项 1: 验证手机号 */}
+                            {user?.phone && (
+                               <option value={user.phone}>
+                                  已验证手机号：{user.phone}
+                               </option>
+                            )}
+                            {/* 选项 2: 身份证/护照号码 */}
+                            {kycForm.idCardNumber && (
+                               <option value={kycForm.idCardNumber}>
+                                  已验证证件号：{kycForm.idCardNumber} (推荐)
+                               </option>
+                            )}
+                        </select>
+                         <label className="label">
+                            <span className="label-text-alt text-warning">
+                                * 这是客户扫码支付的唯一ID，必须与您的 PromptPay 绑定 ID 保持一致。
+                            </span>
+                        </label>
+                    </div>
+                </>
+            ) : (
+                <p className="text-warning">您需要满足上述条件后才能设置 PromptPay ID。</p>
+            )}
+
+        </div>
+      </div>
+      
+      {/* 保存按钮 (保留在最下方，统一保存) */}
+      <div className="flex justify-end pt-4">
+        <button className="btn btn-primary" onClick={saveKycInfo} disabled={saveKycLoading}>
+            {saveKycLoading ? "保存中..." : "保存认证信息"}
+        </button>
+      </div>
+      
+      {/* --- 邮箱信息 (保持不变) --- */}
       <div className="form-control">
         <label className="label"><span className="label-text">注册邮箱</span></label>
         <input
@@ -371,7 +401,7 @@ useEffect(() => {
 
       <div className="divider">手机号验证</div>
       
-      {/* --- 手机号验证 --- */}
+      {/* --- 手机号验证 (保持不变) --- */}
       {!otpView ? (
         <>
           <div className="form-control">
@@ -379,12 +409,15 @@ useEffect(() => {
             <input
               type="tel"
               placeholder="099-888-8888"
+              // 转换格式：用户看到 099-888-8888，但内部使用 +6699-888-8888
+              value={phone.startsWith('+66') ? phone.replace('+66', '0') : phone} 
               className="input input-bordered"
-              value={phone.replace('+66', '0')} 
               onChange={(e) => setPhone(e.target.value)}
             />
-             {user?.phone_confirmed_at && (
+             {user?.phone_confirmed_at ? (
                 <span className="text-success text-sm mt-1">已验证: {user.phone}</span>
+             ) : (
+                <span className="text-warning text-sm mt-1">未验证。</span>
              )}
           </div>
           <button 
