@@ -4,7 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { HiShoppingCart, HiCheckCircle, HiClock } from "react-icons/hi2";
 import BuyButton from "@/components/BuyButton";
-
+import BackButton from "@/components/BackButton";
 // ----- 类型定义 -----
 
 type MultiLangName = {
@@ -234,6 +234,7 @@ export default async function CouponDetailPage({
                <span className="text-2xl font-bold text-primary">฿{coupon.selling_price}</span>
             </div>
             {/* 【修改 3】: 传递 sellingPrice 和 merchantPromptPayId */}
+            <BackButton />
             <BuyButton 
                 couponId={coupon.coupon_id} 
                 sellingPrice={coupon.selling_price}

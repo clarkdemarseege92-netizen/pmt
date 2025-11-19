@@ -1,96 +1,115 @@
-// 文件: /app/api/merchant/recharge/route.ts
-
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { NextResponse } from 'next/server';
-import { generatePromptPayPayload } from '@/lib/promptpay'; 
-import { v4 as uuidv4 } from 'uuid'; 
-// FIX: 移除未使用的 PostgrestError 导入
-
-const PLATFORM_PROMPTPAY_ID = process.env.PLATFORM_PROMPTPAY_ID;
-
-// 定义 merchant_transactions 表的插入结构
-interface MerchantTransactionInsert {
-    merchant_id: string;
-    type: 'top_up' | 'commission' | 'withdraw' | 'bonus';
-    amount: number;
-    status: 'pending' | 'completed' | 'failed'; 
-    related_order_id: string;
-    description: string;
-}
-
-// 请求体：仅接收充值金额
-interface RechargeRequestBody {
-    amount: number;
-}
+import { generatePromptPayPayload } from '@/lib/promptpay';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
-    const { amount }: RechargeRequestBody = await request.json();
+  try {
+    const { couponId, quantity } = await request.json();
 
-    if (!amount || amount <= 0) {
-        return NextResponse.json({ success: false, message: '充值金额无效' }, { status: 400 });
-    }
-    
-    if (!PLATFORM_PROMPTPAY_ID) {
-        return NextResponse.json({ success: false, message: '平台收款ID未配置' }, { status: 500 });
+    // 1. 基础参数校验
+    if (!couponId || !quantity || quantity <= 0) {
+      return NextResponse.json({ success: false, message: '参数错误：无效的优惠券或数量' }, { status: 400 });
     }
 
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        return NextResponse.json({ success: false, message: '请先登录' }, { status: 401 });
+      return NextResponse.json({ success: false, message: '请先登录后再购买' }, { status: 401 });
     }
 
-    try {
-        // 1. 通过 user.id 查找 merchant_id
-        const { data: merchantData, error: merchantError } = await supabase
-            .from('merchants')
-            .select('merchant_id')
-            .eq('owner_id', user.id)
-            .single();
-            
-        if (merchantError || !merchantData) {
-            console.error('Merchant ID Fetch Error:', merchantError);
-            return NextResponse.json({ success: false, message: '无法找到关联的商户ID。' }, { status: 403 });
-        }
-        
-        const merchantId = merchantData.merchant_id;
-        const topUpId = uuidv4(); 
+    // 2. 获取优惠券详情 (含商户信息)
+    const { data: coupon, error: couponError } = await supabase
+      .from('coupons')
+      .select(`
+        coupon_id,
+        selling_price,
+        stock_quantity,
+        merchants (
+          merchant_id,
+          shop_name,
+          status,
+          is_suspended,
+          promptpay_id
+        )
+      `)
+      .eq('coupon_id', couponId)
+      .single();
 
-        // 2. 构造插入数据结构
-        const transactionData: MerchantTransactionInsert = {
-            merchant_id: merchantId, 
-            type: 'top_up', 
-            amount: amount,
-            status: 'pending', // 初始状态为 pending，等待支付验证
-            related_order_id: topUpId, 
-            description: `充值请求 (Ref: ${topUpId.slice(0, 8)})`,
-        };
-
-        // 3. 插入充值记录到 merchant_transactions 表
-        const { error: transactionError } = await supabase
-            .from('merchant_transactions') 
-            .insert(transactionData); 
-
-        if (transactionError) {
-            console.error('Transaction Creation Error:', transactionError);
-            return NextResponse.json({ success: false, message: '充值订单创建失败' }, { status: 500 });
-        }
-
-        // 4. 生成 PromptPay 二维码 Payload (使用平台ID收款)
-        const promptpayPayload = generatePromptPayPayload(PLATFORM_PROMPTPAY_ID, amount);
-
-        // 5. 返回 Payload 和交易ID给客户端
-        return NextResponse.json({
-            success: true,
-            transactionId: topUpId, 
-            paymentMethod: 'PromptPay',
-            promptpayPayload: promptpayPayload,
-            paymentAmount: amount,
-        }, { status: 200 });
-
-    } catch (e) {
-        console.error('Recharge API Error:', e);
-        return NextResponse.json({ success: false, message: '内部服务器错误' }, { status: 500 });
+    if (couponError || !coupon) {
+      console.error('Coupon Fetch Error:', couponError);
+      return NextResponse.json({ success: false, message: '优惠券不存在或已下架' }, { status: 404 });
     }
+
+    // 处理 merchants 可能是数组的情况
+    const merchantData = coupon.merchants;
+    const merchant = Array.isArray(merchantData) ? merchantData[0] : merchantData;
+    
+    // 3. 业务规则检查
+    if (!merchant) {
+       return NextResponse.json({ success: false, message: '商户数据异常' }, { status: 500 });
+    }
+    
+    if (merchant.is_suspended) {
+        return NextResponse.json({ success: false, message: '该商户暂停营业，无法购买' }, { status: 403 });
+    }
+
+    if (!merchant.promptpay_id) {
+        return NextResponse.json({ success: false, message: '商户未配置收款方式，无法购买' }, { status: 400 });
+    }
+
+    if (coupon.stock_quantity < quantity) {
+        return NextResponse.json({ success: false, message: `库存不足，剩余 ${coupon.stock_quantity}` }, { status: 400 });
+    }
+
+    // 4. 准备订单数据
+    const orderId = uuidv4();
+    const totalAmount = coupon.selling_price * quantity;
+    
+    // 生成核销码 (您的数据库有默认值逻辑，但这里手动生成确保返回给前端)
+    // 数据库定义: SUBSTRING(md5((random())::text) from 1 for 10)
+    // 我们在代码里生成一个类似的随机码
+    const redemptionCode = Math.random().toString(36).substring(2, 12).toUpperCase();
+
+    // 5. 创建订单
+    // 【核心修复】字段名必须与您的数据库完全一致
+    const { error: orderError } = await supabase
+      .from('orders')
+      .insert({
+        order_id: orderId,
+        customer_id: user.id,      // 数据库字段是 customer_id (不是 user_id)
+        merchant_id: merchant.merchant_id,
+        coupon_id: coupon.coupon_id,
+        // quantity: quantity,     // 注意：您的数据库没有 quantity 字段，这里暂不写入
+        purchase_price: totalAmount, // 数据库字段是 purchase_price (不是 total_price)
+        status: 'pending',
+        // payment_method: 'promptpay', // 数据库没有这个字段，已移除
+        redemption_code: redemptionCode,
+      });
+
+    if (orderError) {
+      console.error('Create Order Error:', orderError);
+      // 这里的错误信息会返回给前端，方便调试
+      return NextResponse.json({ 
+          success: false, 
+          message: '创建订单失败: ' + orderError.message 
+      }, { status: 500 });
+    }
+
+    // 6. 生成支付二维码 Payload
+    const promptpayPayload = generatePromptPayPayload(merchant.promptpay_id, totalAmount);
+
+    return NextResponse.json({
+      success: true,
+      orderId: orderId,
+      promptpayPayload: promptpayPayload,
+      amount: totalAmount, 
+      message: '订单创建成功'
+    });
+
+  } catch (error) {
+    console.error('Checkout API Unexpected Error:', error);
+    return NextResponse.json({ success: false, message: '服务器内部错误' }, { status: 500 });
+  }
 }
