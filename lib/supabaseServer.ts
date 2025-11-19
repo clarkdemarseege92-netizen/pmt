@@ -1,4 +1,4 @@
-// 文件: /lib/supabaseServer.ts (最终、稳定的版本)
+// 文件: /lib/supabaseServer.ts (最终、稳定的防御性版本)
 
 // 【注意】使用 createServerClient，它允许我们明确定义 cookies getter/setter
 import { createServerClient } from "@supabase/ssr"; 
@@ -9,10 +9,20 @@ export const createSupabaseServerClient = async () => {
   // 1. 获取 Next.js 的 Cookie Store 对象 (必须 await)
   const cookieStore = await cookies();
 
-  // 2. 返回明确配置了 Cookie 读写方法的 Supabase 客户端
+  // FIX: 读取变量时，不再使用强制断言 '!'
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseKey) {
+     // 这行日志将出现在 Vercel Build Logs 中，帮助诊断问题
+     console.error("FATAL SUPABASE ERROR: NEXT_PUBLIC_SUPABASE_URL or ANON_KEY is missing during build time.");
+  }
+  
   return createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    // 使用空值合并 (??) 提供一个安全值，避免在变量缺失时 Next.js 预渲染崩溃
+    // 注意：这里的 'DUMMY_...' 值仅用于 Build Time 避免崩溃。运行时必须有真实值。
+    supabaseUrl ?? 'https://DUMMY_URL.supabase.co', 
+    supabaseKey ?? 'DUMMY_ANON_KEY',
     {
       cookies: {
         get(name: string) {
