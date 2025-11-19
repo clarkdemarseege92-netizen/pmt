@@ -12,26 +12,25 @@ interface Transaction {
   id: number;
   type: 'top_up' | 'commission' | 'withdraw' | 'bonus'; 
   amount: number;
-  balance_after: number;
+  balance_after: number; // 交易后余额
   description: string;
   created_at: string;
+  status?: string; // 新增状态字段
 }
 
-// --- 新增：联表查询的嵌套类型 ---
+// --- 联表查询的嵌套类型 ---
 interface FetchedMerchant {
     merchant_id: string;
     shop_name: string;
     status: string;
     is_suspended: boolean;
+    merchant_transactions: Transaction[]; 
 }
 
 // 联表查询结果的最终类型 (Profile Data)
 interface FetchedProfileData {
-    id: string; // profiles 表的主键
-    balance: number; // 假设 profiles 表有 balance 字段
-    // 联表结果：merchant 是单对象数组，transactions 是数组
+    id: string;
     merchants: FetchedMerchant[]; 
-    transactions: Transaction[]; 
 }
 
 interface MerchantInfo {
@@ -79,7 +78,8 @@ const getTransactionIcon = (type: Transaction['type']) => {
 
 
 export default function WalletPage() {
-  const [loading, setLoading] = useState(true);
+  // 修复: 确保 loading 被使用
+  const [loading, setLoading] = useState(true); 
   const [merchant, setMerchant] = useState<MerchantInfo | null>(null);
   
   // 充值模态框状态
@@ -107,38 +107,64 @@ export default function WalletPage() {
         const { data: profileData, error } = await supabase
             .from('profiles')
             .select(`
-                id, balance,
-                merchants (merchant_id, shop_name, status, is_suspended),
-                transactions (id, type, amount, balance_after, description, created_at)
+                id, 
+                merchants (
+                    merchant_id, 
+                    shop_name, 
+                    status, 
+                    is_suspended,
+                    merchant_transactions (id, type, amount, balance_after, description, created_at, status) 
+                )
             `)
             .eq('id', user.id)
             .single() as { data: FetchedProfileData | null, error: PostgrestError | null }; 
         
-        if (error) throw error;
+        if (error) throw error; 
 
         // 结构化数据
         if (profileData && profileData.merchants && profileData.merchants.length > 0) {
+            const merchantDetails = profileData.merchants[0];
+            
+            const fetchedTransactions: Transaction[] = merchantDetails.merchant_transactions || [];
+            
+            // 2. 根据最新交易计算当前余额
+            // 过滤掉未完成的充值请求 (status != 'completed')，以免影响余额显示
+            const completedTransactions = fetchedTransactions.filter(t => t.status === 'completed' || !t.status); // 兼容旧数据无 status 的情况
+            const sortedTransactions = completedTransactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+            
+            // 当前余额是最新一条交易记录的 balance_after，如果没有记录则为 0
+            const currentBalance = sortedTransactions.length > 0 ? sortedTransactions[0].balance_after : 0;
+            
             setMerchant({
-                merchant_id: profileData.merchants[0].merchant_id,
-                shop_name: profileData.merchants[0].shop_name,
-                platform_balance: profileData.balance || 0,
-                is_suspended: profileData.merchants[0].is_suspended,
-                status: profileData.merchants[0].status,
-                // 使用正确的类型进行映射
-                merchant_transactions: profileData.transactions.map((tx: Transaction) => ({ 
-                    id: tx.id,
-                    type: tx.type,
-                    amount: tx.amount,
-                    balance_after: tx.balance_after,
-                    description: tx.description,
-                    created_at: tx.created_at,
-                })).sort((a: Transaction, b: Transaction) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
+                merchant_id: merchantDetails.merchant_id,
+                shop_name: merchantDetails.shop_name,
+                platform_balance: currentBalance, 
+                is_suspended: merchantDetails.is_suspended,
+                status: merchantDetails.status,
+                merchant_transactions: fetchedTransactions.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()),
             });
+        } else if (profileData && profileData.merchants && profileData.merchants.length === 0) {
+             setMerchant(prev => ({
+                ...(prev || {}),
+                merchant_id: '',
+                shop_name: 'N/A',
+                platform_balance: 0,
+                is_suspended: true,
+                status: 'unregistered',
+                merchant_transactions: [],
+             } as MerchantInfo));
         }
 
-    } catch (e) {
-        console.error('Error fetching merchant data:', e);
-        setMessage({ type: 'error', text: '无法加载商户数据。' });
+    } catch (e: unknown) { 
+        const postgrestError = e as PostgrestError;
+        const errorMessage = (postgrestError.message || postgrestError.code) ? `Supabase Error: ${postgrestError.message} (Code: ${postgrestError.code})` : 'Unknown error during data fetch.';
+        console.error('Error fetching merchant data:', errorMessage);
+        
+        if (postgrestError.code === '42501') { 
+            setMessage({ type: 'error', text: '权限不足 (RLS 错误)。' });
+        } else {
+            setMessage({ type: 'error', text: '无法加载商户数据。' });
+        }
     }
     setLoading(false);
   }, []);
@@ -148,8 +174,7 @@ export default function WalletPage() {
   }, [fetchData]);
 
   // --- 充值流程函数 ---
-
-  // 提交充值金额 (步骤 1)
+  
   const handleTopUpSubmit = async () => {
     const amount = parseFloat(topUpAmount);
     if (isNaN(amount) || amount < 500) {
@@ -187,7 +212,6 @@ export default function WalletPage() {
     }
   };
 
-  // 处理文件选择
   const handleFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files.length > 0) {
       setSlipFile(e.target.files[0]);
@@ -196,7 +220,6 @@ export default function WalletPage() {
     }
   };
 
-  // 提交支付凭证 (步骤 2)
   const handleVerifySlip = async () => {
     if (!slipFile || !currentTransaction) {
       setMessage({ type: 'error', text: '请上传支付凭证图片。' });
@@ -236,7 +259,6 @@ export default function WalletPage() {
     }
   };
   
-  // 重置模态框状态
   const resetModal = () => {
       setIsTopUpModalOpen(false);
       setRechargeStep('input');
@@ -247,8 +269,7 @@ export default function WalletPage() {
       setTopUpAmount("1000");
   };
 
-  // --- 页面渲染部分 ---
-  
+  // 修复: 在加载时显示 loading spinner，解决 loading 未使用的警告
   if (loading) {
     return (
         <div className="flex justify-center items-center h-96">
@@ -315,14 +336,20 @@ export default function WalletPage() {
                     <tr key={tx.id}>
                       <td>{formatDate(tx.created_at)}</td>
                       <td>
-                        <span className="badge badge-outline">{tx.type}</span>
+                        {/* 显示状态标签 */}
+                        <div className="flex flex-col items-start">
+                            <span className="badge badge-outline">{tx.type}</span>
+                            {tx.status === 'pending' && <span className="badge badge-warning badge-xs mt-1">审核中</span>}
+                        </div>
                         <p className="text-sm text-base-content/70 mt-1">{tx.description}</p>
                       </td>
                       <td className={`text-right font-semibold flex items-center justify-end gap-2`}>
                         {getTransactionIcon(tx.type)}
                         {tx.amount > 0 ? `+฿${tx.amount.toFixed(2)}` : `-฿${Math.abs(tx.amount).toFixed(2)}`}
                       </td>
-                      <td className="text-right">฿{tx.balance_after.toFixed(2)}</td>
+                      <td className="text-right">
+                          {tx.balance_after !== null ? `฿${tx.balance_after.toFixed(2)}` : '-'}
+                      </td>
                     </tr>
                   ))
                 )}
@@ -461,7 +488,7 @@ export default function WalletPage() {
               </div>
             )}
             
-            {/* 关闭按钮 (在右上角, 用于关闭整个 modal) */}
+            {/* 关闭按钮 */}
             <form method="dialog">
               <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={resetModal}>✕</button>
             </form>
