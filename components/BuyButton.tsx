@@ -20,7 +20,7 @@ interface PaymentInfo {
     promptpayPayload: string;
 }
 
-export default function BuyButton({ couponId, sellingPrice, merchantPromptPayId, stockQuantity }: BuyButtonProps) {
+export default function BuyButton({ couponId, merchantPromptPayId, stockQuantity }: BuyButtonProps) {
   const [loading, setLoading] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
   const [error, setError] = useState<string | null>(null);

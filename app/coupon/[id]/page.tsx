@@ -239,6 +239,7 @@ export default async function CouponDetailPage({
                 couponId={coupon.coupon_id} 
                 sellingPrice={coupon.selling_price}
                 merchantPromptPayId={merchantPromptPayId}
+                stockQuantity={coupon.stock_quantity}
             />   
          </div>
       </div>
