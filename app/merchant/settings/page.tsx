@@ -7,14 +7,23 @@ import { User } from '@supabase/supabase-js';
 import Image from "next/image";
 import { HiCheckCircle, HiXCircle } from "react-icons/hi2";
 
+// 定义后端 OCR API 的返回结构，避免 'any'
+interface OcrResponse {
+  success: boolean;
+  extractedId?: string | null;
+  extractedName?: string | null;
+  text?: string;
+  error?: string;
+}
+
 interface Merchant {
   merchant_id: string;
   owner_id: string;
   status: string;
   id_card_number?: string;
-  // 银行账户字段已注释 (预留给未来升级)
+  // 银行账户字段 (已注释，预留给未来升级)
   // bank_name?: string; 
-  // bank_account_name?: string; 
+  bank_account_name?: string; // 注意：此字段目前被复用于存储“证件姓名”
   // bank_account_number?: string; 
   id_card_image_url?: string;
   // bank_book_image_url?: string; 
@@ -36,7 +45,7 @@ export default function SettingsPage() {
   const [kycForm, setKycForm] = useState({
     idCardNumber: "",
     // bankName: "", // 银行信息已注释
-    bankAccountName: "",
+    bankAccountName: "", // 这里存储“证件姓名”
     // bankAccountNumber: "", // 银行信息已注释
     idCardImg: "",
     // bankBookImg: "", // 银行信息已注释
@@ -45,14 +54,12 @@ export default function SettingsPage() {
   const [ocrLoading, setOcrLoading] = useState(false);
   const [saveKycLoading, setSaveKycLoading] = useState(false);
 
-useEffect(() => {
+  useEffect(() => {
     const fetchData = async () => {
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
-      // 注意: user.phone 已经是带 +66 的国际格式
       if (user?.phone) setPhone(user.phone); 
 
-      // 获取商户信息
       if (user) {
         const { data: m } = await supabase
           .from('merchants')
@@ -64,11 +71,12 @@ useEffect(() => {
           setMerchant(m as Merchant);
           setKycForm({
             idCardNumber: m.id_card_number || "",
-            // bankName: m.bank_name || "", // 银行信息已注释
+            // bankName: m.bank_name || "",
+            // 注意：因为我们在 Merchant 接口里保留了 bank_account_name 用于姓名，这里需要断言或确保数据存在
             bankAccountName: m.bank_account_name || "",
-            // bankAccountNumber: m.bank_account_number || "", // 银行信息已注释
+            // bankAccountNumber: m.bank_account_number || "",
             idCardImg: m.id_card_image_url || "",
-            // bankBookImg: m.bank_book_image_url || "", // 银行信息已注释
+            // bankBookImg: m.bank_book_image_url || "",
             promptpayId: m.promptpay_id || "" 
           });
         }
@@ -82,13 +90,11 @@ useEffect(() => {
     setLoading(true);
     setMessage(null);
     let formattedPhone = phone.trim();
-    // 确保本地输入格式（09x-xxx-xxxx）被转换为国际格式（+669x-xxx-xxxx）
     if (formattedPhone.startsWith('0')) {
       formattedPhone = `+66${formattedPhone.substring(1)}`;
     }
-    setPhone(formattedPhone); // 更新状态以使用国际格式
+    setPhone(formattedPhone);
 
-    // 将手机号更新到用户元数据，并发送 OTP
     const { error: updateError } = await supabase.auth.updateUser({ 
       phone: formattedPhone 
     });
@@ -127,14 +133,13 @@ useEffect(() => {
     } else {
       setMessage({ type: 'success', text: '手机号验证成功！' });
       setOtpView(false);
-      // 刷新用户信息，user.phone_confirmed_at 将更新
       const { data: { user } } = await supabase.auth.getUser();
       setUser(user);
     }
     setLoading(false);
   };
 
-// --- 处理 OCR 上传 ---
+  // --- 处理 OCR 上传 ---
   const handleOcrUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'id_card' | 'bank_book') => {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
@@ -144,46 +149,55 @@ useEffect(() => {
       // 1. 转 Base64 用于 OCR
       const reader = new FileReader();
       reader.readAsDataURL(file);
+      
       reader.onload = async () => {
         const base64 = reader.result as string;
 
         // 2. 调用 OCR API
         const res = await fetch('/api/ocr', {
           method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ imageBase64: base64, type }),
         });
-        const data = await res.json();
-    console.log("Frontend OCR Response Data:", data);
+        
+        const data = (await res.json()) as OcrResponse;
+        console.log("前端 OCR 响应:", data);
+
         // 3. 自动填入识别到的信息
         if (data.success) {
-          let alertMessage = "已自动识别，请核对：";
+          const updatedFields: string[] = [];
 
-          if (type === 'id_card') {
-            if (data.extractedId) {
-              setKycForm(prev => ({ ...prev, idCardNumber: data.extractedId }));
-              alertMessage += "证件号码；";
-            }
-            // 提取姓名并更新 bankAccountName
-            if (data.extractedName) {
-              setKycForm(prev => ({ ...prev, bankAccountName: data.extractedName }));
-              alertMessage += "账户名。";
-            }
-          } 
-          /* 银行存折/银行卡 OCR 逻辑已注释
-          else if (type === 'bank_book' && data.extractedId) {
-            setKycForm(prev => ({ ...prev, bankAccountNumber: data.extractedId }));
-            alertMessage += "银行账号。";
-          }
-          */
-          
-          if (alertMessage === "已自动识别，请核对：") {
-             alert("图片上传成功，但未在图片中找到清晰的号码和姓名，请手动填写。");
+          setKycForm(prev => {
+             const newState = { ...prev };
+             
+             if (type === 'id_card') {
+                if (data.extractedId) {
+                   newState.idCardNumber = data.extractedId;
+                   updatedFields.push("证件号码");
+                }
+                if (data.extractedName) {
+                   // 将识别到的名字填入 bankAccountName (界面显示的"证件姓名")
+                   newState.bankAccountName = data.extractedName;
+                   updatedFields.push("姓名");
+                }
+             }
+             /* 银行存折/银行卡 OCR 逻辑已注释 (保留逻辑以便未来恢复)
+             else if (type === 'bank_book' && data.extractedId) {
+                // newState.bankAccountNumber = data.extractedId;
+                // updatedFields.push("银行账号");
+             }
+             */
+             return newState;
+          });
+
+          if (updatedFields.length > 0) {
+             alert(`已自动识别并填充：${updatedFields.join("、")}。请务必核对信息是否准确。`);
           } else {
-             alert(alertMessage);
+             alert("图片上传成功，但未识别到清晰的文字信息，请手动填写。");
           }
         }
 
-        // 4. 上传图片到 Supabase Storage (用于存证)
+        // 4. 上传图片到 Supabase Storage
         const fileExt = file.name.split('.').pop();
         const fileName = `kyc/${user?.id}/${type}_${Date.now()}.${fileExt}`;
         const { error: uploadError } = await supabase.storage
@@ -199,7 +213,7 @@ useEffect(() => {
       };
     } catch (error) {
       console.error(error);
-      alert("识别或上传失败");
+      alert("识别或上传服务异常，请稍后重试");
     } finally {
       setOcrLoading(false);
     }
@@ -214,9 +228,9 @@ useEffect(() => {
       .from('merchants')
       .update({
         id_card_number: kycForm.idCardNumber,
+        bank_account_name: kycForm.bankAccountName, // 保存姓名
         // 银行账户字段已注释
         // bank_name: kycForm.bankName,
-        // bank_account_name: kycForm.bankAccountName,
         // bank_account_number: kycForm.bankAccountNumber,
         id_card_image_url: kycForm.idCardImg,
         // bank_book_image_url: kycForm.bankBookImg,
@@ -233,9 +247,7 @@ useEffect(() => {
     setSaveKycLoading(false);
   };
   
-  // 检查 KYC 是否已填写必要字段 (只依赖身份证号)
   const isKycDataFilled = !!kycForm.idCardNumber;
-  // 检查手机号是否已验证
   const isPhoneVerified = !!user?.phone_confirmed_at;
 
   if (loading) {
@@ -249,7 +261,8 @@ useEffect(() => {
   return (
     <div className="w-full max-w-3xl p-8 space-y-6 bg-base-100 rounded-lg shadow-xl">
       <h1 className="text-3xl font-bold">账户设置</h1>
-{/* 1. 认证状态卡片 */}
+
+      {/* 1. 认证状态卡片 */}
       <div className={`alert ${merchant?.status === 'approved' ? 'alert-success' : 'alert-warning'}`}>
         {merchant?.status === 'approved' ? <HiCheckCircle className="w-6 h-6"/> : <HiXCircle className="w-6 h-6"/>}
         <div>
@@ -265,7 +278,7 @@ useEffect(() => {
           实名认证 (KYC)
         </div>
         <div className="collapse-content space-y-4">
-           {/* 身份证部分 (保留) */}
+           {/* 身份证部分 */}
            <div className="form-control">
               <label className="label"><span className="label-text font-bold">1. 身份证/护照</span></label>
               <div className="flex flex-col md:flex-row gap-4 items-start">
@@ -277,11 +290,11 @@ useEffect(() => {
                       ) : (
                         <span className="text-xs text-base-content/40">上传照片自动识别</span>
                       )}
-                      {/* 注意: type="file" 上的 onChange 函数仍然允许上传 bank_book 类型，但在 handleOcrUpload 内部已被注释 */}
                       <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" 
+                        accept="image/*"
                         onChange={(e) => handleOcrUpload(e, 'id_card')} disabled={ocrLoading} />
                    </div>
-                   {ocrLoading && <div className="text-center text-xs mt-1 animate-pulse">正在智能识别中...</div>}
+                   {ocrLoading && <div className="text-center text-xs mt-1 animate-pulse text-primary">正在智能识别中...</div>}
                 </div>
                 {/* 输入框 */}
                 <div className="flex-1 w-full space-y-3">
@@ -315,155 +328,138 @@ useEffect(() => {
            <div className="form-control">
               <label className="label"><span className="label-text font-bold">2. 提现银行账户 (已禁用)</span></label>
               <p className="text-warning text-sm">银行账户认证功能已暂时禁用，请使用 PromptPay 收款。</p>
+              
+               <div className="flex flex-col md:flex-row gap-4 items-start mt-4">
+                  <div className="flex-none w-full md:w-1/3">
+                     <div className="relative aspect-video bg-base-100 rounded-lg border-2 border-dashed border-base-300 flex items-center justify-center overflow-hidden">
+                        {kycForm.bankBookImg ? (
+                          <Image src={kycForm.bankBookImg} alt="Bank Book" fill className="object-cover" unoptimized />
+                        ) : (
+                          <span className="text-xs text-base-content/40">上传存折照片</span>
+                        )}
+                        <input type="file" className="absolute inset-0 opacity-0 cursor-pointer" 
+                          onChange={(e) => handleOcrUpload(e, 'bank_book')} disabled={ocrLoading} />
+                     </div>
+                  </div>
+                  <div className="flex-1 w-full space-y-3">
+                     <input type="text" className="input input-bordered w-full" 
+                         value={kycForm.bankName}
+                         onChange={(e) => setKycForm({...kycForm, bankName: e.target.value})}
+                         placeholder="银行名称" 
+                      />
+                      <input type="text" className="input input-bordered w-full" 
+                         value={kycForm.bankAccountNumber}
+                         onChange={(e) => setKycForm({...kycForm, bankAccountNumber: e.target.value})}
+                         placeholder="银行账号" 
+                      />
+                  </div>
+               </div>
            </div>
            */}
            
         </div>
       </div>
       
-      {/* 3. PromptPay 收款设置 (保留) */}
+      {/* 3. PromptPay 收款设置 */}
       <div className="collapse collapse-arrow bg-base-200">
         <input type="checkbox" defaultChecked /> 
         <div className="collapse-title text-xl font-medium">
           PromptPay 收款设置
         </div>
         <div className="collapse-content space-y-4">
-            <p>1/手机号验证；2/身份证验证；3/设置您的PromptPay</p>
-            {/* 检查 PromptPay 设置的前提条件 */}
-            {!isPhoneVerified && <p className="text-error">错误：请先完成手机号验证。</p>}
-            {!isKycDataFilled && <p className="text-error">错误：请先完成 KYC 中的证件号填写。</p>}
+            <p className="text-sm opacity-70 mb-2">完成认证后，请设置一个用作收款的 ID。</p>
+            {!isPhoneVerified && <p className="text-error text-sm">⚠️ 请先完成手机号验证。</p>}
+            {!isKycDataFilled && <p className="text-error text-sm">⚠️ 请先完成 KYC 中的证件号填写。</p>}
 
             {isPhoneVerified && isKycDataFilled ? (
-                <>
-                    <p className="text-sm text-base-content/70">
-                        请选择一个已验证的 ID 作为客户付款的 PromptPay 收款账户 ID。
-                    </p>
-                    <div className="form-control">
-                        <label className="label">
-                            <span className="label-text font-bold">PromptPay 收款 ID</span>
-                        </label>
-                        <select 
-                            className="select select-bordered w-full" 
-                            value={kycForm.promptpayId || ''}
-                            onChange={(e) => setKycForm({...kycForm, promptpayId: e.target.value})}
-                            required
-                        >
-                            <option value="" disabled>请选择一个 ID</option>
-                            {/* 选项 1: 验证手机号 */}
-                            {user?.phone && (
-                               <option value={user.phone}>
-                                  已验证手机号：{user.phone}
-                               </option>
-                            )}
-                            {/* 选项 2: 身份证/护照号码 */}
-                            {kycForm.idCardNumber && (
-                               <option value={kycForm.idCardNumber}>
-                                  已验证证件号：{kycForm.idCardNumber} (推荐)
-                               </option>
-                            )}
-                        </select>
-                         <label className="label">
-                            <span className="label-text-alt text-warning">
-                                * 这是客户扫码支付的唯一ID，必须与您的 PromptPay 绑定 ID 保持一致。
-                            </span>
-                        </label>
-                    </div>
-                </>
+                <div className="form-control">
+                    <label className="label">
+                        <span className="label-text font-bold">选择 PromptPay ID</span>
+                    </label>
+                    <select 
+                        className="select select-bordered w-full" 
+                        value={kycForm.promptpayId || ''}
+                        onChange={(e) => setKycForm({...kycForm, promptpayId: e.target.value})}
+                    >
+                        <option value="" disabled>请选择...</option>
+                        {user?.phone && (
+                           <option value={user.phone}>
+                              手机号：{user.phone}
+                           </option>
+                        )}
+                        {kycForm.idCardNumber && (
+                           <option value={kycForm.idCardNumber}>
+                              证件号：{kycForm.idCardNumber} (推荐)
+                           </option>
+                        )}
+                    </select>
+                </div>
             ) : (
-                <p className="text-warning">您需要满足上述条件后才能设置 PromptPay ID。</p>
+                <button className="btn btn-disabled w-full">请先完成上述验证步骤</button>
             )}
-
         </div>
       </div>
       
-      {/* 保存按钮 (保留在最下方，统一保存) */}
+      {/* 保存按钮 */}
       <div className="flex justify-end pt-4">
         <button className="btn btn-primary" onClick={saveKycInfo} disabled={saveKycLoading}>
             {saveKycLoading ? "保存中..." : "保存认证信息"}
         </button>
       </div>
       
-      {/* --- 邮箱信息 (保持不变) --- */}
+      {/* 邮箱信息 */}
+      <div className="divider text-xs opacity-50">账户安全</div>
       <div className="form-control">
         <label className="label"><span className="label-text">注册邮箱</span></label>
-        <input
-          type="email"
-          className="input input-bordered"
-          value={user?.email || ''}
-          disabled
-        />
-        {user?.email_confirmed_at ? (
-            <span className="text-success text-sm mt-1">已验证</span>
-        ) : (
-            <span className="text-warning text-sm mt-1">待验证（请检查您的收件箱）</span>
-        )}
+        <div className="flex justify-between items-center px-1">
+             <span>{user?.email}</span>
+             {user?.email_confirmed_at ? (
+                <span className="badge badge-success badge-sm">已验证</span>
+             ) : (
+                <span className="badge badge-warning badge-sm">待验证</span>
+             )}
+        </div>
       </div>
 
-      <div className="divider">手机号验证</div>
-      
-      {/* --- 手机号验证 (保持不变) --- */}
-      {!otpView ? (
-        <>
-          <div className="form-control">
-            <label className="label"><span className="label-text">手机号（用于账户恢复）</span></label>
-            <input
-              type="tel"
-              placeholder="099-888-8888"
-              // 转换格式：用户看到 099-888-8888，但内部使用 +6699-888-8888
-              value={phone.startsWith('+66') ? phone.replace('+66', '0') : phone} 
-              className="input input-bordered"
-              onChange={(e) => setPhone(e.target.value)}
-            />
-             {user?.phone_confirmed_at ? (
-                <span className="text-success text-sm mt-1">已验证: {user.phone}</span>
-             ) : (
-                <span className="text-warning text-sm mt-1">未验证。</span>
-             )}
-          </div>
-          <button 
-            className="btn btn-primary" 
-            onClick={handleSendOtp} 
-            disabled={loading}
-          >
-            {loading && <span className="loading loading-spinner"></span>}
-            {user?.phone_confirmed_at ? '更新并重新验证手机号' : '发送验证码'} 
-          </button>
-        </>
-      ) : (
-        <>
-          <p>已发送验证码至 {phone}</p>
-          <div className="form-control">
-            <label className="label"><span className="label-text">6位验证码</span></label>
-            <input
-              type="text"
-              placeholder="123456"
-              className="input input-bordered"
-              value={otp}
-              onChange={(e) => setOtp(e.target.value)}
-            />
-          </div>
-          <div className="flex gap-4">
-             <button 
-                className="btn btn-primary" 
-                onClick={handleVerifyOtp} 
-                disabled={loading}
-              >
-                {loading && <span className="loading loading-spinner"></span>}
-                确认验证
-              </button>
-              <button 
-                className="btn btn-ghost" 
-                onClick={() => { setOtpView(false); setMessage(null); }}
-              >
-                返回
-              </button>
-          </div>
-        </>
-      )}
+      {/* 手机号验证 */}
+      <div className="form-control mt-4">
+            <label className="label"><span className="label-text">手机号</span></label>
+            {!otpView ? (
+                <div className="flex gap-2">
+                    <input
+                      type="tel"
+                      placeholder="099-888-8888"
+                      value={phone.startsWith('+66') ? phone.replace('+66', '0') : phone} 
+                      className="input input-bordered flex-1"
+                      onChange={(e) => setPhone(e.target.value)}
+                    />
+                    <button className="btn btn-outline" onClick={handleSendOtp} disabled={loading}>
+                        {user?.phone_confirmed_at ? '更换' : '验证'}
+                    </button>
+                </div>
+            ) : (
+                <div className="flex gap-2">
+                    <input
+                      type="text"
+                      placeholder="输入验证码"
+                      className="input input-bordered flex-1"
+                      value={otp}
+                      onChange={(e) => setOtp(e.target.value)}
+                    />
+                    <button className="btn btn-primary" onClick={handleVerifyOtp} disabled={loading}>
+                        确认
+                    </button>
+                    <button className="btn btn-ghost" onClick={() => setOtpView(false)}>取消</button>
+                </div>
+            )}
+            {user?.phone_confirmed_at && !otpView && <div className="text-success text-xs mt-1 ml-1">已验证</div>}
+      </div>
 
       {message && (
-        <div className={`alert ${message.type === 'error' ? 'alert-error' : 'alert-success'}`}>
-          <span>{message.text}</span>
+        <div className={`toast toast-end`}>
+            <div className={`alert ${message.type === 'error' ? 'alert-error' : 'alert-success'}`}>
+                <span>{message.text}</span>
+            </div>
         </div>
       )}
     </div>
