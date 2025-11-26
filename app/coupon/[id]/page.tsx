@@ -2,9 +2,10 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { HiShoppingCart, HiCheckCircle, HiClock } from "react-icons/hi2";
+import { HiShoppingCart, HiCheckCircle, HiClock, HiBuildingStorefront } from "react-icons/hi2";
 import BuyButton from "@/components/BuyButton";
 import BackButton from "@/components/BackButton";
+import Link from "next/link";
 // ----- 类型定义 -----
 
 type MultiLangName = {
@@ -143,10 +144,20 @@ export default async function CouponDetailPage({
                 <h1 className="text-2xl font-bold text-base-content">
                     {getLangName(coupon.name, lang)}
                 </h1>
-                {/* 显示店铺名称 */}
-                <p className="text-sm text-base-content/60 mt-1">
-                    店铺: {coupon.merchants?.shop_name}
-                </p>
+                {/* [修改] 店铺名称改为跳转链接 */}
+                {coupon.merchants ? (
+                  <Link href={`/shop/${coupon.merchants.merchant_id}`} className="group inline-block">
+                    <p className="text-sm text-base-content/60 mt-1 group-hover:text-primary transition-colors flex items-center gap-1 cursor-pointer">
+                        <HiBuildingStorefront className="w-4 h-4" />
+                        店铺: {coupon.merchants.shop_name} 
+                        <span className="text-xs opacity-50 group-hover:underline">(进店逛逛)</span>
+                    </p>
+                  </Link>
+                ) : (
+                  <p className="text-sm text-base-content/60 mt-1">
+                      店铺: 未知商户
+                  </p>
+                )}
              </div>
              <div className="badge badge-outline badge-sm shrink-0 mt-1">
                库存: {coupon.stock_quantity}
