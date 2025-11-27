@@ -15,6 +15,7 @@ import {
   HiCog6Tooth,           // 设置
   HiChevronLeft,         // 收起箭头
   HiChevronRight,        // 展开箭头
+  HiPaintBrush,          // [新增] 店铺装修图标
   HiArrowLeftStartOnRectangle // 返回/退出
 } from "react-icons/hi2";
 
@@ -37,6 +38,12 @@ export default function MerchantSidebar() {
       href: "/merchant/products",
       icon: <HiShoppingBag className="w-6 h-6" />,
     },
+    // [新增] 店铺装修入口
+    {
+      name: "店铺装修",
+      href: "/merchant/design",
+      icon: <HiPaintBrush className="w-6 h-6" />,
+    },
     {
       name: "优惠券管理",
       href: "/merchant/coupons",
@@ -47,7 +54,7 @@ export default function MerchantSidebar() {
       href: "/merchant/reviews",
       icon: <HiChatBubbleLeftRight className="w-6 h-6" />,
     },
-        {
+    {
       name: "钱包",
       href: "/merchant/wallet",
       icon: <HiWallet className="w-6 h-6" />,
