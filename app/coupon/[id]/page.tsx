@@ -100,7 +100,12 @@ export default async function CouponDetailPage({
     : 0;
 
   // 获取商户收款码 (如果为空则设为空字符串，由 BuyButton 处理错误)
-  const merchantPromptPayId = coupon.merchants?.promptpay_id || '';
+  // const merchantPromptPayId = coupon.merchants?.promptpay_id || '';
+  console.log('优惠券页面商户数据:', {
+  couponId: coupon.coupon_id,
+  merchantPromptPayId: coupon.merchants?.promptpay_id,
+  merchants: coupon.merchants
+});
 
   return (
     <main className="min-h-screen bg-base-200 pb-24">
@@ -246,12 +251,14 @@ export default async function CouponDetailPage({
             </div>
             {/* 【修改 3】: 传递 sellingPrice 和 merchantPromptPayId */}
             <BackButton />
-            <BuyButton 
-                couponId={coupon.coupon_id} 
-                sellingPrice={coupon.selling_price}
-                merchantPromptPayId={merchantPromptPayId}
-                stockQuantity={coupon.stock_quantity}
-            />   
+
+
+
+<BuyButton
+  couponId={coupon.coupon_id}
+  merchantPromptPayId={coupon.merchants?.promptpay_id || (Array.isArray(coupon.merchants) ? coupon.merchants[0]?.promptpay_id : '')}
+  stockQuantity={coupon.stock_quantity}
+/>
          </div>
       </div>
 

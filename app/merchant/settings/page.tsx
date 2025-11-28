@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
 import Image from "next/image";
 import { HiCheckCircle, HiXCircle, HiBuildingStorefront, HiIdentification } from "react-icons/hi2";
-
+import { FaFacebook, FaLine, FaInstagram, FaTiktok } from "react-icons/fa";
 // 定义后端 OCR API 的返回结构
 interface OcrResponse {
   success: boolean;
@@ -28,6 +28,14 @@ interface Merchant {
   address?: string;
   google_maps_link?: string;
   contact_phone?: string;
+  description?: string;
+  logo_url?: string; 
+  social_links?: { 
+    facebook?: string;
+    line?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
 }
 
 export default function SettingsPage() {
@@ -50,6 +58,14 @@ export default function SettingsPage() {
     address: "",
     googleMapsLink: "",
     contactPhone: "",
+    description: "",
+    logoUrl: "", 
+    socialLinks: {
+    facebook: "",
+    line: "",
+    instagram: "",
+    tiktok: ""
+  },
     
     // KYC & 支付信息
     idCardNumber: "",
@@ -83,6 +99,14 @@ export default function SettingsPage() {
             address: m.address || "",
             googleMapsLink: m.google_maps_link || "",
             contactPhone: m.contact_phone || "",
+            description: m.description || "", 
+            logoUrl: m.logo_url || "", 
+            socialLinks: m.social_links || { 
+          facebook: "",
+          line: "",
+          instagram: "",
+          tiktok: ""
+             },
             
             // KYC 信息
             idCardNumber: m.id_card_number || "",
@@ -214,7 +238,10 @@ export default function SettingsPage() {
         shop_name: form.shopName,
         address: form.address,
         google_maps_link: form.googleMapsLink,
-        contact_phone: form.contactPhone
+        contact_phone: form.contactPhone,
+        description: form.description,
+        logo_url: form.logoUrl, 
+        social_links: form.socialLinks 
       })
       .eq('merchant_id', merchant.merchant_id);
 
@@ -252,6 +279,44 @@ export default function SettingsPage() {
   
   const isKycDataFilled = !!form.idCardNumber;
   const isPhoneVerified = !!user?.phone_confirmed_at;
+// 添加 logo 上传函数
+const handleLogoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  if (!e.target.files?.[0] || !user) return;
+  const file = e.target.files[0];
+  
+  try {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `logos/${user.id}/logo_${Date.now()}.${fileExt}`;
+    
+    const { error: uploadError } = await supabase.storage
+      .from('products')
+      .upload(fileName, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('products')
+      .getPublicUrl(fileName);
+    
+    setForm(prev => ({ ...prev, logoUrl: publicUrl }));
+    setMessage({ type: 'success', text: 'Logo 上传成功！记得点击"更新店铺信息"保存更改。' });
+    
+  } catch (error) {
+    console.error('Logo upload error:', error);
+    setMessage({ type: 'error', text: 'Logo 上传失败，请重试' });
+  }
+};
+
+// 社交媒体链接输入处理函数
+const handleSocialLinkChange = (platform: keyof typeof form.socialLinks, value: string) => {
+  setForm(prev => ({
+    ...prev,
+    socialLinks: {
+      ...prev.socialLinks,
+      [platform]: value
+    }
+  }));
+};
 
   if (loading) return <span className="loading loading-spinner loading-lg"></span>;
   if (!user) return <p>无法加载用户信息。</p>;
@@ -286,12 +351,59 @@ export default function SettingsPage() {
            <p className="text-xs opacity-60 mb-4">这些信息将直接展示在您的店铺主页，方便顾客找到您。</p>
 
            <div className="grid gap-4">
+              {/* Logo 上传 */}
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text font-bold">店铺 Logo</span>
+          <span className="label-text-alt text-xs text-base-content/50">建议尺寸: 200x200px</span>
+        </label>
+        <div className="flex flex-col md:flex-row gap-4 items-start">
+          <div className="flex-none">
+            <div className="relative w-24 h-24 bg-base-100 rounded-lg border-2 border-dashed border-base-300 flex items-center justify-center overflow-hidden">
+              {form.logoUrl ? (
+                <Image 
+                  src={form.logoUrl} 
+                  alt="Shop Logo" 
+                  fill 
+                  className="object-cover rounded-lg"
+                  unoptimized 
+                />
+              ) : (
+                <span className="text-xs text-base-content/40 text-center px-2">点击上传 Logo</span>
+              )}
+              <input 
+                type="file" 
+                className="absolute inset-0 opacity-0 cursor-pointer" 
+                accept="image/*"
+                onChange={handleLogoUpload} 
+              />
+            </div>
+          </div>
+          <div className="flex-1">
+            <p className="text-sm opacity-70">
+              {form.logoUrl 
+                ? "Logo 已上传，点击图片可重新上传" 
+                : "上传店铺 Logo，将在店铺页面显示"
+              }
+            </p>
+            {form.logoUrl && (
+              <button 
+                type="button"
+                className="btn btn-ghost btn-xs mt-2"
+                onClick={() => setForm(prev => ({ ...prev, logoUrl: "" }))}
+              >
+                移除 Logo
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
               <div className="form-control">
                 <label className="label"><span className="label-text font-bold">店铺名称</span></label>
                 <input type="text" className="input input-bordered" 
                    value={form.shopName}
                    onChange={(e) => setForm({...form, shopName: e.target.value})} 
-                   placeholder="例如: 考山路泰式按摩"
+                   placeholder="例如: PMT SHOP"
                 />
               </div>
 
@@ -303,7 +415,21 @@ export default function SettingsPage() {
                    placeholder="例如: 曼谷素坤逸路 12 巷 30 号..."
                 ></textarea>
               </div>
-
+      <div className="form-control">
+        <label className="label">
+          <span className="label-text font-bold">店铺描述</span>
+          <span className="label-text-alt text-xs text-base-content/50">简要介绍您的店铺</span>
+        </label>
+        <textarea className="textarea textarea-bordered h-24" 
+          value={form.description}
+          onChange={(e) => setForm({...form, description: e.target.value})} 
+          placeholder="例如: Thai Food"
+          maxLength={200}
+        ></textarea>
+        <div className="text-right text-xs opacity-50 mt-1">
+          {form.description.length}/200
+        </div>
+      </div>
               <div className="grid md:grid-cols-2 gap-4">
                   <div className="form-control">
                     <label className="label">
@@ -327,6 +453,55 @@ export default function SettingsPage() {
                   </div>
               </div>
            </div>
+{/* 社交媒体链接 */}
+<div className="form-control">
+  <label className="label">
+    <span className="label-text font-bold">社交媒体链接</span>
+    <span className="label-text-alt text-xs text-base-content/50">让顾客通过更多渠道联系您</span>
+  </label>
+  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+    <div className="flex items-center gap-2">
+      <FaFacebook className="w-4 h-4 text-blue-600" />
+      <input 
+        type="text" 
+        className="input input-bordered input-sm flex-1" 
+        placeholder="https://facebook.com/..."
+        value={form.socialLinks.facebook || ""} // 确保有默认值
+        onChange={(e) => handleSocialLinkChange('facebook', e.target.value)}
+      />
+    </div>
+    <div className="flex items-center gap-2">
+      <FaLine className="w-4 h-4 text-green-600" />
+      <input 
+        type="text" 
+        className="input input-bordered input-sm flex-1" 
+        placeholder="Line ID 或链接"
+        value={form.socialLinks.line || ""} // 确保有默认值
+        onChange={(e) => handleSocialLinkChange('line', e.target.value)}
+      />
+    </div>
+    <div className="flex items-center gap-2">
+      <FaInstagram className="w-4 h-4 text-pink-600" />
+      <input 
+        type="text" 
+        className="input input-bordered input-sm flex-1" 
+        placeholder="https://instagram.com/..."
+        value={form.socialLinks.instagram || ""} // 确保有默认值
+        onChange={(e) => handleSocialLinkChange('instagram', e.target.value)}
+      />
+    </div>
+    <div className="flex items-center gap-2">
+      <FaTiktok className="w-4 h-4 text-black" />
+      <input 
+        type="text" 
+        className="input input-bordered input-sm flex-1" 
+        placeholder="https://tiktok.com/..."
+        value={form.socialLinks.tiktok || ""} // 确保有默认值
+        onChange={(e) => handleSocialLinkChange('tiktok', e.target.value)}
+      />
+    </div>
+  </div>
+</div>
 
            <div className="card-actions justify-end mt-4">
               <button 

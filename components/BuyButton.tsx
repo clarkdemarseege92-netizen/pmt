@@ -1,16 +1,21 @@
-// 文件: /components/BuyButton.tsx
+// components/BuyButton.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import QRCode from 'react-qr-code'; 
-import { HiXMark, HiMinus, HiPlus } from 'react-icons/hi2'; // 引入加减图标
+import { HiXMark, HiMinus, HiPlus } from 'react-icons/hi2';
 import { useRouter } from 'next/navigation';
 
 interface BuyButtonProps {
-  couponId: string;
-  sellingPrice: number;
+  couponId?: string;
+  productIds?: string[];
   merchantPromptPayId: string;
-  stockQuantity: number; // 新增：接收库存数量，用于限制购买上限
+  stockQuantity?: number;
+  quantity?: number;
+  onQuantityChange?: (quantity: number) => void;
+  showQuantitySelector?: boolean;
+  buttonText?: string;
+  className?: string;
 }
 
 interface PaymentInfo {
@@ -20,31 +25,62 @@ interface PaymentInfo {
     promptpayPayload: string;
 }
 
-export default function BuyButton({ couponId, merchantPromptPayId, stockQuantity }: BuyButtonProps) {
+export default function BuyButton({ 
+  couponId, 
+  productIds,
+  merchantPromptPayId, 
+  stockQuantity = 999,
+  quantity: externalQuantity,
+  onQuantityChange,
+  showQuantitySelector = true,
+  buttonText = "立即购买",
+  className = ""
+}: BuyButtonProps) {
   const [loading, setLoading] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   
-  // 新增：购买数量状态，默认为 1
-  const [quantity, setQuantity] = useState(1);
+  const [internalQuantity, setInternalQuantity] = useState(1);
+  const quantity = externalQuantity !== undefined ? externalQuantity : internalQuantity;
   
   const router = useRouter();
 
-  // 增加数量
+  // 防止背景滚动
+  useEffect(() => {
+    if (paymentInfo) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'unset';
+    }
+
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [paymentInfo]);
+
   const handleIncrease = () => {
-    if (quantity < stockQuantity) {
-      setQuantity(prev => prev + 1);
+    const newQuantity = quantity + 1;
+    if (couponId && newQuantity > stockQuantity) {
+      return;
+    }
+    if (onQuantityChange) {
+      onQuantityChange(newQuantity);
+    } else {
+      setInternalQuantity(newQuantity);
     }
   };
 
-  // 减少数量
   const handleDecrease = () => {
-    if (quantity > 1) {
-      setQuantity(prev => prev - 1);
+    const newQuantity = quantity - 1;
+    if (newQuantity >= 1) {
+      if (onQuantityChange) {
+        onQuantityChange(newQuantity);
+      } else {
+        setInternalQuantity(newQuantity);
+      }
     }
   };
 
-  // 1. 购买/生成订单函数
   const handleCheckout = async () => {
     if (!merchantPromptPayId) {
         setError('商户收款设置不完整，暂时无法购买。');
@@ -55,11 +91,14 @@ export default function BuyButton({ couponId, merchantPromptPayId, stockQuantity
     setError(null);
 
     try {
+      const payload = productIds 
+        ? { productIds, quantity } // 购物车模式
+        : { couponId, quantity };  // 单商品模式
+
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        // 传递动态选择的数量
-        body: JSON.stringify({ couponId, quantity: quantity }), 
+        body: JSON.stringify(payload), 
       });
 
       const data = await response.json();
@@ -67,7 +106,7 @@ export default function BuyButton({ couponId, merchantPromptPayId, stockQuantity
       if (response.ok && data.success) {
         setPaymentInfo({
             orderId: data.orderId,
-            amount: data.amount, // 使用后端计算的总价
+            amount: data.amount,
             promptPayId: merchantPromptPayId,
             promptpayPayload: data.promptpayPayload,
         });
@@ -82,25 +121,15 @@ export default function BuyButton({ couponId, merchantPromptPayId, stockQuantity
       setLoading(false);
     }
   };
-  
-  // 2. 完成支付流程
-  const goToOrderPage = () => {
-      setPaymentInfo(null);
-      setError(null);
-      router.push('/client/orders'); // 确保路径正确，通常是 /client/orders 或 /my/orders
-  };
-  
-  // 3. 关闭弹窗
-  const closePaymentModal = () => {
-      setPaymentInfo(null);
-      setError(null);
-  };
+
+  const isOutOfStock = couponId ? stockQuantity <= 0 : false;
+  const isQuantityExceeded = couponId ? quantity >= stockQuantity : false;
 
   return (
     <>
-      <div className="flex items-center gap-3">
-        {/* 数量选择器 */}
-        <div className="flex items-center border border-base-300 rounded-lg h-12 bg-base-100">
+      <div className={`flex items-center gap-3 ${className}`}>
+        {showQuantitySelector && (
+          <div className="flex items-center border border-base-300 rounded-lg h-12 bg-base-100">
             <button 
                 className="btn btn-ghost btn-sm h-full px-3 rounded-l-lg rounded-r-none text-base-content/70"
                 onClick={handleDecrease}
@@ -112,79 +141,105 @@ export default function BuyButton({ couponId, merchantPromptPayId, stockQuantity
             <button 
                 className="btn btn-ghost btn-sm h-full px-3 rounded-r-lg rounded-l-none text-base-content/70"
                 onClick={handleIncrease}
-                disabled={quantity >= stockQuantity || loading}
+                disabled={isQuantityExceeded || loading}
             >
                 <HiPlus className="w-4 h-4" />
             </button>
-        </div>
+          </div>
+        )}
 
-        {/* 购买按钮 */}
         <button 
-            className="btn btn-primary h-12 px-8 text-lg shadow-lg shadow-primary/30"
+            className="btn btn-primary h-12 px-8 text-lg shadow-lg shadow-primary/30 flex-1"
             onClick={handleCheckout} 
-            disabled={loading || stockQuantity <= 0}
+            disabled={loading || isOutOfStock}
         >
-            {loading ? <span className="loading loading-spinner"></span> : (stockQuantity > 0 ? "立即购买" : "缺货")}
+            {loading ? <span className="loading loading-spinner"></span> : (isOutOfStock ? "缺货" : buttonText)}
         </button>
       </div>
 
-      {/* 购买成功后的支付模态框 */}
+      {/* 支付模态框 - 修复遮挡问题 */}
       {paymentInfo && (
-        <dialog className="modal modal-open">
-          <div className="modal-box w-11/12 max-w-sm text-center relative p-6">
-            
-            {/* 新增：关闭按钮 */}
+        <div className="fixed inset-0 z-9999 flex items-center justify-center p-4">
+          {/* 背景遮罩 - 只覆盖可见区域，不影响页面背景 */}
+          <div 
+            className="absolute inset-0 bg-black bg-opacity-50 backdrop-blur-sm"
+            onClick={() => setPaymentInfo(null)}
+          />
+          
+          {/* 模态框内容 */}
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-sm mx-auto p-6 z-10000 transform transition-all">
+            {/* 关闭按钮 */}
             <button 
-                className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-                onClick={closePaymentModal}
+              className="btn btn-sm btn-circle btn-ghost absolute right-3 top-3 z-10 hover:bg-base-200"
+              onClick={() => setPaymentInfo(null)}
             >
-                <HiXMark className="w-6 h-6" />
+              <HiXMark className="w-5 h-5" />
             </button>
 
-            <h3 className="font-bold text-2xl text-primary mb-4 mt-2">
-               扫码支付
-            </h3>
-            <p className="text-sm text-base-content/80 mb-2">
-                订单金额 ({quantity} 张)
-            </p>
-            <p className="font-bold text-2xl text-error mb-6">
+            <div className="text-center pt-2">
+              <h3 className="font-bold text-2xl text-primary mb-3">扫码支付</h3>
+              <p className="text-sm text-base-content/80 mb-1">订单金额</p>
+              <p className="text-sm text-base-content/60 mb-3">({quantity} 件商品)</p>
+              <p className="font-bold text-3xl text-error mb-6">
                 ฿{paymentInfo.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-            </p>
+              </p>
 
-            {/* PromptPay 二维码区域 */}
-            <div className="flex justify-center mb-6 p-4 bg-white rounded-xl shadow-inner border border-base-200">
+              {/* 二维码区域 */}
+              <div className="flex justify-center mb-6 p-4 bg-white rounded-xl shadow-inner border border-base-300">
                 <QRCode 
-                    value={paymentInfo.promptpayPayload} 
-                    size={200}
-                    level="M" // 调整为 M 级别通常更易扫码
-                    style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                  value={paymentInfo.promptpayPayload} 
+                  size={200}
+                  level="M"
+                  style={{ 
+                    height: "auto", 
+                    maxWidth: "100%", 
+                    width: "100%",
+                    borderRadius: '8px'
+                  }}
                 />
-            </div>
-            
-            <div className="text-xs text-base-content/50 space-y-1 mb-6">
-                <p>商户ID: {paymentInfo.promptPayId}</p>
-                <p>订单号: {paymentInfo.orderId.slice(0, 8)}...</p>
-            </div>
+              </div>
+              
+              <div className="text-xs text-base-content/50 space-y-1 mb-6 bg-base-100 p-3 rounded-lg">
+                <p className="truncate">商户: {paymentInfo.promptPayId}</p>
+                <p className="truncate">订单: {paymentInfo.orderId.slice(0, 12)}...</p>
+              </div>
 
-            <div className="modal-action justify-center w-full">
-              <button className="btn btn-primary w-full" onClick={goToOrderPage}>
-                  已付款，去上传凭证
-              </button>
+              <div className="flex gap-3">
+                <button 
+                  className="btn btn-outline flex-1 btn-sm"
+                  onClick={() => setPaymentInfo(null)}
+                >
+                  取消
+                </button>
+                <button 
+                  className="btn btn-primary flex-1 btn-sm"
+                  onClick={() => {
+                    setPaymentInfo(null);
+                    setError(null);
+                    document.body.style.overflow = 'unset';
+                    router.push('/client/orders');
+                  }}
+                >
+                  已付款
+                </button>
+              </div>
             </div>
           </div>
-          {/* 点击背景关闭 */}
-          <form method="dialog" className="modal-backdrop">
-            <button onClick={closePaymentModal}>close</button>
-          </form>
-        </dialog>
+        </div>
       )}
 
       {/* 错误提示 */}
       {error && (
-        <div className="toast toast-end z-100">
+        <div className="toast toast-end z-10001">
           <div className="alert alert-error shadow-lg">
             <HiXMark className="w-5 h-5" />
-            <span>{error}</span>
+            <span className="flex-1">{error}</span>
+            <button 
+              className="btn btn-ghost btn-xs" 
+              onClick={() => setError(null)}
+            >
+              关闭
+            </button>
           </div>
         </div>
       )}

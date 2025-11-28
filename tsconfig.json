@@ -20,10 +20,13 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@/": ["./*"],
+      "@/*": ["./*"],
       "@/app/*": ["./app/*"],
       "@/components/*": ["./components/*"],
-      "@/lib/*": ["./lib/*"]
+      "@/context/*": ["./context/*"],  
+      "@/lib/*": ["./lib/*"],
+      "@/utils/*": ["./utils/*"],
+      "@/types/*": ["./types/*"]
     }
   },
   "include": [

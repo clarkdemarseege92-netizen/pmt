@@ -1,11 +1,15 @@
-// 文件: app/shop/[id]/page.tsx
+// app/shop/[id]/page.tsx
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { HiMapPin, HiPhone, HiBuildingStorefront, HiShoppingBag, HiTag, HiClock, HiCheckCircle } from "react-icons/hi2";
-// 修正导入语句 - 删除重复导入
+import { HiMapPin, HiPhone, HiBuildingStorefront, HiTag, HiClock, HiCheckCircle } from "react-icons/hi2";
+import { FaFacebook, FaLine, FaInstagram, FaTiktok } from "react-icons/fa";
 import { getMerchantCustomization } from "@/app/actions/merchantDesign";
 import { type ExtendedMerchantCustomization } from "@/app/types/merchantDesign"; 
+import { CartProvider } from "@/context/CartContext";
+import ProductCard from '@/components/ProductCard';
+import CartFooter from '@/components/CartFooter';
+
 
 // 添加日志函数
 const log = {
@@ -45,14 +49,13 @@ type MerchantDetail = {
   google_maps_link?: string;
   contact_phone?: string;
   description?: string;
+  social_links?: { 
+    facebook?: string;
+    line?: string;
+    instagram?: string;
+    tiktok?: string;
+  };
 };
-
-// 删除这个重复的接口定义，因为已经从 '@/app/types/merchantDesign' 导入了
-// interface ExtendedMerchantCustomization extends MerchantCustomization {
-//   announcement_text?: string;
-//   homepage_styles?: Record<string, unknown>;
-//   detail_page_styles?: Record<string, unknown>;
-// }
 
 // 组合数据结构
 interface ShopData {
@@ -62,99 +65,208 @@ interface ShopData {
   coupons: Array<unknown>;
 }
 
-// 辅助函数
-const getLangName = (name: MultiLangName | null | undefined, lang = 'th') => {
-  if (!name) return "N/A";
-  return name[lang] || name['en'] || "N/A";
-};
 
-// --- 商品卡片组件 ---
-const ProductCard = ({ product, config, themeColor }: { product: ProductDetail, config: ExtendedMerchantCustomization, themeColor: string }) => {
-    
-  // 根据装修配置设置按钮圆角
-  const getButtonRadius = () => {
-    switch (config.button_style) {
-      case 'pill': return '9999px';
-      case 'square': return '0px';
-      default: return '0.5rem';
-    }
-  };
+// --- 店铺内容组件 ---
+function ShopContent({ merchantId, shopData }: { merchantId: string; shopData: ShopData }) {
+  const { merchant, customization: config, products } = shopData;
+  
+  // 动态样式变量
+  const themeColor = config.theme_primary_color || '#3b82f6';
+  const displayGridCols = config.display_config?.grid_cols === 1 ? 'grid-cols-1' : 'grid-cols-2';
 
-  const isGridCols2 = config.display_config?.grid_cols === 2;
+  // 动态样式注入
+  const shopStyles = {
+    '--theme-primary': themeColor,
+    '--theme-button-radius': config.button_style === 'pill' ? '9999px' : config.button_style === 'square' ? '0px' : '0.5rem',
+    backgroundImage: config.background_image_url ? `url(${config.background_image_url})` : 'none',
+    backgroundSize: 'cover' as const,
+    backgroundPosition: 'center',
+    backgroundAttachment: config.background_image_url ? 'fixed' as const : 'scroll' as const,
+    backgroundColor: config.background_image_url ? 'transparent' : '#f3f4f6',
+    minHeight: '100vh',
+    // 添加字体支持
+    fontFamily: config.font_family === 'serif' ? 'serif' : config.font_family === 'mono' ? 'monospace' : 'sans-serif'
+  } as React.CSSProperties;
 
   return (
-    <div 
-      className={`card bg-base-100 shadow-sm transition-all hover:shadow-lg ${isGridCols2 ? '' : 'flex-row'}`} 
-      style={{ 
-        borderRadius: isGridCols2 ? '0.5rem' : '1rem',
-        overflow: 'hidden'
-      }}
-    >
-      <figure className={`bg-gray-100 relative ${isGridCols2 ? 'aspect-square w-full' : 'w-28 h-28 shrink-0'}`}>
-        {product.image_urls?.[0] ? (
-          <Image 
-            src={product.image_urls[0]} 
-            alt={getLangName(product.name)} 
-            fill 
-            className="object-cover" 
-            sizes={isGridCols2 ? "(max-width: 768px) 50vw, 25vw" : "112px"}
-          />
-        ) : (
-          <div className="w-full h-full bg-base-200 grid place-items-center text-base-content/30">
-            <HiTag className="w-8 h-8" />
+    <CartProvider merchantId={merchantId}>
+      <main className="min-h-screen pb-32" style={shopStyles}>
+        <div className="max-w-md mx-auto relative z-10">
+          {/* 1. 店铺头部信息 (封面图, Logo, 名称) */}
+          <div className="relative bg-white shadow-xl">
+            {/* 封面图 */}
+            <div className="h-40 w-full bg-gray-300 relative overflow-hidden">
+              {config.cover_image_url ? (
+                <Image src={config.cover_image_url} alt="Cover Image" fill className="object-cover" priority />
+              ) : (
+                <div className="w-full h-full bg-linear-to-r from-gray-200 to-gray-300 grid place-items-center text-gray-500">
+                  店铺封面图
+                </div>
+              )}
+            </div>
+
+            {/* Logo 和信息 */}
+            <div className="p-4 -mt-12 relative z-20">
+              <div className="flex justify-between items-end">
+                {/* Logo */}
+                <div className="w-24 h-24 rounded-full border-4 border-white bg-white shadow-lg overflow-hidden relative shrink-0">
+                  {merchant.logo_url ? (
+                    <Image src={merchant.logo_url} alt="Shop Logo" fill className="object-cover" />
+                  ) : (
+                    <div className="w-full h-full bg-base-200 grid place-items-center text-xl text-base-content/30">
+                      <HiBuildingStorefront />
+                    </div>
+                  )}
+                </div>
+                
+                {/* 关注/收藏按钮 (动态颜色) */}
+                <button 
+                  className="btn btn-sm text-white border-0 shadow-md"
+                  style={{ 
+                    backgroundColor: themeColor,
+                    borderRadius: config.button_style === 'pill' ? '9999px' : config.button_style === 'square' ? '0px' : '0.5rem'
+                  }}
+                >
+                  + 关注
+                </button>
+              </div>
+
+              {/* 名称和描述 */}
+              <h1 className="text-2xl font-bold mt-2 text-base-content">{merchant.shop_name}</h1>
+              <p className="text-sm text-base-content/60 mt-1">{merchant.description || "欢迎光临，请自助点餐"}</p>
+              
+              {/* 评分和公告 */}
+              <div className="flex items-center gap-3 mt-3 text-sm text-success">
+                <HiCheckCircle className="w-5 h-5" /> 认证商家 (4.8分)
+              </div>
+            </div>
+
+            {/* 联系方式 (固定信息卡片) */}
+            <div className="bg-white p-4 border-t border-base-200 mt-4">
+              <div className="flex justify-between items-center gap-4 text-sm">
+                {/* 地址 */}
+                <div className="flex items-center gap-2 cursor-pointer hover:opacity-70 transition-opacity">
+                  <HiMapPin className="w-5 h-5 text-secondary" />
+                  {merchant.google_maps_link ? (
+                    <a href={merchant.google_maps_link} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                      地址 (导航)
+                    </a>
+                  ) : (
+                    <span>{merchant.address || "暂无地址"}</span>
+                  )}
+                </div>
+                {/* 电话 */}
+                {merchant.contact_phone && (
+                  <a href={`tel:${merchant.contact_phone}`} className="flex items-center gap-2 cursor-pointer hover:opacity-70 transition-opacity">
+                    <HiPhone className="w-5 h-5 text-primary" />
+                    <span>电话</span>
+                  </a>
+                )}
+              </div>
+            </div>
+
+            {/* 社交媒体链接 */}
+            {merchant.social_links && (
+              <div className="bg-white p-4 border-t border-base-200">
+                <div className="flex justify-center gap-4">
+                  {merchant.social_links.facebook && (
+                    <a 
+                      href={merchant.social_links.facebook} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-circle btn-outline btn-sm hover:bg-blue-50 hover:border-blue-300 transition-colors"
+                      title="Facebook"
+                    >
+                      <FaFacebook className="w-4 h-4 text-blue-600" />
+                    </a>
+                  )}
+                  {merchant.social_links.line && (
+                    <a 
+                      href={merchant.social_links.line.startsWith('http') ? merchant.social_links.line : `https://line.me/ti/p/~${merchant.social_links.line}`}
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-circle btn-outline btn-sm hover:bg-green-50 hover:border-green-300 transition-colors"
+                      title="Line"
+                    >
+                      <FaLine className="w-4 h-4 text-green-600" />
+                    </a>
+                  )}
+                  {merchant.social_links.instagram && (
+                    <a 
+                      href={merchant.social_links.instagram} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-circle btn-outline btn-sm hover:bg-pink-50 hover:border-pink-300 transition-colors"
+                      title="Instagram"
+                    >
+                      <FaInstagram className="w-4 h-4 text-pink-600" />
+                    </a>
+                  )}
+                  {merchant.social_links.tiktok && (
+                    <a 
+                      href={merchant.social_links.tiktok} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="btn btn-circle btn-outline btn-sm hover:bg-gray-50 hover:border-gray-300 transition-colors"
+                      title="TikTok"
+                    >
+                      <FaTiktok className="w-4 h-4 text-black" />
+                    </a>
+                  )}
+                </div>
+                {Object.values(merchant.social_links).some(link => link) && (
+                  <p className="text-center text-xs text-base-content/60 mt-2">
+                    关注我们的社交媒体
+                  </p>
+                )}
+              </div>
+            )}
+
+            {/* 店铺公告栏 (如果商户设置了) */}
+            {config.announcement_text && (
+              <div 
+                className="p-3 bg-warning/20 text-warning-content text-sm flex items-center gap-2 border-l-4 border-warning"
+                style={{ borderLeftColor: themeColor }}
+              >
+                <HiClock className="w-4 h-4 shrink-0" /> 
+                <span>{config.announcement_text}</span>
+              </div>
+            )}
           </div>
-        )}
-      </figure>
-      
-      <div className="card-body p-3 flex flex-col justify-between">
-        <h3 className={`font-bold ${isGridCols2 ? 'text-sm' : 'text-base'} line-clamp-2`}>
-          {getLangName(product.name)}
-        </h3>
-        
-        {/* 价格显示 */}
-        <div className={`flex ${isGridCols2 ? 'flex-col' : 'items-center justify-between'} gap-1 mt-1`}>
-          <span 
-            className={`font-extrabold`} 
-            style={{ 
-              color: themeColor, 
-              fontSize: isGridCols2 ? '1.125rem' : '1.5rem' 
-            }}
-          >
-            ฿{product.original_price}
-          </span>
+
+          {/* 2. 商品/点单区 */}
+          <div className="p-4 mt-4">
+            <h2 className="text-xl font-bold mb-4 text-base-content">全部商品 ({products.length})</h2>
+
+            {products.length === 0 ? (
+              <div className="text-center p-10 bg-base-100 rounded-xl shadow-md text-base-content/50">
+                <HiTag className="w-8 h-8 mx-auto mb-2" />
+                <p>该店铺暂未发布任何商品。</p>
+              </div>
+            ) : (
+              <div className={`grid gap-4 ${displayGridCols}`}>
+
+{products.map(product => (
+  <div key={product.product_id}>
+      <ProductCard 
+        key={product.product_id} 
+        product={product} 
+        config={config} 
+        themeColor={themeColor}
+      />
+
+    
+  </div>
+))}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* 商品描述 */}
-        {product.description && (
-          <p className="text-xs text-base-content/60 mt-1 line-clamp-2">
-            {getLangName(product.description)}
-          </p>
-        )}
-
-        {/* 辅助信息 */}
-        {(config.display_config?.show_stock || config.display_config?.show_sales_count) && (
-          <div className={`flex gap-3 text-xs text-base-content/60 ${isGridCols2 ? 'mt-1' : ''}`}>
-            {config.display_config.show_stock && (
-              <span>库存: {product.stock_quantity !== undefined ? product.stock_quantity : 'N/A'}</span>
-            )}
-            {config.display_config.show_sales_count && (
-              <span>已售: {product.sales_count !== undefined ? product.sales_count : 'N/A'}</span>
-            )}
-          </div>
-        )}
-
-        {/* 点单按钮 */}
-        <button 
-          className={`btn btn-sm text-white border-0 mt-2 ${isGridCols2 ? 'w-full' : 'w-auto self-end'}`} 
-          style={{ 
-            backgroundColor: themeColor,
-            borderRadius: getButtonRadius() 
-          }}
-        >
-          {isGridCols2 ? '加入购物车' : <HiShoppingBag className="w-5 h-5"/>}
-        </button>
-      </div>
-    </div>
+        {/* 3. 底部购物车栏 - 移除 themeColor 和 buttonStyle 属性 */}
+        <CartFooter />
+      </main>
+    </CartProvider>
   );
 }
 
@@ -177,7 +289,7 @@ export default async function ShopPage({
     const { data: merchantData, error } = await supabase
       .from('merchants')
       .select(`
-        merchant_id, shop_name, logo_url, address, google_maps_link, contact_phone, description,
+        merchant_id, shop_name, logo_url, address, google_maps_link, contact_phone, description,social_links,
         products (
           product_id, name, original_price, image_urls, description
         )
@@ -255,34 +367,6 @@ export default async function ShopPage({
         }
       : defaultConfig;
 
-    // 添加详细的配置检查日志
-    log.info('配置合并详情', {
-      receivedFromAPI: customizationRes.data,
-      mergedConfig: customization,
-      hasBackgroundImage: !!customization.background_image_url,
-      hasCoverImage: !!customization.cover_image_url,
-      themeColor: customization.theme_primary_color,
-      backgroundImageUrl: customization.background_image_url,
-      coverImageUrl: customization.cover_image_url
-    });
-
-    // 特别检查背景图片URL格式
-    if (customization.background_image_url) {
-      console.log('🎨 背景图片URL详情:', {
-        url: customization.background_image_url,
-        startsWithHttp: customization.background_image_url.startsWith('http'),
-        isSupabaseUrl: customization.background_image_url.includes('supabase')
-      });
-    }
-
-    if (customization.cover_image_url) {
-      console.log('🖼️ 封面图片URL详情:', {
-        url: customization.cover_image_url,
-        startsWithHttp: customization.cover_image_url.startsWith('http'),
-        isSupabaseUrl: customization.cover_image_url.includes('supabase')
-      });
-    }
-
     // 3. 组织数据
     const shopData: ShopData = {
       merchant: {
@@ -293,206 +377,14 @@ export default async function ShopPage({
         google_maps_link: merchantData.google_maps_link,
         contact_phone: merchantData.contact_phone,
         description: merchantData.description,
+        social_links: merchantData.social_links || {},
       },
       customization: customization,
       products: (merchantData.products || []) as ProductDetail[],
       coupons: [],
     };
 
-    const { merchant, customization: config, products } = shopData;
-    
-    // 动态样式变量
-    const themeColor = config.theme_primary_color || '#3b82f6';
-    const displayGridCols = config.display_config?.grid_cols === 1 ? 'grid-cols-1' : 'grid-cols-2';
-
-    // 动态样式注入
-    const shopStyles = {
-      '--theme-primary': themeColor,
-      '--theme-button-radius': config.button_style === 'pill' ? '9999px' : config.button_style === 'square' ? '0px' : '0.5rem',
-      backgroundImage: config.background_image_url ? `url(${config.background_image_url})` : 'none',
-      backgroundSize: 'cover' as const,
-      backgroundPosition: 'center',
-      backgroundAttachment: config.background_image_url ? 'fixed' as const : 'scroll' as const,
-      backgroundColor: config.background_image_url ? 'transparent' : '#f3f4f6',
-      minHeight: '100vh',
-      // 添加字体支持
-      fontFamily: config.font_family === 'serif' ? 'serif' : config.font_family === 'mono' ? 'monospace' : 'sans-serif'
-    } as React.CSSProperties;
-    
-    console.log('🎨 应用的样式:', shopStyles);
-    
-    log.info('页面渲染准备完成', {
-      merchantName: merchant.shop_name,
-      productsCount: products.length,
-      themeColor,
-      displayGridCols,
-      backgroundImage: !!config.background_image_url,
-      buttonStyle: config.button_style
-    });
-    
-    // 在页面渲染前添加验证
-    console.log('🎯 最终验证配置:', {
-      // 从数据库获取的原始值
-      dbThemeColor: customization?.theme_primary_color,
-      dbButtonStyle: customization?.button_style, 
-      dbCoverImage: customization?.cover_image_url,
-      // 实际使用的值
-      usedThemeColor: customization.theme_primary_color,
-      usedButtonStyle: customization.button_style,
-      usedCoverImage: customization.cover_image_url,
-      // 样式对象
-      shopStyles: shopStyles
-    });
-
-    // 检查按钮样式是否应用
-    console.log('🔘 按钮样式验证:', {
-      buttonStyle: customization.button_style,
-      buttonRadius: shopStyles['--theme-button-radius'],
-      themeColor: shopStyles['--theme-primary']
-    });
-    
-    return (
-      <main 
-        className="min-h-screen pb-20"
-        style={shopStyles}
-      >
-        <div className="max-w-md mx-auto relative z-10">
-
-          {/* 1. 店铺头部信息 (封面图, Logo, 名称) */}
-          <div className="relative bg-white shadow-xl">
-            {/* 封面图 */}
-            <div className="h-40 w-full bg-gray-300 relative overflow-hidden">
-              {config.cover_image_url ? (
-                <Image src={config.cover_image_url} alt="Cover Image" fill className="object-cover" priority />
-              ) : (
-                <div className="w-full h-full bg-linear-to-r from-gray-200 to-gray-300 grid place-items-center text-gray-500">
-                  店铺封面图
-                </div>
-              )}
-            </div>
-
-            {/* Logo 和信息 */}
-            <div className="p-4 -mt-12 relative z-20">
-              <div className="flex justify-between items-end">
-                {/* Logo */}
-                <div className="w-24 h-24 rounded-full border-4 border-white bg-white shadow-lg overflow-hidden relative shrink-0">
-                  {merchant.logo_url ? (
-                    <Image src={merchant.logo_url} alt="Shop Logo" fill className="object-cover" />
-                  ) : (
-                    <div className="w-full h-full bg-base-200 grid place-items-center text-xl text-base-content/30">
-                      <HiBuildingStorefront />
-                    </div>
-                  )}
-                </div>
-                
-                {/* 关注/收藏按钮 (动态颜色) */}
-                <button 
-                  className="btn btn-sm text-white border-0 shadow-md"
-                  style={{ 
-                    backgroundColor: themeColor,
-                    borderRadius: config.button_style === 'pill' ? '9999px' : config.button_style === 'square' ? '0px' : '0.5rem'
-                  }}
-                >
-                  + 关注
-                </button>
-              </div>
-
-              {/* 名称和描述 */}
-              <h1 className="text-2xl font-bold mt-2 text-base-content">{merchant.shop_name}</h1>
-              <p className="text-sm text-base-content/60 mt-1">{merchant.description || "欢迎光临，请自助点餐"}</p>
-              
-              {/* 评分和公告 */}
-              <div className="flex items-center gap-3 mt-3 text-sm text-success">
-                <HiCheckCircle className="w-5 h-5" /> 认证商家 (4.8分)
-              </div>
-            </div>
-
-            {/* 联系方式 (固定信息卡片) */}
-            <div className="bg-white p-4 border-t border-base-200 mt-4">
-              <div className="flex justify-between items-center gap-4 text-sm">
-                {/* 地址 */}
-                <div className="flex items-center gap-2 cursor-pointer hover:opacity-70 transition-opacity">
-                  <HiMapPin className="w-5 h-5 text-secondary" />
-                  {merchant.google_maps_link ? (
-                    <a href={merchant.google_maps_link} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      地址 (导航)
-                    </a>
-                  ) : (
-                    <span>{merchant.address || "暂无地址"}</span>
-                  )}
-                </div>
-                {/* 电话 */}
-                {merchant.contact_phone && (
-                  <a href={`tel:${merchant.contact_phone}`} className="flex items-center gap-2 cursor-pointer hover:opacity-70 transition-opacity">
-                    <HiPhone className="w-5 h-5 text-primary" />
-                    <span>电话</span>
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* 店铺公告栏 (如果商户设置了) */}
-            {config.announcement_text && (
-              <div 
-                className="p-3 bg-warning/20 text-warning-content text-sm flex items-center gap-2 border-l-4 border-warning"
-                style={{ borderLeftColor: themeColor }}
-              >
-                <HiClock className="w-4 h-4 shrink-0" /> 
-                <span>{config.announcement_text}</span>
-              </div>
-            )}
-          </div>
-
-          {/* 2. 商品/点单区 */}
-          <div className="p-4 mt-4">
-            <h2 className="text-xl font-bold mb-4 text-base-content">全部商品 ({products.length})</h2>
-
-            {products.length === 0 ? (
-              <div className="text-center p-10 bg-base-100 rounded-xl shadow-md text-base-content/50">
-                <HiTag className="w-8 h-8 mx-auto mb-2" />
-                <p>该店铺暂未发布任何商品。</p>
-              </div>
-            ) : (
-              <div className={`grid gap-4 ${displayGridCols}`}>
-                {products.map(product => (
-                  <ProductCard 
-                    key={product.product_id} 
-                    product={product} 
-                    config={config} 
-                    themeColor={themeColor}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-
-        </div>
-
-        {/* 3. 底部购物车栏 (点单系统核心) */}
-        <div className="fixed bottom-0 left-0 right-0 z-50 p-4 shadow-2xl bg-base-100/95 backdrop-blur-sm">
-          <div className="max-w-md mx-auto flex justify-between items-center gap-4">
-            {/* 购物车图标和数量 */}
-            <div className="flex items-center gap-2 text-primary font-bold">
-              <HiShoppingBag className="w-7 h-7" />
-              <span className="text-2xl">฿0.00</span>
-              <span className="badge badge-sm badge-outline">0 件</span>
-            </div>
-            
-            {/* 结算按钮 */}
-            <button 
-              className="btn text-white shadow-xl"
-              style={{ 
-                backgroundColor: themeColor,
-                borderRadius: config.button_style === 'pill' ? '9999px' : config.button_style === 'square' ? '0px' : '0.5rem'
-              }}
-              disabled // 暂时禁用，等待购物车逻辑实现
-            >
-              去结算
-            </button>
-          </div>
-        </div>
-      </main>
-    );
+    return <ShopContent merchantId={merchantId} shopData={shopData} />;
 
   } catch (error) {
     log.error('处理店铺页面时发生未预期的错误', {
