@@ -3,9 +3,11 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { HiMapPin, HiPhone, HiBuildingStorefront, HiShoppingBag, HiTag, HiClock, HiCheckCircle } from "react-icons/hi2";
-import { getMerchantCustomization, type MerchantCustomization } from "@/app/actions/merchantDesign";
+// 修正导入语句 - 删除重复导入
+import { getMerchantCustomization } from "@/app/actions/merchantDesign";
+import { type ExtendedMerchantCustomization } from "@/app/types/merchantDesign"; 
 
-// 添加日志函数 - 修复 any 类型
+// 添加日志函数
 const log = {
   info: (message: string, data?: unknown) => {
     console.log(`[SHOP_PAGE_INFO] ${message}`, data ? JSON.stringify(data, null, 2) : '');
@@ -45,10 +47,12 @@ type MerchantDetail = {
   description?: string;
 };
 
-// 扩展 MerchantCustomization 类型以包含公告文本
-interface ExtendedMerchantCustomization extends MerchantCustomization {
-  announcement_text?: string;
-}
+// 删除这个重复的接口定义，因为已经从 '@/app/types/merchantDesign' 导入了
+// interface ExtendedMerchantCustomization extends MerchantCustomization {
+//   announcement_text?: string;
+//   homepage_styles?: Record<string, unknown>;
+//   detail_page_styles?: Record<string, unknown>;
+// }
 
 // 组合数据结构
 interface ShopData {
@@ -64,7 +68,7 @@ const getLangName = (name: MultiLangName | null | undefined, lang = 'th') => {
   return name[lang] || name['en'] || "N/A";
 };
 
-// --- 商品卡片组件 (用于动态渲染) ---
+// --- 商品卡片组件 ---
 const ProductCard = ({ product, config, themeColor }: { product: ProductDetail, config: ExtendedMerchantCustomization, themeColor: string }) => {
     
   // 根据装修配置设置按钮圆角
@@ -76,7 +80,7 @@ const ProductCard = ({ product, config, themeColor }: { product: ProductDetail, 
     }
   };
 
-  const isGridCols2 = config.display_config.grid_cols === 2;
+  const isGridCols2 = config.display_config?.grid_cols === 2;
 
   return (
     <div 
@@ -88,7 +92,13 @@ const ProductCard = ({ product, config, themeColor }: { product: ProductDetail, 
     >
       <figure className={`bg-gray-100 relative ${isGridCols2 ? 'aspect-square w-full' : 'w-28 h-28 shrink-0'}`}>
         {product.image_urls?.[0] ? (
-          <Image src={product.image_urls[0]} alt={getLangName(product.name)} fill className="object-cover" />
+          <Image 
+            src={product.image_urls[0]} 
+            alt={getLangName(product.name)} 
+            fill 
+            className="object-cover" 
+            sizes={isGridCols2 ? "(max-width: 768px) 50vw, 25vw" : "112px"}
+          />
         ) : (
           <div className="w-full h-full bg-base-200 grid place-items-center text-base-content/30">
             <HiTag className="w-8 h-8" />
@@ -97,24 +107,32 @@ const ProductCard = ({ product, config, themeColor }: { product: ProductDetail, 
       </figure>
       
       <div className="card-body p-3 flex flex-col justify-between">
-        <h3 className={`font-bold ${isGridCols2 ? 'text-sm' : 'text-base'}`}>{getLangName(product.name)}</h3>
+        <h3 className={`font-bold ${isGridCols2 ? 'text-sm' : 'text-base'} line-clamp-2`}>
+          {getLangName(product.name)}
+        </h3>
         
-        {/* 价格显示 - 只有 original_price */}
+        {/* 价格显示 */}
         <div className={`flex ${isGridCols2 ? 'flex-col' : 'items-center justify-between'} gap-1 mt-1`}>
-          <span className={`font-extrabold`} style={{ color: themeColor, fontSize: isGridCols2 ? '1.125rem' : '1.5rem' }}>
+          <span 
+            className={`font-extrabold`} 
+            style={{ 
+              color: themeColor, 
+              fontSize: isGridCols2 ? '1.125rem' : '1.5rem' 
+            }}
+          >
             ฿{product.original_price}
           </span>
         </div>
 
         {/* 商品描述 */}
         {product.description && (
-          <p className="text-xs text-base-content/60 mt-1">
+          <p className="text-xs text-base-content/60 mt-1 line-clamp-2">
             {getLangName(product.description)}
           </p>
         )}
 
-        {/* 辅助信息 - 根据表结构，这些字段可能不存在 */}
-        {(config.display_config.show_stock || config.display_config.show_sales_count) && (
+        {/* 辅助信息 */}
+        {(config.display_config?.show_stock || config.display_config?.show_sales_count) && (
           <div className={`flex gap-3 text-xs text-base-content/60 ${isGridCols2 ? 'mt-1' : ''}`}>
             {config.display_config.show_stock && (
               <span>库存: {product.stock_quantity !== undefined ? product.stock_quantity : 'N/A'}</span>
@@ -153,7 +171,7 @@ export default async function ShopPage({
     const supabase = await createSupabaseServerClient();
     log.info('Supabase客户端创建成功');
 
-    // 1. 查询商户信息 - 根据实际表结构调整查询字段
+    // 1. 查询商户信息
     log.info('开始查询商户信息', { merchantId });
     
     const { data: merchantData, error } = await supabase
@@ -199,7 +217,8 @@ export default async function ShopPage({
     log.info('装修配置查询完成', { 
       success: customizationRes.success,
       hasData: !!customizationRes.data,
-      error: customizationRes.error
+      error: customizationRes.error,
+      receivedData: customizationRes.data
     });
     
     // 使用默认配置作为后备
@@ -211,25 +230,58 @@ export default async function ShopPage({
       theme_secondary_color: '#ffffff',
       button_style: 'rounded',
       font_family: 'sans',
+      cover_image_url: undefined,
+      background_image_url: undefined,
+      announcement_text: undefined,
       display_config: {
         show_stock: true,
         show_sales_count: true,
         grid_cols: 2
       },
-      announcement_text: undefined
+      homepage_styles: {},
+      detail_page_styles: {}
     };
 
+    // 深度合并配置，确保所有字段都有值
     const customization = customizationRes.success && customizationRes.data 
-      ? { ...defaultConfig, ...customizationRes.data }
+      ? {
+          ...defaultConfig,
+          ...customizationRes.data,
+          // 确保 display_config 被正确合并
+          display_config: {
+            ...defaultConfig.display_config,
+            ...(customizationRes.data.display_config || {})
+          }
+        }
       : defaultConfig;
 
-    log.info('最终使用的装修配置', {
-      themeColor: customization.theme_primary_color,
-      buttonStyle: customization.button_style,
-      gridCols: customization.display_config.grid_cols,
+    // 添加详细的配置检查日志
+    log.info('配置合并详情', {
+      receivedFromAPI: customizationRes.data,
+      mergedConfig: customization,
+      hasBackgroundImage: !!customization.background_image_url,
       hasCoverImage: !!customization.cover_image_url,
-      hasBackgroundImage: !!customization.background_image_url
+      themeColor: customization.theme_primary_color,
+      backgroundImageUrl: customization.background_image_url,
+      coverImageUrl: customization.cover_image_url
     });
+
+    // 特别检查背景图片URL格式
+    if (customization.background_image_url) {
+      console.log('🎨 背景图片URL详情:', {
+        url: customization.background_image_url,
+        startsWithHttp: customization.background_image_url.startsWith('http'),
+        isSupabaseUrl: customization.background_image_url.includes('supabase')
+      });
+    }
+
+    if (customization.cover_image_url) {
+      console.log('🖼️ 封面图片URL详情:', {
+        url: customization.cover_image_url,
+        startsWithHttp: customization.cover_image_url.startsWith('http'),
+        isSupabaseUrl: customization.cover_image_url.includes('supabase')
+      });
+    }
 
     // 3. 组织数据
     const shopData: ShopData = {
@@ -253,23 +305,52 @@ export default async function ShopPage({
     const themeColor = config.theme_primary_color || '#3b82f6';
     const displayGridCols = config.display_config?.grid_cols === 1 ? 'grid-cols-1' : 'grid-cols-2';
 
-    // [动态样式注入]
+    // 动态样式注入
     const shopStyles = {
       '--theme-primary': themeColor,
       '--theme-button-radius': config.button_style === 'pill' ? '9999px' : config.button_style === 'square' ? '0px' : '0.5rem',
       backgroundImage: config.background_image_url ? `url(${config.background_image_url})` : 'none',
-      backgroundSize: 'cover',
+      backgroundSize: 'cover' as const,
       backgroundPosition: 'center',
-      backgroundAttachment: 'fixed',
+      backgroundAttachment: config.background_image_url ? 'fixed' as const : 'scroll' as const,
+      backgroundColor: config.background_image_url ? 'transparent' : '#f3f4f6',
+      minHeight: '100vh',
+      // 添加字体支持
+      fontFamily: config.font_family === 'serif' ? 'serif' : config.font_family === 'mono' ? 'monospace' : 'sans-serif'
     } as React.CSSProperties;
-
+    
+    console.log('🎨 应用的样式:', shopStyles);
+    
     log.info('页面渲染准备完成', {
       merchantName: merchant.shop_name,
       productsCount: products.length,
       themeColor,
-      displayGridCols
+      displayGridCols,
+      backgroundImage: !!config.background_image_url,
+      buttonStyle: config.button_style
+    });
+    
+    // 在页面渲染前添加验证
+    console.log('🎯 最终验证配置:', {
+      // 从数据库获取的原始值
+      dbThemeColor: customization?.theme_primary_color,
+      dbButtonStyle: customization?.button_style, 
+      dbCoverImage: customization?.cover_image_url,
+      // 实际使用的值
+      usedThemeColor: customization.theme_primary_color,
+      usedButtonStyle: customization.button_style,
+      usedCoverImage: customization.cover_image_url,
+      // 样式对象
+      shopStyles: shopStyles
     });
 
+    // 检查按钮样式是否应用
+    console.log('🔘 按钮样式验证:', {
+      buttonStyle: customization.button_style,
+      buttonRadius: shopStyles['--theme-button-radius'],
+      themeColor: shopStyles['--theme-primary']
+    });
+    
     return (
       <main 
         className="min-h-screen pb-20"
@@ -352,8 +433,12 @@ export default async function ShopPage({
 
             {/* 店铺公告栏 (如果商户设置了) */}
             {config.announcement_text && (
-              <div className="p-2 bg-yellow-100 text-yellow-800 text-xs flex items-center gap-2">
-                <HiClock /> {config.announcement_text}
+              <div 
+                className="p-3 bg-warning/20 text-warning-content text-sm flex items-center gap-2 border-l-4 border-warning"
+                style={{ borderLeftColor: themeColor }}
+              >
+                <HiClock className="w-4 h-4 shrink-0" /> 
+                <span>{config.announcement_text}</span>
               </div>
             )}
           </div>
