@@ -24,25 +24,27 @@ export default function FavoriteButton({
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
+useEffect(() => {
     setMounted(true);
+
+    const checkStatus = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data } = await supabase
+        .from('favorites')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('item_type', itemType) // 依赖项
+        .eq('item_id', itemId)     // 依赖项
+        .maybeSingle();
+
+      if (data) setIsFavorited(true);
+    };
+
     checkStatus();
-  }, [itemId]);
-
-  const checkStatus = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('favorites')
-      .select('id')
-      .eq('user_id', user.id)
-      .eq('item_type', itemType)
-      .eq('item_id', itemId)
-      .maybeSingle(); // 使用 maybeSingle 避免 406 错误
-
-    if (data) setIsFavorited(true);
-  };
+    // 这里的依赖项补全了 itemType，因为如果类型变了也应该重新检查
+  }, [itemId, itemType]);
 
   const toggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault(); // 防止触发父级链接跳转
