@@ -5,6 +5,7 @@ import { useCart } from '@/context/CartContext';
 import Image from 'next/image';
 import { HiTag, HiShoppingBag, HiMinus, HiPlus } from "react-icons/hi2";
 import { ExtendedMerchantCustomization } from '@/app/types/merchantDesign';
+import FavoriteButton from './FavoriteButton'; // 引入收藏按钮
 
 
 type MultiLangName = {
@@ -76,12 +77,21 @@ export default function ProductCard({
 
   return (
     <div 
-      className={`card bg-base-100 shadow-sm transition-all hover:shadow-lg ${isGridCols2 ? '' : 'flex-row'}`} 
+      className={`card bg-base-100 shadow-sm transition-all hover:shadow-lg relative group ${isGridCols2 ? '' : 'flex-row'}`} 
       style={{ 
         borderRadius: isGridCols2 ? '0.5rem' : '1rem',
         overflow: 'hidden'
       }}
     >
+      {/* 收藏按钮：绝对定位在图片右上角 */}
+      <div className="absolute top-2 right-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity">
+        <FavoriteButton itemId={product.product_id} itemType="product" variant="icon" />
+      </div>
+      {/* 移动端始终显示收藏按钮 (因为没有 hover) */}
+      <div className="absolute top-2 right-2 z-10 md:hidden">
+        <FavoriteButton itemId={product.product_id} itemType="product" variant="icon" />
+      </div>
+
       <figure className={`bg-gray-100 relative ${isGridCols2 ? 'aspect-square w-full' : 'w-28 h-28 shrink-0'}`}>
         {product.image_urls?.[0] ? (
           <Image 

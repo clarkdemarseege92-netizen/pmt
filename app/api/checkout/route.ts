@@ -1,5 +1,6 @@
-// app/api/checkout/route.ts
+// 文件: /app/api/checkout/route.ts
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
+import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { generatePromptPayPayload } from '@/lib/promptpay';
 import { v4 as uuidv4 } from 'uuid';
@@ -37,7 +38,7 @@ interface ProductWithMerchant {
 interface OrderData {
   order_id: string;
   customer_id: string;
-  coupon_id: string;
+  coupon_id: string | null;
   merchant_id: string;
   purchase_price: number;
   status: string;
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
     const { couponId, productIds, quantity } = await request.json();
     console.log('Checkout API 收到请求:', { couponId, productIds, quantity });
 
-    // 1. 参数校验 - 支持两种模式
+    // 1. 参数校验
     if ((!couponId && (!productIds || !Array.isArray(productIds))) || !quantity || quantity <= 0) {
       return NextResponse.json({ 
         success: false, 
@@ -59,6 +60,8 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
+    // --- 步骤 A: 身份验证 (使用普通客户端) ---
+    // 验证当前发起请求的用户身份
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
@@ -69,18 +72,46 @@ export async function POST(request: Request) {
       }, { status: 401 });
     }
 
+    // --- 步骤 B: 初始化 Admin 客户端 ---
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+    // === 🔍 调试代码开始 (问题解决后可删除) ===
+    console.log("--------------------------------------------------");
+    console.log("🔍 环境变量调试:");
+    console.log("1. NEXT_PUBLIC_SUPABASE_URL:", supabaseUrl ? "✅ 已读取" : "❌ 未读取 (Undefined)");
+    console.log("2. SUPABASE_SERVICE_ROLE_KEY:", serviceRoleKey ? "✅ 已读取 (长度: " + serviceRoleKey.length + ")" : "❌ 未读取 (Undefined)");
+    console.log("--------------------------------------------------");
+    // === 调试代码结束 ===
+    // 【防御性检查】确保环境变量存在，否则给出清晰的错误
+    if (!supabaseUrl || !serviceRoleKey) {
+      console.error('FATAL ERROR: 缺少 SUPABASE_SERVICE_ROLE_KEY 环境变量。无法初始化 Admin 客户端。');
+      return NextResponse.json({ 
+        success: false, 
+        message: '服务器配置错误：支付服务暂不可用 (Missing Server Config)' 
+      }, { status: 500 });
+    }
+
+    // 创建拥有超级权限的 Admin 客户端 (用于读取敏感的 promptpay_id)
+    const supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+
     let totalAmount = 0;
     let merchantId = '';
     let merchantPromptPayId = '';
     let orderItems: OrderItem[] = [];
-    let targetCouponId = '';
+    let targetCouponId: string | null = null;
 
     // 2. 单商品购买模式 (优惠券)
     if (couponId) {
       console.log('处理优惠券购买:', couponId);
       targetCouponId = couponId;
       
-      const { data: coupon, error: couponError } = await supabase
+      // 使用 Admin 客户端查询
+      const { data: coupon, error: couponError } = await supabaseAdmin
         .from('coupons')
         .select(`
           coupon_id,
@@ -107,32 +138,21 @@ export async function POST(request: Request) {
       }
 
       const couponData = coupon as unknown as CouponWithMerchant;
-      
-      if (!couponData.merchants) {
-        console.error('优惠券商户数据为空:', couponData);
-        return NextResponse.json({ 
-          success: false, 
-          message: '商户数据异常' 
-        }, { status: 500 });
-      }
-
       const merchant = couponData.merchants;
       
-      console.log('商户信息:', {
+      // 检查 Admin 是否成功读取到了 promptpay_id
+      console.log('商户信息 (Admin查询):', {
         merchant_id: merchant.merchant_id,
-        promptpay_id: merchant.promptpay_id,
+        has_promptpay: !!merchant.promptpay_id, 
         is_suspended: merchant.is_suspended
       });
 
       if (merchant.is_suspended) {
-        return NextResponse.json({ 
-          success: false, 
-          message: '该商户暂停营业，无法购买' 
-        }, { status: 403 });
+        return NextResponse.json({ success: false, message: '该商户暂停营业，无法购买' }, { status: 403 });
       }
 
       if (!merchant.promptpay_id) {
-        console.error('商户收款ID为空:', merchant);
+        console.error('商户收款ID为空 (即使使用了 Admin 权限):', merchant);
         return NextResponse.json({ 
           success: false, 
           message: '商户收款设置不完整，暂时无法购买。' 
@@ -140,10 +160,7 @@ export async function POST(request: Request) {
       }
 
       if (couponData.stock_quantity < quantity) {
-        return NextResponse.json({ 
-          success: false, 
-          message: `库存不足，剩余 ${couponData.stock_quantity}` 
-        }, { status: 400 });
+        return NextResponse.json({ success: false, message: `库存不足` }, { status: 400 });
       }
 
       totalAmount = couponData.selling_price * quantity;
@@ -152,11 +169,11 @@ export async function POST(request: Request) {
       orderItems = [{ coupon_id: couponId, quantity }];
 
     } 
-    // 3. 购物车模式 (商品) - 为商品创建虚拟优惠券
+    // 3. 购物车模式 (商品)
     else if (productIds && Array.isArray(productIds)) {
       console.log('处理购物车购买:', productIds);
       
-      const { data: products, error: productsError } = await supabase
+      const { data: products, error: productsError } = await supabaseAdmin
         .from('products')
         .select(`
           product_id,
@@ -173,66 +190,31 @@ export async function POST(request: Request) {
         .in('product_id', productIds);
 
       if (productsError || !products || products.length === 0) {
-        console.error('商品查询错误:', productsError);
-        return NextResponse.json({ 
-          success: false, 
-          message: '商品不存在或已下架' 
-        }, { status: 404 });
+        return NextResponse.json({ success: false, message: '商品不存在或已下架' }, { status: 404 });
       }
-
-      console.log('查询到的商品数据:', JSON.stringify(products, null, 2));
 
       const productsData = products as unknown as ProductWithMerchant[];
-
-      const productsWithValidMerchants = productsData.filter(p => 
-        p.merchants && p.merchants.merchant_id
-      );
+      const productsWithValidMerchants = productsData.filter(p => p.merchants && p.merchants.merchant_id);
 
       if (productsWithValidMerchants.length === 0) {
-        console.error('所有商品都没有商户数据:', productsData);
-        return NextResponse.json({ 
-          success: false, 
-          message: '商品商户数据异常' 
-        }, { status: 500 });
+        return NextResponse.json({ success: false, message: '商品商户数据异常' }, { status: 500 });
       }
 
-      const uniqueMerchantIds = [...new Set(productsWithValidMerchants.map(p => {
-        return p.merchants.merchant_id;
-      }))];
-      
-      console.log('商户ID列表:', uniqueMerchantIds);
-
+      const uniqueMerchantIds = [...new Set(productsWithValidMerchants.map(p => p.merchants.merchant_id))];
       if (uniqueMerchantIds.length > 1) {
-        return NextResponse.json({ 
-          success: false, 
-          message: '不能同时购买不同商户的商品' 
-        }, { status: 400 });
+        return NextResponse.json({ success: false, message: '不能同时购买不同商户的商品' }, { status: 400 });
       }
 
       const merchant = productsWithValidMerchants[0].merchants;
-      
-      console.log('选择的商户信息:', {
-        merchant_id: merchant.merchant_id,
-        promptpay_id: merchant.promptpay_id,
-        is_suspended: merchant.is_suspended
-      });
 
       if (merchant.is_suspended) {
-        return NextResponse.json({ 
-          success: false, 
-          message: '商户暂停营业，无法购买' 
-        }, { status: 403 });
+        return NextResponse.json({ success: false, message: '商户暂停营业' }, { status: 403 });
       }
 
       if (!merchant.promptpay_id) {
-        console.error('商户收款ID为空:', merchant);
-        return NextResponse.json({ 
-          success: false, 
-          message: '商户收款设置不完整，暂时无法购买。' 
-        }, { status: 400 });
+        return NextResponse.json({ success: false, message: '商户收款设置不完整' }, { status: 400 });
       }
 
-      // 计算总金额
       for (const product of productsWithValidMerchants) {
         totalAmount += product.original_price * quantity;
       }
@@ -240,30 +222,8 @@ export async function POST(request: Request) {
       merchantId = merchant.merchant_id;
       merchantPromptPayId = merchant.promptpay_id;
       
-      // 为商品订单创建一个虚拟优惠券
-      const virtualCouponId = uuidv4();
-      targetCouponId = virtualCouponId;
 
-      // 创建虚拟优惠券
-      const { error: couponCreateError } = await supabase
-        .from('coupons')
-        .insert({
-          coupon_id: virtualCouponId,
-          merchant_id: merchantId,
-          selling_price: totalAmount,
-          original_value: totalAmount,
-          stock_quantity: 999, // 设置足够大的库存
-          name: { en: 'Product Order', th: 'คำสั่งซื้อสินค้า' },
-          rules: { type: 'product_order' }
-        });
-
-      if (couponCreateError) {
-        console.error('创建虚拟优惠券失败:', couponCreateError);
-        return NextResponse.json({ 
-          success: false, 
-          message: '创建订单失败: ' + couponCreateError.message 
-        }, { status: 500 });
-      }
+      targetCouponId = null;
 
       orderItems = productsWithValidMerchants.map(p => ({ 
         product_id: p.product_id, 
@@ -271,22 +231,14 @@ export async function POST(request: Request) {
       }));
     }
 
-    console.log('订单信息:', { 
-      totalAmount, 
-      merchantId, 
-      merchantPromptPayId, 
-      orderItems,
-      targetCouponId 
-    });
-
-    // 4. 创建订单
+    // --- 步骤 C: 创建订单 (使用 Admin 客户端写入) ---
+    // 使用 Admin 客户端可以避免因 RLS 策略导致的写入失败
     const orderId = uuidv4();
     const redemptionCode = Math.random().toString(36).substring(2, 12).toUpperCase();
 
-    // 构建订单数据
     const orderData: OrderData = {
       order_id: orderId,
-      customer_id: user.id,
+      customer_id: user.id, // 明确指定 customer_id 为当前登录用户
       coupon_id: targetCouponId,
       merchant_id: merchantId,
       purchase_price: totalAmount,
@@ -296,9 +248,7 @@ export async function POST(request: Request) {
       payment_method: 'promptpay'
     };
 
-    console.log('创建的订单数据:', orderData);
-
-    const { error: orderError } = await supabase
+    const { error: orderError } = await supabaseAdmin
       .from('orders')
       .insert(orderData);
 
@@ -310,30 +260,15 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // 5. 创建订单项 (order_items)
+    // 5. 创建订单项
     if (orderItems.length > 0) {
-      try {
-        const { error: itemsError } = await supabase
-          .from('order_items')
-          .insert(
-            orderItems.map(item => ({
-              order_id: orderId,
-              ...item
-            }))
-          );
-
-        if (itemsError) {
-          console.warn('创建订单项失败:', itemsError);
-        }
-      } catch (itemsError) {
-        console.warn('创建订单项异常:', itemsError);
-      }
+      await supabaseAdmin
+        .from('orders')
+        .insert(orderItems.map(item => ({ order_id: orderId, ...item })));
     }
 
     // 6. 生成支付二维码
     const promptpayPayload = generatePromptPayPayload(merchantPromptPayId, totalAmount);
-
-    console.log('订单创建成功:', { orderId, totalAmount, promptpayPayload });
 
     return NextResponse.json({
       success: true,
@@ -343,11 +278,12 @@ export async function POST(request: Request) {
       message: '订单创建成功'
     });
 
-  } catch (error) {
+  } catch (error: unknown) {
     console.error('Checkout API 未预期错误:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ 
       success: false, 
-      message: '服务器内部错误' 
+      message: '服务器内部错误: ' + errorMessage
     }, { status: 500 });
   }
 }

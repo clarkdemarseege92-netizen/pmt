@@ -1,56 +1,66 @@
-// 文件: /components/MerchantSidebar.tsx
+// 文件: /components/ClientSidebar.tsx
 "use client";
 
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
-  HiSquares2X2,
-  HiShoppingBag,
-  HiTicket,
-  HiChatBubbleLeftRight,
-  HiWallet,
-  HiQrCode,
-  HiCog6Tooth,
+  HiUser,               // 个人资料
+  HiTicket,             // 订单/票券
+  HiHeart,              // 收藏
+  HiClock,              // 浏览历史
+  HiChatBubbleBottomCenterText, // 待评价
   HiChevronLeft,
   HiChevronRight,
-  HiPaintBrush,
-  HiArrowLeftStartOnRectangle,
-  HiClipboardDocumentList
+  HiArrowLeftStartOnRectangle, // 返回主页
 } from "react-icons/hi2";
 
-export default function MerchantSidebar() {
+export default function ClientSidebar() {
   const [isExpanded, setIsExpanded] = useState(true);
   const pathname = usePathname();
 
   const toggleSidebar = () => setIsExpanded(!isExpanded);
 
   const navItems = [
-    { name: "仪表板", href: "/merchant/dashboard", icon: <HiSquares2X2 className="w-6 h-6" /> },
-    { name: "订单管理", href: "/merchant/orders", icon: <HiClipboardDocumentList className="w-6 h-6" /> },
-    { name: "商品目录", href: "/merchant/products", icon: <HiShoppingBag className="w-6 h-6" /> },
-    { name: "店铺装修", href: "/merchant/design", icon: <HiPaintBrush className="w-6 h-6" /> },
-    { name: "优惠券", href: "/merchant/coupons", icon: <HiTicket className="w-6 h-6" /> },
-    { name: "评价管理", href: "/merchant/reviews", icon: <HiChatBubbleLeftRight className="w-6 h-6" /> },
-    { name: "钱包", href: "/merchant/wallet", icon: <HiWallet className="w-6 h-6" /> },
-    { name: "核销", href: "/merchant/redeem", icon: <HiQrCode className="w-6 h-6" /> },
-    { name: "设置", href: "/merchant/settings", icon: <HiCog6Tooth className="w-6 h-6" /> },
+    {
+      name: "个人资料",
+      href: "/client/profile",
+      icon: <HiUser className="w-6 h-6" />,
+    },
+    {
+      name: "我的订单",
+      href: "/client/orders",
+      icon: <HiTicket className="w-6 h-6" />,
+    },
+    {
+      name: "我的收藏",
+      href: "/client/favorites",
+      icon: <HiHeart className="w-6 h-6" />,
+    },
+    {
+      name: "最近浏览",
+      href: "/client/history",
+      icon: <HiClock className="w-6 h-6" />,
+    },
+    {
+      name: "待评价",
+      href: "/client/reviews",
+      icon: <HiChatBubbleBottomCenterText className="w-6 h-6" />,
+    },
   ];
 
   return (
-    // 【修改点】：将 h-screen 改为 h-full，并确保在移动端隐藏 (hidden md:flex)
-    // 这里的 hidden md:flex 是为了配合新的 LayoutWrapper，防止在移动端出现双重导航
     <aside 
-      className={`hidden md:flex h-full bg-base-100 text-base-content flex-col transition-all duration-300 border-r border-base-200 ${
+      className={`hidden md:flex h-screen bg-base-100 text-base-content flex-col transition-all duration-300 border-r border-base-200 ${
         isExpanded ? "w-64" : "w-20"
       }`}
     >
       <div className="h-16 flex items-center justify-between px-4 border-b border-base-200">
-        {isExpanded && <span className="font-bold text-xl truncate text-secondary">商家中心</span>}
+        {isExpanded && <span className="font-bold text-xl truncate text-primary">用户中心</span>}
         <button 
           onClick={toggleSidebar} 
           className="btn btn-square btn-ghost btn-sm"
-          title={isExpanded ? "收起菜单" : "展开菜单"}
+          title={isExpanded ? "收起" : "展开"}
         >
            {isExpanded ? <HiChevronLeft className="w-5 h-5" /> : <HiChevronRight className="w-5 h-5" />}
         </button>
@@ -65,7 +75,7 @@ export default function MerchantSidebar() {
               href={item.href}
               className={`flex items-center p-3 rounded-xl transition-all duration-200 ${
                 isActive 
-                  ? "bg-secondary text-secondary-content shadow-md" 
+                  ? "bg-primary text-primary-content shadow-md" 
                   : "hover:bg-base-200 text-base-content/70 hover:text-base-content"
               } ${isExpanded ? "justify-start gap-3" : "justify-center"}`}
               title={!isExpanded ? item.name : ""}
@@ -87,13 +97,13 @@ export default function MerchantSidebar() {
             className={`flex items-center p-3 rounded-xl hover:bg-error/10 text-base-content/70 hover:text-error transition-all ${
               isExpanded ? "justify-start gap-3" : "justify-center"
             }`}
-             title="返回主站"
+             title="返回首页"
          >
             <HiArrowLeftStartOnRectangle className="w-6 h-6 shrink-0" />
             <span className={`whitespace-nowrap transition-opacity duration-300 ${
                isExpanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
             }`}>
-               返回主站
+               返回首页
             </span>
          </Link>
       </div>

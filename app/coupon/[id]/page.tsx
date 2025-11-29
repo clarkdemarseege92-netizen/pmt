@@ -5,7 +5,9 @@ import { notFound } from "next/navigation";
 import { HiShoppingCart, HiCheckCircle, HiClock, HiBuildingStorefront } from "react-icons/hi2";
 import BuyButton from "@/components/BuyButton";
 import BackButton from "@/components/BackButton";
+import FavoriteButton from "@/components/FavoriteButton"; // 引入
 import Link from "next/link";
+
 // ----- 类型定义 -----
 
 type MultiLangName = {
@@ -27,7 +29,14 @@ type CouponProductRelation = {
   products: ProductDetail;
 };
 
-// 【修改 1】: 更新类型定义，添加 merchants 关联信息
+// 【修复 1】: 提取商户信息类型，方便复用
+type MerchantInfo = {
+  merchant_id: string;
+  shop_name: string;
+  promptpay_id?: string;
+};
+
+// 更新 CouponDetail 类型
 type CouponDetail = {
   coupon_id: string;
   name: MultiLangName;
@@ -37,14 +46,10 @@ type CouponDetail = {
   image_urls: string[];
   rules: MultiLangName;
   description?: MultiLangName;
-  usage_instructions?: string; // 兼容旧字段名
+  usage_instructions?: string;
   coupon_products: CouponProductRelation[];
-  // 新增商户信息
-  merchants: {
-    merchant_id: string;
-    shop_name: string;
-    promptpay_id: string;
-  } | null;
+  // 【修复 2】: 使用联合类型替代 any
+  merchants: MerchantInfo | MerchantInfo[] | null;
 };
 
 // 辅助函数
@@ -60,10 +65,9 @@ export default async function CouponDetailPage({
 }) {
   const { id } = await params;
   const supabase = await createSupabaseServerClient();
-  const lang = 'th'; // 实际项目中可从 cookie 或 header 获取
+  const lang = 'th';
 
   // 1. 核心查询
-  // 【修改 2】: 在 select 中增加 merchants 的联表查询
   const { data: couponRaw, error } = await supabase
     .from('coupons')
     .select(`
@@ -85,8 +89,6 @@ export default async function CouponDetailPage({
     .eq('coupon_id', id)
     .single();
 
-  // 错误处理：确保 coupon 存在且商户 PromptPay ID 存在
-  // 注意：如果商户没设置 PromptPay，可能导致无法购买，这里我们允许页面加载但按钮可能会报错
   if (error || !couponRaw) {
     console.error("Error fetching coupon:", error);
     notFound();
@@ -94,22 +96,24 @@ export default async function CouponDetailPage({
 
   const coupon = couponRaw as unknown as CouponDetail;
   
-  // 计算折扣率
+  const merchantData = Array.isArray(coupon.merchants) 
+    ? coupon.merchants[0] 
+    : coupon.merchants;
+
+  const paymentIdentifier = merchantData?.promptpay_id || merchantData?.merchant_id || '';
+
   const discountPercentage = coupon.original_value > 0 
     ? Math.round(((coupon.original_value - coupon.selling_price) / coupon.original_value) * 100)
     : 0;
 
-  // 获取商户收款码 (如果为空则设为空字符串，由 BuyButton 处理错误)
-  // const merchantPromptPayId = coupon.merchants?.promptpay_id || '';
-  console.log('优惠券页面商户数据:', {
-  couponId: coupon.coupon_id,
-  merchantPromptPayId: coupon.merchants?.promptpay_id,
-  merchants: coupon.merchants
-});
-
   return (
     <main className="min-h-screen bg-base-200 pb-24">
-      {/* 1. 顶部轮播图 (保留原样) */}
+      {/* 悬浮返回按钮 */}
+      <div className="fixed top-4 left-4 z-50">
+        <BackButton />
+      </div>
+
+      {/* 1. 顶部轮播图 */}
       <div className="w-full bg-white">
         <div className="carousel w-full h-[300px] md:h-[400px]">
           {coupon.image_urls && coupon.image_urls.length > 0 ? (
@@ -142,19 +146,28 @@ export default async function CouponDetailPage({
       </div>
 
       <div className="max-w-4xl mx-auto">
-        {/* 2. 核心信息卡片 (保留原样) */}
+        {/* 2. 核心信息卡片 */}
         <div className="bg-base-100 p-6 shadow-sm md:rounded-b-xl mb-4">
           <div className="flex justify-between items-start gap-4">
-             <div>
-                <h1 className="text-2xl font-bold text-base-content">
-                    {getLangName(coupon.name, lang)}
-                </h1>
-                {/* [修改] 店铺名称改为跳转链接 */}
-                {coupon.merchants ? (
-                  <Link href={`/shop/${coupon.merchants.merchant_id}`} className="group inline-block">
+             <div className="flex-1">
+                <div className="flex justify-between items-start">
+                    <h1 className="text-2xl font-bold text-base-content mr-2">
+                        {getLangName(coupon.name, lang)}
+                    </h1>
+                    {/* 收藏按钮：浮在标题右侧 */}
+                    <FavoriteButton 
+                        itemId={coupon.coupon_id} 
+                        itemType="coupon" 
+                        variant="button"
+                        className="btn-neutral btn-outline btn-xs sm:btn-sm"
+                    />
+                </div>
+                
+                {merchantData ? (
+                  <Link href={`/shop/${merchantData.merchant_id}`} className="group inline-block">
                     <p className="text-sm text-base-content/60 mt-1 group-hover:text-primary transition-colors flex items-center gap-1 cursor-pointer">
                         <HiBuildingStorefront className="w-4 h-4" />
-                        店铺: {coupon.merchants.shop_name} 
+                        店铺: {merchantData.shop_name} 
                         <span className="text-xs opacity-50 group-hover:underline">(进店逛逛)</span>
                     </p>
                   </Link>
@@ -183,7 +196,7 @@ export default async function CouponDetailPage({
           </p>
         </div>
 
-        {/* 3. 详情与须知 (Tabs) (保留原样) */}
+        {/* 3. 详情与须知 (Tabs) */}
         <div className="bg-base-100 shadow-sm md:rounded-xl overflow-hidden">
           <div role="tablist" className="tabs tabs-bordered tabs-lg grid grid-cols-2">
             <input type="radio" name="coupon_tabs" role="tab" className="tab" aria-label="套餐详情" defaultChecked />
@@ -249,16 +262,13 @@ export default async function CouponDetailPage({
                <span className="text-xs text-base-content/60">总价</span>
                <span className="text-2xl font-bold text-primary">฿{coupon.selling_price}</span>
             </div>
-            {/* 【修改 3】: 传递 sellingPrice 和 merchantPromptPayId */}
-            <BackButton />
-
-
-
-<BuyButton
-  couponId={coupon.coupon_id}
-  merchantPromptPayId={coupon.merchants?.promptpay_id || (Array.isArray(coupon.merchants) ? coupon.merchants[0]?.promptpay_id : '')}
-  stockQuantity={coupon.stock_quantity}
-/>
+            
+            {/* 核心修复：使用 paymentIdentifier */}
+            <BuyButton
+              couponId={coupon.coupon_id}
+              merchantPromptPayId={paymentIdentifier} 
+              stockQuantity={coupon.stock_quantity}
+            />
          </div>
       </div>
 

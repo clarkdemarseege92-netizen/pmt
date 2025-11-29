@@ -9,6 +9,8 @@ import { type ExtendedMerchantCustomization } from "@/app/types/merchantDesign";
 import { CartProvider } from "@/context/CartContext";
 import ProductCard from '@/components/ProductCard';
 import CartFooter from '@/components/CartFooter';
+import BackButton from "@/components/BackButton";
+import FavoriteButton from "@/components/FavoriteButton"; // 引入
 
 
 // 添加日志函数
@@ -84,13 +86,18 @@ function ShopContent({ merchantId, shopData }: { merchantId: string; shopData: S
     backgroundAttachment: config.background_image_url ? 'fixed' as const : 'scroll' as const,
     backgroundColor: config.background_image_url ? 'transparent' : '#f3f4f6',
     minHeight: '100vh',
-    // 添加字体支持
     fontFamily: config.font_family === 'serif' ? 'serif' : config.font_family === 'mono' ? 'monospace' : 'sans-serif'
   } as React.CSSProperties;
 
   return (
     <CartProvider merchantId={merchantId}>
       <main className="min-h-screen pb-32" style={shopStyles}>
+        
+        {/* 悬浮返回按钮 */}
+        <div className="fixed top-4 left-4 z-50">
+          <BackButton />
+        </div>
+
         <div className="max-w-md mx-auto relative z-10">
           {/* 1. 店铺头部信息 (封面图, Logo, 名称) */}
           <div className="relative bg-white shadow-xl">
@@ -119,16 +126,14 @@ function ShopContent({ merchantId, shopData }: { merchantId: string; shopData: S
                   )}
                 </div>
                 
-                {/* 关注/收藏按钮 (动态颜色) */}
-                <button 
-                  className="btn btn-sm text-white border-0 shadow-md"
-                  style={{ 
-                    backgroundColor: themeColor,
-                    borderRadius: config.button_style === 'pill' ? '9999px' : config.button_style === 'square' ? '0px' : '0.5rem'
-                  }}
-                >
-                  + 关注
-                </button>
+                {/* 关注/收藏按钮 (替换为功能组件) */}
+                <FavoriteButton 
+                  itemId={merchant.merchant_id} 
+                  itemType="merchant" 
+                  variant="button"
+                  themeColor={themeColor} // 传入店铺主题色
+                  className="rounded-[--theme-button-radius]" // 使用 CSS 变量应用圆角
+                />
               </div>
 
               {/* 名称和描述 */}
@@ -222,7 +227,7 @@ function ShopContent({ merchantId, shopData }: { merchantId: string; shopData: S
               </div>
             )}
 
-            {/* 店铺公告栏 (如果商户设置了) */}
+            {/* 店铺公告栏 */}
             {config.announcement_text && (
               <div 
                 className="p-3 bg-warning/20 text-warning-content text-sm flex items-center gap-2 border-l-4 border-warning"
@@ -254,8 +259,6 @@ function ShopContent({ merchantId, shopData }: { merchantId: string; shopData: S
         config={config} 
         themeColor={themeColor}
       />
-
-    
   </div>
 ))}
               </div>
@@ -263,7 +266,7 @@ function ShopContent({ merchantId, shopData }: { merchantId: string; shopData: S
           </div>
         </div>
 
-        {/* 3. 底部购物车栏 - 移除 themeColor 和 buttonStyle 属性 */}
+        {/* 3. 底部购物车栏 */}
         <CartFooter />
       </main>
     </CartProvider>
@@ -326,12 +329,6 @@ export default async function ShopPage({
     log.info('开始查询商户装修配置', { merchantId });
     
     const customizationRes = await getMerchantCustomization(merchantId);
-    log.info('装修配置查询完成', { 
-      success: customizationRes.success,
-      hasData: !!customizationRes.data,
-      error: customizationRes.error,
-      receivedData: customizationRes.data
-    });
     
     // 使用默认配置作为后备
     const defaultConfig: ExtendedMerchantCustomization = {
@@ -354,12 +351,11 @@ export default async function ShopPage({
       detail_page_styles: {}
     };
 
-    // 深度合并配置，确保所有字段都有值
+    // 深度合并配置
     const customization = customizationRes.success && customizationRes.data 
       ? {
           ...defaultConfig,
           ...customizationRes.data,
-          // 确保 display_config 被正确合并
           display_config: {
             ...defaultConfig.display_config,
             ...(customizationRes.data.display_config || {})
