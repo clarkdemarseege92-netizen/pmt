@@ -2,11 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabaseClient';
-import { 
-  getMerchantCustomization, 
-  MerchantCustomization,
-  DisplayConfig
-} from '@/app/actions/merchantDesign';
+import { getMerchantCustomization } from '@/app/actions/merchantDesign';
+import type { MerchantCustomization, DisplayConfig } from '@/app/types/merchantDesign';
 import Image from "next/image";
 import Link from "next/link";
 import { 
