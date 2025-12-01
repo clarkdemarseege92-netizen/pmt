@@ -42,10 +42,23 @@ export default function Navbar() {
     const fetchUser = async () => {
       console.log('🔵 NAVBAR: fetchUser 开始', new Date().toISOString());
       try {
+        console.log('🔵 NAVBAR: 检查 cookies...');
+        const authCookies = document.cookie.split(';')
+          .filter(c => c.trim().startsWith('sb-'));
+        console.log('🔵 NAVBAR: Auth cookies 数量:', authCookies.length);
+
         console.log('🔵 NAVBAR: 调用 getUser...');
         const startTime = Date.now();
 
-        const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+        // 添加超时保护
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('getUser timeout after 10s')), 10000)
+        );
+
+        const getUserPromise = supabase.auth.getUser();
+
+        const result = await Promise.race([getUserPromise, timeoutPromise]);
+        const { data: { user }, error: getUserError } = result;
 
         const endTime = Date.now();
         console.log(`🔵 NAVBAR: getUser 完成，耗时 ${endTime - startTime}ms`);
