@@ -109,7 +109,7 @@ export async function GET(request: Request) {
     }
 
     console.error("AUTH CALLBACK: 交换 code 失败。Supabase 错误:", error);
-    console.error("AUTH CALLBACK: 失败详情 (Message):", error.message);
+    console.error("AUTH CALLBACK: 失败详情 (Message):", error?.message || "未知错误");
 
   } else {
      console.warn("AUTH CALLBACK: 访问 /auth/callback，但 URL 中没有 code");
