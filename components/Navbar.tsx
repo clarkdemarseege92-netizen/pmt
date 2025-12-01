@@ -38,10 +38,68 @@ export default function Navbar() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
 
-    // 【关键修复】不使用 getSession()，完全依赖 auth 监听器
-    // 因为 cookie 格式导致 getSession() 会卡住
-    console.log('🔵 NAVBAR: 设置 auth 状态监听器（不调用 getSession）');
+    // 定义 profile 获取函数（复用逻辑）
+    const fetchProfile = async (userId: string) => {
+      console.log('🔵 NAVBAR: 开始获取 profile，user.id=', userId);
+      try {
+        const profileStartTime = Date.now();
 
+        // 添加超时保护
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => {
+            console.error('🔴 NAVBAR: Profile 查询超时！');
+            reject(new Error('Profile query timeout'));
+          }, 3000)
+        );
+
+        const queryPromise = supabase
+          .from('profiles')
+          .select('avatar_url')
+          .eq('id', userId)
+          .maybeSingle();
+
+        const result = await Promise.race([queryPromise, timeoutPromise]);
+        const { data: profileData, error } = result;
+
+        const profileEndTime = Date.now();
+        console.log(`🔵 NAVBAR: profile 查询完成，耗时 ${profileEndTime - profileStartTime}ms`);
+
+        if (error) {
+          console.error('🔴 NAVBAR: Error fetching profile:', error.message);
+          setProfile(null);
+        } else if (profileData) {
+          console.log('🟢 NAVBAR: Profile 设置成功，avatar_url=', profileData.avatar_url);
+          setProfile(profileData);
+        } else {
+          console.log('🟡 NAVBAR: Profile 不存在，使用默认头像');
+          setProfile(null);
+        }
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('🔴 NAVBAR: Profile 查询异常:', errorMessage);
+        setProfile(null);
+      }
+    };
+
+    // 【关键修复】立即检查当前 session
+    console.log('🔵 NAVBAR: 立即检查当前 auth 状态...');
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      console.log('🔵 NAVBAR: 初始 session 检查:', {
+        hasSession: !!session,
+        userId: session?.user?.id
+      });
+
+      if (session?.user) {
+        setUser(session.user);
+        fetchProfile(session.user.id);
+      }
+    }).catch(err => {
+      console.error('🔴 NAVBAR: getSession 失败:', err);
+      // 即使失败也继续，依赖监听器
+    });
+
+    // 设置 auth 状态监听器（监听后续变化）
+    console.log('🔵 NAVBAR: 设置 auth 状态监听器');
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔵 NAVBAR: Auth 状态变化:', {
         event,
@@ -53,34 +111,8 @@ export default function Navbar() {
       const currentUser = session?.user ?? null;
       setUser(currentUser);
 
-      // 当用户状态变化时，更新 profile
       if (currentUser) {
-        console.log('🔵 NAVBAR: 用户已登录，开始获取 profile，user.id=', currentUser.id);
-        try {
-          const profileStartTime = Date.now();
-          const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('avatar_url')
-            .eq('id', currentUser.id)
-            .maybeSingle();
-
-          const profileEndTime = Date.now();
-          console.log(`🔵 NAVBAR: profile 查询完成，耗时 ${profileEndTime - profileStartTime}ms`);
-
-          if (error) {
-            console.error('🔴 NAVBAR: Error fetching profile:', error.message);
-            setProfile(null);
-          } else if (profileData) {
-            console.log('🟢 NAVBAR: Profile 设置成功，avatar_url=', profileData.avatar_url);
-            setProfile(profileData);
-          } else {
-            console.log('🟡 NAVBAR: Profile 不存在，使用默认头像');
-            setProfile(null);
-          }
-        } catch (err) {
-          console.error('🔴 NAVBAR: Unexpected error fetching profile:', err);
-          setProfile(null);
-        }
+        fetchProfile(currentUser.id);
       } else {
         console.log('🟡 NAVBAR: 用户未登录');
         setProfile(null);
