@@ -60,12 +60,12 @@ export default function LoginPage() {
     if (error) {
       console.error('🔴 LOGIN PAGE: 登录失败:', error.message);
       setError(error.message);
+      setLoading(false);
     } else {
       console.log('🟢 LOGIN PAGE: 登录成功，准备跳转到首页');
-      // 【修改 1】登录成功跳转到首页
-      router.push(`/`);
+      // 【关键修复】使用 window.location.href 强制刷新，确保服务器端获取新的 cookies
+      window.location.href = '/';
     }
-    setLoading(false);
   };
 
   // ----- 邮箱/密码注册 -----
@@ -95,10 +95,8 @@ export default function LoginPage() {
     }
 
     console.log('🟢 LOGIN PAGE: 注册成功，准备跳转到首页');
-    // 【修改 2】移除自动升级 RPC 代码
-    // 注册成功直接跳转首页
-    router.push(`/`);
-    setLoading(false);
+    // 【关键修复】使用 window.location.href 强制刷新，确保服务器端获取新的 cookies
+    window.location.href = '/';
   };
 
   return (

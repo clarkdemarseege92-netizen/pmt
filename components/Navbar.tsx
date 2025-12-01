@@ -42,7 +42,20 @@ export default function Navbar() {
     const fetchUser = async () => {
       console.log('🔵 NAVBAR: fetchUser 开始');
       try {
-        const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+        // 添加超时保护
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => reject(new Error('getUser timeout after 5s')), 5000)
+        );
+
+        const getUserPromise = supabase.auth.getUser();
+
+        const result = await Promise.race([
+          getUserPromise,
+          timeoutPromise
+        ]);
+
+        const { data: { user }, error: getUserError } = result;
+
         console.log('🔵 NAVBAR: getUser 结果:', {
           hasUser: !!user,
           userId: user?.id,
@@ -86,7 +99,10 @@ export default function Navbar() {
           console.log('🟡 NAVBAR: 用户未登录');
         }
       } catch (err) {
-        console.error('🔴 NAVBAR: fetchUser 发生异常:', err);
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        console.error('🔴 NAVBAR: fetchUser 发生异常:', errorMessage);
+        setUser(null);
+        setProfile(null);
       }
     };
     fetchUser();
