@@ -19,6 +19,11 @@ const nextConfig: NextConfig = {
       static: 0,
     },
   },
+  // 【关键修复】禁用 Vercel 的自动静态优化
+  generateBuildId: async () => {
+    // 使用时间戳确保每次部署都是新的 build ID
+    return `build-${Date.now()}`;
+  },
 };
 
 export default nextConfig;

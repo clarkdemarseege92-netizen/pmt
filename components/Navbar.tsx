@@ -40,21 +40,15 @@ export default function Navbar() {
     setMounted(true);
 
     const fetchUser = async () => {
-      console.log('🔵 NAVBAR: fetchUser 开始');
+      console.log('🔵 NAVBAR: fetchUser 开始', new Date().toISOString());
       try {
-        // 添加超时保护
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('getUser timeout after 5s')), 5000)
-        );
+        console.log('🔵 NAVBAR: 调用 getUser...');
+        const startTime = Date.now();
 
-        const getUserPromise = supabase.auth.getUser();
+        const { data: { user }, error: getUserError } = await supabase.auth.getUser();
 
-        const result = await Promise.race([
-          getUserPromise,
-          timeoutPromise
-        ]);
-
-        const { data: { user }, error: getUserError } = result;
+        const endTime = Date.now();
+        console.log(`🔵 NAVBAR: getUser 完成，耗时 ${endTime - startTime}ms`);
 
         console.log('🔵 NAVBAR: getUser 结果:', {
           hasUser: !!user,
