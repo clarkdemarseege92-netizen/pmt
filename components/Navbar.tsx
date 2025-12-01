@@ -47,28 +47,30 @@ export default function Navbar() {
           .filter(c => c.trim().startsWith('sb-'));
         console.log('🔵 NAVBAR: Auth cookies 数量:', authCookies.length);
 
-        console.log('🔵 NAVBAR: 调用 getUser...');
+        // 打印 cookie 内容（前 100 字符）
+        if (authCookies.length > 0) {
+          const cookiePreview = authCookies[0].substring(0, 100);
+          console.log('🔵 NAVBAR: Cookie 预览:', cookiePreview + '...');
+        }
+
+        console.log('🔵 NAVBAR: 尝试 getSession()...');
         const startTime = Date.now();
 
-        // 添加超时保护
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => reject(new Error('getUser timeout after 10s')), 10000)
-        );
-
-        const getUserPromise = supabase.auth.getUser();
-
-        const result = await Promise.race([getUserPromise, timeoutPromise]);
-        const { data: { user }, error: getUserError } = result;
+        // 先尝试 getSession（更快，不需要网络请求）
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
 
         const endTime = Date.now();
-        console.log(`🔵 NAVBAR: getUser 完成，耗时 ${endTime - startTime}ms`);
+        console.log(`🔵 NAVBAR: getSession 完成，耗时 ${endTime - startTime}ms`);
 
-        console.log('🔵 NAVBAR: getUser 结果:', {
-          hasUser: !!user,
-          userId: user?.id,
-          error: getUserError?.message
+        console.log('🔵 NAVBAR: Session 结果:', {
+          hasSession: !!session,
+          hasUser: !!session?.user,
+          userId: session?.user?.id,
+          expiresAt: session?.expires_at,
+          error: sessionError?.message
         });
 
+        const user = session?.user ?? null;
         setUser(user);
 
         // 如果用户已登录，获取 profile 信息
