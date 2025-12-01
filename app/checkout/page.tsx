@@ -6,6 +6,9 @@ import { useState } from 'react';
 import LoginModal from '@/components/LoginModal';
 import { CartItem, MultiLangName } from '@/types/cart'; // 导入类型
 
+// 禁用静态生成，避免构建时预渲染错误
+export const dynamic = 'force-dynamic';
+
 // 修复 getLangName 函数的类型
 const getLangName = (name: MultiLangName | null | undefined, lang = 'th'): string => {
   if (!name) return "N/A";
