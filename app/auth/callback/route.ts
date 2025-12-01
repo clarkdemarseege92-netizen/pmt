@@ -1,28 +1,55 @@
 // 文件: /app/auth/callback/route.ts
-import { createSupabaseServerClient } from "@/lib/supabaseServer";
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from "next/server";
-import { redirect } from "next/navigation";
+import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
   console.log("AUTH CALLBACK: 路由处理器被命中");
   console.log("AUTH CALLBACK: 完整的请求 URL:", request.url);
 
-  const { searchParams } = new URL(request.url);
-  const code = searchParams.get("code");
-  const errorFromGoogle = searchParams.get("error");
-  
-  // 【修改 1】默认跳转到首页 "/"，而不是商家后台
-  const nextUrl = searchParams.get("next") || "/";
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get("code");
+  const errorFromGoogle = requestUrl.searchParams.get("error");
+
+  // 默认跳转到首页
+  const nextUrl = requestUrl.searchParams.get("next") || "/";
 
   if (errorFromGoogle) {
-    console.error("AUTH CALLBACK: Google/OAuth 提供商返回了一个错误:", errorFromGoogle, "错误描述:", searchParams.get("error_description"));
+    console.error("AUTH CALLBACK: OAuth 提供商返回了错误:", errorFromGoogle);
     return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(errorFromGoogle)}`, request.url));
   }
 
   if (code) {
     console.log("AUTH CALLBACK: 发现授权码(code):", code.substring(0, 10) + "...");
 
-    const supabase = await createSupabaseServerClient();
+    const cookieStore = await cookies();
+
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+          set(name: string, value: string, options) {
+            try {
+              cookieStore.set(name, value, options);
+            } catch (error) {
+              // 在某些 Next.js 环境下 set 可能失败，捕获错误
+              console.error('AUTH CALLBACK: Cookie set error:', error);
+            }
+          },
+          remove(name: string, options) {
+            try {
+              cookieStore.set(name, '', options);
+            } catch (error) {
+              console.error('AUTH CALLBACK: Cookie remove error:', error);
+            }
+          },
+        },
+      }
+    );
 
     console.log("AUTH CALLBACK: 正在尝试交换 code 获取 session...");
     const { data, error } = await supabase.auth.exchangeCodeForSession(code);
@@ -105,7 +132,7 @@ export async function GET(request: Request) {
       }
 
       console.log("AUTH CALLBACK: 操作完成，重定向到:", nextUrl);
-      return redirect(nextUrl);
+      return NextResponse.redirect(new URL(nextUrl, requestUrl.origin));
     }
 
     console.error("AUTH CALLBACK: 交换 code 失败。Supabase 错误:", error);
@@ -116,5 +143,5 @@ export async function GET(request: Request) {
   }
 
   console.log("AUTH CALLBACK: 重定向到登录页并显示 AUTH_ERROR");
-  return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent('AUTH_ERROR')}`, request.url));
+  return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent('AUTH_ERROR')}`, requestUrl.origin));
 }

@@ -23,6 +23,20 @@ export default function DebugAuthPage() {
     addLog(`🔵 Supabase URL: ${supabaseUrl}`);
     addLog(`🔵 Supabase Key: ${supabaseKey ? '已设置 (' + supabaseKey.substring(0, 20) + '...)' : '未设置'}`);
 
+    // 检查 cookies
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    const authCookies = cookies.filter(c =>
+      c.startsWith('sb-') ||
+      c.includes('access') ||
+      c.includes('refresh') ||
+      c.includes('auth')
+    );
+    addLog(`🔵 Auth Cookies 数量: ${authCookies.length}`);
+    authCookies.forEach((cookie, i) => {
+      const [name] = cookie.split('=');
+      addLog(`🔵 Cookie ${i + 1}: ${name}`);
+    });
+
     const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
     const testAuth = async () => {

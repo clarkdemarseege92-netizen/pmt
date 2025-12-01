@@ -54,6 +54,7 @@ export default function LoginPage() {
       hasUser: !!data?.user,
       userId: data?.user?.id,
       hasSession: !!data?.session,
+      sessionToken: data?.session?.access_token?.substring(0, 20),
       error: error?.message
     });
 
@@ -62,7 +63,12 @@ export default function LoginPage() {
       setError(error.message);
       setLoading(false);
     } else {
-      console.log('🟢 LOGIN PAGE: 登录成功，准备跳转到首页');
+      console.log('🟢 LOGIN PAGE: 登录成功，等待 500ms 确保 cookies 写入');
+
+      // 等待一下确保 cookies 写入完成
+      await new Promise(resolve => setTimeout(resolve, 500));
+
+      console.log('🟢 LOGIN PAGE: 准备跳转到首页');
       // 【关键修复】使用 window.location.href 强制刷新，确保服务器端获取新的 cookies
       window.location.href = '/';
     }
