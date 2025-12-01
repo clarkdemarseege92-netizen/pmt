@@ -12,6 +12,13 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  // 【关键修复】禁用实验性的部分预渲染，确保认证状态正确
+  experimental: {
+    staleTimes: {
+      dynamic: 0,
+      static: 0,
+    },
+  },
 };
 
 export default nextConfig;

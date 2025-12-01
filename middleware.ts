@@ -57,7 +57,20 @@ export async function middleware(request: NextRequest) {
   )
 
   // 刷新 session（如果过期会自动刷新）
-  await supabase.auth.getUser()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // 【关键修复】添加缓存控制头，防止 Vercel 边缘缓存
+  response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate')
+  response.headers.set('CDN-Cache-Control', 'no-store')
+  response.headers.set('Vercel-CDN-Cache-Control', 'no-store')
+
+  // 添加认证状态到响应头（用于调试）
+  if (user) {
+    response.headers.set('X-User-Authenticated', 'true')
+    response.headers.set('X-User-ID', user.id)
+  } else {
+    response.headers.set('X-User-Authenticated', 'false')
+  }
 
   return response
 }

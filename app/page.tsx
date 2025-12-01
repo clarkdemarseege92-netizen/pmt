@@ -4,6 +4,10 @@ import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import Link from "next/link";
 
+// 【关键修复】禁用静态生成和缓存，确保每次请求都是动态的
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 // 定义数据类型 (基于我们的数据库设计)
 // 优惠券名称
 type MultiLangName = {
