@@ -33,24 +33,32 @@ export default function Navbar() {
 
   useEffect(() => {
     console.log('🔵 NAVBAR: useEffect 开始执行');
-
-    // 忽略此行警告，这是处理 Hydration 的标准模式
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
+
+    // 防止重复获取 profile
+    let currentFetchingUserId: string | null = null;
 
     // 定义 profile 获取函数（复用逻辑）
     const fetchProfile = async (userId: string) => {
+      // 如果正在获取相同用户的 profile，跳过
+      if (currentFetchingUserId === userId) {
+        console.log('🟡 NAVBAR: 跳过重复的 profile 查询，userId=', userId);
+        return;
+      }
+
+      currentFetchingUserId = userId;
       console.log('🔵 NAVBAR: 开始获取 profile，user.id=', userId);
       try {
         const profileStartTime = Date.now();
 
-        // 添加超时保护
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => {
+        // 添加超时保护，并保存定时器 ID 以便清理
+        let timeoutId: NodeJS.Timeout;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+          timeoutId = setTimeout(() => {
             console.error('🔴 NAVBAR: Profile 查询超时！');
             reject(new Error('Profile query timeout'));
-          }, 3000)
-        );
+          }, 5000); // 增加到 5 秒，给网络更多时间
+        });
 
         const queryPromise = supabase
           .from('profiles')
@@ -59,6 +67,10 @@ export default function Navbar() {
           .maybeSingle();
 
         const result = await Promise.race([queryPromise, timeoutPromise]);
+
+        // 查询完成，清除超时定时器
+        clearTimeout(timeoutId!);
+
         const { data: profileData, error } = result;
 
         const profileEndTime = Date.now();
@@ -78,6 +90,9 @@ export default function Navbar() {
         const errorMessage = err instanceof Error ? err.message : String(err);
         console.error('🔴 NAVBAR: Profile 查询异常:', errorMessage);
         setProfile(null);
+      } finally {
+        // 查询完成后重置标志
+        currentFetchingUserId = null;
       }
     };
 
