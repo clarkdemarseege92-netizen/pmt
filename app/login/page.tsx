@@ -40,41 +40,64 @@ export default function LoginPage() {
 
   // ----- 邮箱/密码登录 -----
   const handleEmailLogin = async () => {
+    console.log('🟢 LOGIN PAGE: 开始邮箱登录');
     setLoading(true);
     setError(null);
-    const { error } = await supabase.auth.signInWithPassword({
+
+    const { data, error } = await supabase.auth.signInWithPassword({
       email: email,
       password: password,
     });
 
+    console.log('🟢 LOGIN PAGE: 登录结果:', {
+      hasData: !!data,
+      hasUser: !!data?.user,
+      userId: data?.user?.id,
+      hasSession: !!data?.session,
+      error: error?.message
+    });
+
     if (error) {
+      console.error('🔴 LOGIN PAGE: 登录失败:', error.message);
       setError(error.message);
     } else {
+      console.log('🟢 LOGIN PAGE: 登录成功，准备跳转到首页');
       // 【修改 1】登录成功跳转到首页
-      router.push(`/`); 
+      router.push(`/`);
     }
     setLoading(false);
   };
 
   // ----- 邮箱/密码注册 -----
   const handleEmailSignUp = async () => {
+    console.log('🟢 LOGIN PAGE: 开始邮箱注册');
     setLoading(true);
     setError(null);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email: email,
       password: password,
     });
 
+    console.log('🟢 LOGIN PAGE: 注册结果:', {
+      hasData: !!data,
+      hasUser: !!data?.user,
+      userId: data?.user?.id,
+      hasSession: !!data?.session,
+      error: error?.message
+    });
+
     if (error) {
+      console.error('🔴 LOGIN PAGE: 注册失败:', error.message);
       setError(error.message);
       setLoading(false);
       return;
     }
 
+    console.log('🟢 LOGIN PAGE: 注册成功，准备跳转到首页');
     // 【修改 2】移除自动升级 RPC 代码
     // 注册成功直接跳转首页
-    router.push(`/`); 
+    router.push(`/`);
     setLoading(false);
   };
 

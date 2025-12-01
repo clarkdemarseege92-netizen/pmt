@@ -7,6 +7,16 @@ import { supabase } from "@/lib/supabaseClient";
 // import { User } from "@supabase/supabase-js"; 
 import Image from "next/image"; // 修复：现在我们会真正使用这个组件
 
+// 定义分类类型
+type Category = {
+  category_id: string;
+  name: string | { th?: string; en?: string; [key: string]: string | undefined };
+  parent_id: string | null;
+  icon_url?: string;
+  sort_order?: number;
+  subcategories?: Category[];
+};
+
 // 定义商品类型
 type Product = {
   product_id: string;
@@ -15,6 +25,15 @@ type Product = {
   image_urls: string[];
   name: { th: string; en: string; [key: string]: string };
   description: { th: string; en: string; [key: string]: string };
+  category_id?: string;
+};
+
+// --- 工具函数：获取分类名称 ---
+const getCategoryName = (name: string | { th?: string; en?: string; [key: string]: string | undefined }): string => {
+  if (typeof name === 'string') {
+    return name;
+  }
+  return name.th || name.en || "未命名";
 };
 
 // --- 工具函数：图片转 WebP ---
@@ -48,6 +67,10 @@ export default function ProductsPage() {
   // const [user, setUser] = useState<User | null>(null);
   const [merchantId, setMerchantId] = useState<string | null>(null);
 
+  // 分类状态
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [categoriesLoading, setCategoriesLoading] = useState(false);
+
   // 模态框状态
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -63,7 +86,8 @@ export default function ProductsPage() {
     descTH: "",
     descEN: "",
     price: "",
-    imageUrl: "", 
+    imageUrl: "",
+    categoryId: "",
   });
 
   // 1. 初始化
@@ -78,7 +102,7 @@ export default function ProductsPage() {
           .select("merchant_id")
           .eq("owner_id", user.id)
           .single();
-        
+
         if (merchant) {
           setMerchantId(merchant.merchant_id);
           fetchProducts(merchant.merchant_id);
@@ -86,7 +110,24 @@ export default function ProductsPage() {
       }
     };
     init();
+    fetchCategories();
   }, []);
+
+  // 1.5 获取分类列表
+  const fetchCategories = async () => {
+    setCategoriesLoading(true);
+    try {
+      const response = await fetch('/api/categories');
+      if (response.ok) {
+        const data = await response.json();
+        setCategories(data);
+      }
+    } catch (error) {
+      console.error('Error fetching categories:', error);
+    } finally {
+      setCategoriesLoading(false);
+    }
+  };
 
   // 2. 获取商品列表
   const fetchProducts = async (mId: string) => {
@@ -113,11 +154,12 @@ export default function ProductsPage() {
         descEN: product.description?.en || "",
         price: product.original_price.toString(),
         imageUrl: product.image_urls?.[0] || "",
+        categoryId: product.category_id || "",
       });
     } else {
       setEditingProduct(null);
       setFormData({
-        nameTH: "", nameEN: "", descTH: "", descEN: "", price: "", imageUrl: ""
+        nameTH: "", nameEN: "", descTH: "", descEN: "", price: "", imageUrl: "", categoryId: ""
       });
     }
     setIsModalOpen(true);
@@ -174,12 +216,19 @@ export default function ProductsPage() {
   const handleSubmit = async () => {
     if (!merchantId) return;
 
+    // 验证必填字段
+    if (!formData.categoryId) {
+      alert("请选择商品分类");
+      return;
+    }
+
     const payload = {
       merchant_id: merchantId,
       name: { th: formData.nameTH, en: formData.nameEN },
       description: { th: formData.descTH, en: formData.descEN },
       original_price: parseFloat(formData.price),
       image_urls: formData.imageUrl ? [formData.imageUrl] : [],
+      category_id: formData.categoryId,
     };
 
     let error;
@@ -212,6 +261,27 @@ export default function ProductsPage() {
     else if (merchantId) fetchProducts(merchantId);
   };
 
+  // 6. 根据 category_id 获取分类名称
+  const getCategoryNameById = (categoryId?: string): string => {
+    if (!categoryId) return "-";
+
+    // 在主分类中查找
+    for (const category of categories) {
+      if (category.category_id === categoryId) {
+        return getCategoryName(category.name);
+      }
+      // 在子分类中查找
+      if (category.subcategories) {
+        for (const sub of category.subcategories) {
+          if (sub.category_id === categoryId) {
+            return `${getCategoryName(category.name)} > ${getCategoryName(sub.name)}`;
+          }
+        }
+      }
+    }
+    return "未分类";
+  };
+
   if (loading) return <div className="p-10 text-center"><span className="loading loading-spinner loading-lg"></span></div>;
 
   return (
@@ -230,13 +300,14 @@ export default function ProductsPage() {
             <tr>
               <th>图片</th>
               <th>名称 (泰/英)</th>
+              <th>分类</th>
               <th>原价</th>
               <th>操作</th>
             </tr>
           </thead>
           <tbody>
             {products.length === 0 ? (
-              <tr><td colSpan={4} className="text-center py-4">暂无商品，请添加。</td></tr>
+              <tr><td colSpan={5} className="text-center py-4">暂无商品，请添加。</td></tr>
             ) : (
               products.map((p) => (
                 <tr key={p.product_id}>
@@ -245,10 +316,10 @@ export default function ProductsPage() {
                       <div className="mask mask-squircle w-12 h-12 relative">
                         {/* 修复：使用 Next.js Image 替代 img，并添加 unoptimized */}
                         {p.image_urls?.[0] ? (
-                           <Image 
-                             src={p.image_urls[0]} 
-                             alt={p.name?.en || 'Product'} 
-                             width={48} 
+                           <Image
+                             src={p.image_urls[0]}
+                             alt={p.name?.en || 'Product'}
+                             width={48}
                              height={48}
                              className="object-cover"
                              unoptimized
@@ -262,6 +333,9 @@ export default function ProductsPage() {
                   <td>
                     <div className="font-bold">{p.name?.th}</div>
                     <div className="text-sm opacity-50">{p.name?.en}</div>
+                  </td>
+                  <td>
+                    <span className="badge badge-outline badge-sm">{getCategoryNameById(p.category_id)}</span>
                   </td>
                   <td>฿{p.original_price}</td>
                   <td>
@@ -299,8 +373,33 @@ export default function ProductsPage() {
               {/* 价格 */}
               <div className="form-control">
                 <label className="label"><span className="label-text">原价 (฿)*</span></label>
-                <input type="number" className="input input-bordered" 
+                <input type="number" className="input input-bordered"
                   value={formData.price} onChange={e => setFormData({...formData, price: e.target.value})} />
+              </div>
+
+              {/* 行业分类 */}
+              <div className="form-control">
+                <label className="label"><span className="label-text">行业分类*</span></label>
+                <select
+                  className="select select-bordered"
+                  value={formData.categoryId}
+                  onChange={e => setFormData({...formData, categoryId: e.target.value})}
+                  disabled={categoriesLoading}
+                >
+                  <option value="">请选择分类</option>
+                  {categories.map((category) => (
+                    <optgroup key={category.category_id} label={getCategoryName(category.name)}>
+                      <option value={category.category_id}>
+                        {getCategoryName(category.name)} (主分类)
+                      </option>
+                      {category.subcategories?.map((sub) => (
+                        <option key={sub.category_id} value={sub.category_id}>
+                          └─ {getCategoryName(sub.name)}
+                        </option>
+                      ))}
+                    </optgroup>
+                  ))}
+                </select>
               </div>
 
               {/* 图片上传区域 */}

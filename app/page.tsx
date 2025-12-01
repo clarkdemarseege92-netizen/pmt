@@ -5,21 +5,21 @@ import Image from "next/image";
 import Link from "next/link";
 
 // 定义数据类型 (基于我们的数据库设计)
-// 优惠券名称 
+// 优惠券名称
 type MultiLangName = {
-  th: string;
-  en: string;
-  [key: string]: string;
+  th?: string;
+  en?: string;
+  [key: string]: string | undefined;
 };
 
 // 分类 [cite: 445, 10]
 type Category = {
   category_id: string;
-  name: MultiLangName;
+  name: string | MultiLangName;
   parent_id: string | null;
 };
 
-// 优惠券 
+// 优惠券
 type Coupon = {
   coupon_id: string;
   name: MultiLangName;
@@ -28,8 +28,11 @@ type Coupon = {
   original_value: number;
 };
 
-// 辅助函数：安全地获取多语言名称 
-const getLangName = (name: MultiLangName, lang = 'th') => {
+// 辅助函数：安全地获取多语言名称
+const getLangName = (name: string | MultiLangName, lang = 'th'): string => {
+  if (typeof name === 'string') {
+    return name;
+  }
   return name[lang] || name['en'] || "N/A";
 };
 
@@ -44,8 +47,9 @@ export default async function Home() {
   const { data: categories, error: categoriesError } = await supabase
     .from('categories')
     .select('category_id, name, parent_id')
-    .is('parent_id', null) // 
-    .order('name->>th', { ascending: true }); // 按泰语名称排序
+    .is('parent_id', null)
+    .eq('is_active', true) // 只显示激活的分类
+    .order('sort_order', { ascending: true }); // 按排序顺序排序
 
   // 获取精选优惠券 
   const { data: coupons, error: couponsError } = await supabase

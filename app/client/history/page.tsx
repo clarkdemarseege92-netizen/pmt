@@ -33,7 +33,7 @@ export default async function HistoryPage() {
     .select('*')
     .eq('user_id', user.id)
     .order('viewed_at', { ascending: false })
-    .limit(50);
+    .limit(20);
 
   if (!history || history.length === 0) {
     return (

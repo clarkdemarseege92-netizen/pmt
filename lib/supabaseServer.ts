@@ -31,14 +31,14 @@ export const createSupabaseServerClient = async () => {
         set(name: string, value: string, options) {
           try {
             cookieStore.set(name, value, options);
-          } catch {}{
+          } catch {
             // 忽略在服务器组件中设置 Cookie 导致的错误
           }
         },
         remove(name: string) {
           try {
-            cookieStore.delete(name); 
-          } catch {}{
+            cookieStore.delete(name);
+          } catch {
             // 忽略错误
           }
         },

@@ -14,6 +14,7 @@ type Product = {
   name: { th: string; en: string };
   original_price: number;
   image_urls: string[];
+  category_id?: string;
 };
 
 // 优惠券 (主表)
@@ -26,6 +27,7 @@ type Coupon = {
   stock_quantity: number;
   image_urls: string[]; // 封面图
   rules: { th: string; en: string }; // 使用须知
+  category_id?: string;
 };
 
 // 修复 3: 删除未使用的 SelectedProduct 类型定义
@@ -121,7 +123,7 @@ export default function CouponsPage() {
   const fetchProducts = async (mId: string) => {
     const { data, error } = await supabase
       .from("products")
-      .select("product_id, name, original_price, image_urls")
+      .select("product_id, name, original_price, image_urls, category_id")
       .eq("merchant_id", mId);
     if (!error) setProducts(data as unknown as Product[]);
   };
@@ -198,6 +200,14 @@ export default function CouponsPage() {
     return total;
   };
 
+  // --- 逻辑：继承分类（取第一个选中商品的分类）---
+  const getInheritedCategory = (): string | null => {
+    if (selection.size === 0) return null;
+    const firstProductId = Array.from(selection.keys())[0];
+    const firstProduct = products.find(p => p.product_id === firstProductId);
+    return firstProduct?.category_id || null;
+  };
+
   // --- 逻辑：图片上传 ---
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
@@ -227,6 +237,7 @@ export default function CouponsPage() {
     }
 
     const totalOriginalValue = calculateTotalOriginalPrice();
+    const inheritedCategoryId = getInheritedCategory();
 
     const payload = {
       merchant_id: merchantId,
@@ -236,6 +247,7 @@ export default function CouponsPage() {
       original_value: totalOriginalValue,
       stock_quantity: parseInt(formData.stock),
       image_urls: formData.imageUrl ? [formData.imageUrl] : [],
+      category_id: inheritedCategoryId,
     };
 
     let targetCouponId = editingId;

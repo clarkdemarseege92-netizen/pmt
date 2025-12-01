@@ -21,19 +21,88 @@ export async function GET(request: Request) {
 
   if (code) {
     console.log("AUTH CALLBACK: 发现授权码(code):", code.substring(0, 10) + "...");
-    
+
     const supabase = await createSupabaseServerClient();
 
     console.log("AUTH CALLBACK: 正在尝试交换 code 获取 session...");
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
-      console.log("AUTH CALLBACK: 交换 code 成功！");
-      
-      // 【修改 2】移除自动升级商家的逻辑
-      // 我们不再在这里检查或升级用户角色。
-      // 新用户将保持默认角色（通常是 'customer' 或 'authenticated'），
-      // 直到他们主动申请成为商家。
+    if (!error && data.user) {
+      console.log("AUTH CALLBACK: 交换 code 成功！用户ID:", data.user.id);
+
+      // 【修改 2】如果是管理员登录流程，验证管理员权限
+      if (nextUrl === '/admin') {
+        console.log("AUTH CALLBACK: 检测到管理员登录流程，验证权限...");
+
+        // 检查用户是否为管理员
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError) {
+          console.error("AUTH CALLBACK: 获取 profile 失败:", profileError.message);
+        }
+
+        // 如果用户还没有 profile，创建一个默认的 user 角色
+        if (!profile) {
+          console.log("AUTH CALLBACK: 用户没有 profile，创建默认 user 角色");
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              role: 'user',
+            });
+
+          if (insertError) {
+            console.error("AUTH CALLBACK: 创建 profile 失败:", insertError.message);
+          }
+
+          // 非管理员用户，退出登录并重定向
+          await supabase.auth.signOut();
+          console.log("AUTH CALLBACK: 非管理员用户，已退出登录");
+          return NextResponse.redirect(new URL("/admin-login?error=not_admin", request.url));
+        }
+
+        // 验证是否为管理员
+        if (profile.role !== 'admin') {
+          console.log("AUTH CALLBACK: 用户不是管理员，角色为:", profile.role);
+          // 非管理员用户，退出登录并重定向
+          await supabase.auth.signOut();
+          return NextResponse.redirect(new URL("/admin-login?error=not_admin", request.url));
+        }
+
+        console.log("AUTH CALLBACK: 管理员权限验证通过");
+      } else {
+        // 普通用户登录，确保有 profile 记录（如果没有则创建）
+        console.log("AUTH CALLBACK: 普通用户登录流程");
+        const { data: profile, error: profileError } = await supabase
+          .from('profiles')
+          .select('id')
+          .eq('id', data.user.id)
+          .single();
+
+        if (profileError && profileError.code === 'PGRST116') {
+          // PGRST116 = 没有找到记录
+          console.log("AUTH CALLBACK: 用户首次登录，创建 profile");
+          const { error: insertError } = await supabase
+            .from('profiles')
+            .insert({
+              id: data.user.id,
+              email: data.user.email,
+              role: 'user',
+            });
+
+          if (insertError) {
+            console.error("AUTH CALLBACK: 创建 profile 失败:", insertError.message);
+            // 不阻止登录，继续执行
+          } else {
+            console.log("AUTH CALLBACK: Profile 创建成功");
+          }
+        }
+      }
 
       console.log("AUTH CALLBACK: 操作完成，重定向到:", nextUrl);
       return redirect(nextUrl);
@@ -41,7 +110,7 @@ export async function GET(request: Request) {
 
     console.error("AUTH CALLBACK: 交换 code 失败。Supabase 错误:", error);
     console.error("AUTH CALLBACK: 失败详情 (Message):", error.message);
-  
+
   } else {
      console.warn("AUTH CALLBACK: 访问 /auth/callback，但 URL 中没有 code");
   }

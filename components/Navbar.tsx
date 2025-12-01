@@ -3,13 +3,14 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { createBrowserClient } from "@supabase/ssr";
 import { User } from "@supabase/supabase-js";
-import { 
-  HiUser, 
-  HiArrowRightOnRectangle, 
-  HiTicket, 
-  HiSquares2X2, 
+import {
+  HiUser,
+  HiArrowRightOnRectangle,
+  HiTicket,
+  HiSquares2X2,
   HiUserCircle
   // HiHeart 已移除，因为目前收藏功能代码被注释了
 } from "react-icons/hi2";
@@ -20,27 +21,127 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 const supabase = createBrowserClient(supabaseUrl, supabaseKey);
 
+// 定义 Profile 类型
+type Profile = {
+  avatar_url?: string;
+};
+
 export default function Navbar() {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
+    console.log('🔵 NAVBAR: useEffect 开始执行');
+
     // 忽略此行警告，这是处理 Hydration 的标准模式
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
 
     const fetchUser = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      setUser(user);
+      console.log('🔵 NAVBAR: fetchUser 开始');
+      try {
+        const { data: { user }, error: getUserError } = await supabase.auth.getUser();
+        console.log('🔵 NAVBAR: getUser 结果:', {
+          hasUser: !!user,
+          userId: user?.id,
+          error: getUserError?.message
+        });
+
+        setUser(user);
+
+        // 如果用户已登录，获取 profile 信息
+        if (user) {
+          console.log('🔵 NAVBAR: 用户已登录，开始获取 profile');
+          // 使用 try-catch 确保 profile 查询失败不会影响认证流程
+          try {
+            const { data: profileData, error } = await supabase
+              .from('profiles')
+              .select('avatar_url')
+              .eq('id', user.id)
+              .maybeSingle(); // 使用 maybeSingle 替代 single，避免抛出异常
+
+            console.log('🔵 NAVBAR: profile 查询结果:', {
+              hasProfile: !!profileData,
+              avatarUrl: profileData?.avatar_url,
+              error: error?.message
+            });
+
+            if (error) {
+              console.error('🔴 NAVBAR: Error fetching profile:', error.message);
+              setProfile(null);
+            } else if (profileData) {
+              console.log('🟢 NAVBAR: Profile 设置成功');
+              setProfile(profileData);
+            } else {
+              console.log('🟡 NAVBAR: Profile 不存在，使用默认头像');
+              setProfile(null);
+            }
+          } catch (err) {
+            console.error('🔴 NAVBAR: Unexpected error fetching profile:', err);
+            setProfile(null);
+          }
+        } else {
+          console.log('🟡 NAVBAR: 用户未登录');
+        }
+      } catch (err) {
+        console.error('🔴 NAVBAR: fetchUser 发生异常:', err);
+      }
     };
     fetchUser();
 
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
+    console.log('🔵 NAVBAR: 设置 auth 状态监听器');
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔵 NAVBAR: Auth 状态变化:', {
+        event,
+        hasSession: !!session,
+        userId: session?.user?.id
+      });
+
       setUser(session?.user ?? null);
+
+      // 当用户状态变化时，更新 profile
+      if (session?.user) {
+        console.log('🔵 NAVBAR: Auth change - 用户已登录，获取 profile');
+        // 使用 try-catch 确保 profile 查询失败不会影响认证流程
+        try {
+          const { data: profileData, error } = await supabase
+            .from('profiles')
+            .select('avatar_url')
+            .eq('id', session.user.id)
+            .maybeSingle(); // 使用 maybeSingle 替代 single，避免抛出异常
+
+          console.log('🔵 NAVBAR: Auth change - profile 查询结果:', {
+            hasProfile: !!profileData,
+            avatarUrl: profileData?.avatar_url,
+            error: error?.message
+          });
+
+          if (error) {
+            console.error('🔴 NAVBAR: Error fetching profile on auth change:', error.message);
+            setProfile(null);
+          } else if (profileData) {
+            console.log('🟢 NAVBAR: Auth change - Profile 设置成功');
+            setProfile(profileData);
+          } else {
+            console.log('🟡 NAVBAR: Auth change - Profile 不存在');
+            setProfile(null);
+          }
+        } catch (err) {
+          console.error('🔴 NAVBAR: Unexpected error fetching profile on auth change:', err);
+          setProfile(null);
+        }
+      } else {
+        console.log('🟡 NAVBAR: Auth change - 用户未登录');
+        setProfile(null);
+      }
     });
 
+    console.log('🔵 NAVBAR: Auth 监听器设置完成');
+
     return () => {
+      console.log('🔵 NAVBAR: 清理 auth 监听器');
       authListener.subscription.unsubscribe();
     };
   }, []);
@@ -69,9 +170,20 @@ export default function Navbar() {
             {/* 头像触发器 */}
             <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
               <div className="w-10 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
-                <div className="w-full h-full flex items-center justify-center bg-neutral text-neutral-content">
-                   <HiUser className="w-6 h-6" />
-                </div>
+                {profile?.avatar_url ? (
+                  <Image
+                    src={profile.avatar_url}
+                    alt="User Avatar"
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover"
+                    unoptimized
+                  />
+                ) : (
+                  <div className="w-full h-full flex items-center justify-center bg-neutral text-neutral-content">
+                    <HiUser className="w-6 h-6" />
+                  </div>
+                )}
               </div>
             </div>
 

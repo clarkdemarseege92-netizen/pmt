@@ -7,6 +7,7 @@ import BuyButton from "@/components/BuyButton";
 import BackButton from "@/components/BackButton";
 import FavoriteButton from "@/components/FavoriteButton"; // 引入
 import Link from "next/link";
+import { recordBrowsingHistory } from "@/lib/recordBrowsingHistory";
 
 // ----- 类型定义 -----
 
@@ -93,6 +94,9 @@ export default async function CouponDetailPage({
     console.error("Error fetching coupon:", error);
     notFound();
   }
+
+  // 记录浏览历史
+  await recordBrowsingHistory('coupon', id);
 
   const coupon = couponRaw as unknown as CouponDetail;
   

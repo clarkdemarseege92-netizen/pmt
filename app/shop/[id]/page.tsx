@@ -5,26 +5,13 @@ import { notFound } from "next/navigation";
 import { HiMapPin, HiPhone, HiBuildingStorefront, HiTag, HiClock, HiCheckCircle } from "react-icons/hi2";
 import { FaFacebook, FaLine, FaInstagram, FaTiktok } from "react-icons/fa";
 import { getMerchantCustomization } from "@/app/actions/merchantDesign";
-import { type ExtendedMerchantCustomization } from "@/app/types/merchantDesign"; 
+import { type ExtendedMerchantCustomization } from "@/app/types/merchantDesign";
 import { CartProvider } from "@/context/CartContext";
 import ProductCard from '@/components/ProductCard';
 import CartFooter from '@/components/CartFooter';
 import BackButton from "@/components/BackButton";
 import FavoriteButton from "@/components/FavoriteButton"; // 引入
-
-
-// 添加日志函数
-const log = {
-  info: (message: string, data?: unknown) => {
-    console.log(`[SHOP_PAGE_INFO] ${message}`, data ? JSON.stringify(data, null, 2) : '');
-  },
-  error: (message: string, error?: unknown) => {
-    console.error(`[SHOP_PAGE_ERROR] ${message}`, error ? JSON.stringify(error, null, 2) : '');
-  },
-  warn: (message: string, data?: unknown) => {
-    console.warn(`[SHOP_PAGE_WARN] ${message}`, data ? JSON.stringify(data, null, 2) : '');
-  }
-};
+import { recordBrowsingHistory } from "@/lib/recordBrowsingHistory";
 
 // --- 类型定义 ---
 type MultiLangName = {
@@ -273,121 +260,86 @@ function ShopContent({ merchantId, shopData }: { merchantId: string; shopData: S
   );
 }
 
-export default async function ShopPage({ 
-  params 
-}: { 
-  params: Promise<{ id: string }> 
+export default async function ShopPage({
+  params
+}: {
+  params: Promise<{ id: string }>
 }) {
   const { id: merchantId } = await params;
-  
-  log.info('开始处理店铺页面请求', { merchantId, timestamp: new Date().toISOString() });
 
-  try {
-    const supabase = await createSupabaseServerClient();
-    log.info('Supabase客户端创建成功');
+  const supabase = await createSupabaseServerClient();
 
-    // 1. 查询商户信息
-    log.info('开始查询商户信息', { merchantId });
-    
-    const { data: merchantData, error } = await supabase
-      .from('merchants')
-      .select(`
-        merchant_id, shop_name, logo_url, address, google_maps_link, contact_phone, description,social_links,
-        products (
-          product_id, name, original_price, image_urls, description
-        )
-      `)
-      .eq('merchant_id', merchantId)
-      .single();
+  // 1. 查询商户信息
+  const { data: merchantData, error } = await supabase
+    .from('merchants')
+    .select(`
+      merchant_id, shop_name, logo_url, address, google_maps_link, contact_phone, description,social_links,
+      products (
+        product_id, name, original_price, image_urls, description
+      )
+    `)
+    .eq('merchant_id', merchantId)
+    .single();
 
-    log.info('商户查询完成', { 
-      hasData: !!merchantData, 
-      hasError: !!error,
-      error: error,
-      merchantData: merchantData ? {
-        merchant_id: merchantData.merchant_id,
-        shop_name: merchantData.shop_name,
-        productsCount: merchantData.products?.length || 0
-      } : null
-    });
-
-    if (error) {
-      log.error('查询商户信息时发生错误', {
-        errorCode: error.code,
-        errorMessage: error.message,
-        errorDetails: error.details,
-        merchantId
-      });
-    }
-
-    if (error || !merchantData) {
-      log.warn('商户不存在或查询失败，触发404', { merchantId, error });
-      notFound();
-    }
-
-    // 2. 查询商户装修配置
-    log.info('开始查询商户装修配置', { merchantId });
-    
-    const customizationRes = await getMerchantCustomization(merchantId);
-    
-    // 使用默认配置作为后备
-    const defaultConfig: ExtendedMerchantCustomization = {
-      merchant_id: merchantId,
-      plan_level: 'free',
-      template_id: 'default',
-      theme_primary_color: '#3b82f6',
-      theme_secondary_color: '#ffffff',
-      button_style: 'rounded',
-      font_family: 'sans',
-      cover_image_url: undefined,
-      background_image_url: undefined,
-      announcement_text: undefined,
-      display_config: {
-        show_stock: true,
-        show_sales_count: true,
-        grid_cols: 2
-      },
-      homepage_styles: {},
-      detail_page_styles: {}
-    };
-
-    // 深度合并配置
-    const customization = customizationRes.success && customizationRes.data 
-      ? {
-          ...defaultConfig,
-          ...customizationRes.data,
-          display_config: {
-            ...defaultConfig.display_config,
-            ...(customizationRes.data.display_config || {})
-          }
-        }
-      : defaultConfig;
-
-    // 3. 组织数据
-    const shopData: ShopData = {
-      merchant: {
-        merchant_id: merchantData.merchant_id,
-        shop_name: merchantData.shop_name,
-        logo_url: merchantData.logo_url,
-        address: merchantData.address,
-        google_maps_link: merchantData.google_maps_link,
-        contact_phone: merchantData.contact_phone,
-        description: merchantData.description,
-        social_links: merchantData.social_links || {},
-      },
-      customization: customization,
-      products: (merchantData.products || []) as ProductDetail[],
-      coupons: [],
-    };
-
-    return <ShopContent merchantId={merchantId} shopData={shopData} />;
-
-  } catch (error) {
-    log.error('处理店铺页面时发生未预期的错误', {
-      merchantId,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    });
+  if (error || !merchantData) {
     notFound();
   }
+
+  // 记录浏览历史
+  await recordBrowsingHistory('merchant', merchantId);
+
+  // 2. 查询商户装修配置
+  const customizationRes = await getMerchantCustomization(merchantId);
+
+  // 使用默认配置作为后备
+  const defaultConfig: ExtendedMerchantCustomization = {
+    merchant_id: merchantId,
+    plan_level: 'free',
+    template_id: 'default',
+    theme_primary_color: '#3b82f6',
+    theme_secondary_color: '#ffffff',
+    button_style: 'rounded',
+    font_family: 'sans',
+    cover_image_url: undefined,
+    background_image_url: undefined,
+    announcement_text: undefined,
+    display_config: {
+      show_stock: true,
+      show_sales_count: true,
+      grid_cols: 2
+    },
+    homepage_styles: {},
+    detail_page_styles: {}
+  };
+
+  // 深度合并配置
+  const customization = customizationRes.success && customizationRes.data
+    ? {
+        ...defaultConfig,
+        ...customizationRes.data,
+        display_config: {
+          ...defaultConfig.display_config,
+          ...(customizationRes.data.display_config || {})
+        }
+      }
+    : defaultConfig;
+
+  // 3. 组织数据
+  const shopData: ShopData = {
+    merchant: {
+      merchant_id: merchantData.merchant_id,
+      shop_name: merchantData.shop_name,
+      logo_url: merchantData.logo_url,
+      address: merchantData.address,
+      google_maps_link: merchantData.google_maps_link,
+      contact_phone: merchantData.contact_phone,
+      description: merchantData.description,
+      social_links: merchantData.social_links || {},
+    },
+    customization: customization,
+    products: (merchantData.products || []) as ProductDetail[],
+    coupons: [],
+  };
+
+  return <ShopContent merchantId={merchantId} shopData={shopData} />;
 }
