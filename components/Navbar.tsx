@@ -12,7 +12,6 @@ import {
   HiTicket,
   HiSquares2X2,
   HiUserCircle
-  // HiHeart 已移除，因为目前收藏功能代码被注释了
 } from "react-icons/hi2";
 import { useRouter } from "next/navigation";
 
@@ -39,159 +38,51 @@ export default function Navbar() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setMounted(true);
 
-    const fetchUser = async () => {
-      console.log('🔵 NAVBAR: fetchUser 开始', new Date().toISOString());
-      try {
-        console.log('🔵 NAVBAR: 检查 cookies...');
-        const authCookies = document.cookie.split(';')
-          .filter(c => c.trim().startsWith('sb-'));
-        console.log('🔵 NAVBAR: Auth cookies 数量:', authCookies.length);
+    // 【关键修复】不使用 getSession()，完全依赖 auth 监听器
+    // 因为 cookie 格式导致 getSession() 会卡住
+    console.log('🔵 NAVBAR: 设置 auth 状态监听器（不调用 getSession）');
 
-        // 打印 cookie 内容（前 100 字符）
-        if (authCookies.length > 0) {
-          const cookiePreview = authCookies[0].substring(0, 100);
-          console.log('🔵 NAVBAR: Cookie 预览:', cookiePreview + '...');
-        }
-
-        console.log('🔵 NAVBAR: 尝试 getSession()...');
-        const startTime = Date.now();
-
-        // 添加超时保护
-        const timeoutPromise = new Promise<never>((_, reject) =>
-          setTimeout(() => {
-            console.error('🔴 NAVBAR: getSession 超时！');
-            reject(new Error('getSession timeout after 5s'));
-          }, 5000)
-        );
-
-        const sessionPromise = supabase.auth.getSession();
-        console.log('🔵 NAVBAR: getSession Promise 创建成功，开始等待...');
-
-        const result = await Promise.race([sessionPromise, timeoutPromise]);
-        const { data: { session }, error: sessionError } = result;
-
-        const endTime = Date.now();
-        console.log(`🔵 NAVBAR: getSession 完成，耗时 ${endTime - startTime}ms`);
-
-        console.log('🔵 NAVBAR: Session 结果:', {
-          hasSession: !!session,
-          hasUser: !!session?.user,
-          userId: session?.user?.id,
-          email: session?.user?.email,
-          expiresAt: session?.expires_at,
-          expiresIn: session?.expires_at ? Math.floor((session.expires_at * 1000 - Date.now()) / 1000) + 's' : 'N/A',
-          error: sessionError?.message
-        });
-
-        if (!session) {
-          console.warn('⚠️ NAVBAR: Session 为 null，尝试检查 localStorage...');
-          try {
-            const storageKeys = Object.keys(localStorage).filter(k => k.includes('supabase'));
-            console.log('🔵 NAVBAR: LocalStorage Supabase keys:', storageKeys);
-          } catch (e) {
-            console.error('🔴 NAVBAR: 无法访问 localStorage:', e);
-          }
-        }
-
-        const user = session?.user ?? null;
-        console.log('🔵 NAVBAR: 设置 user 状态:', {
-          hasUser: !!user,
-          userId: user?.id
-        });
-        setUser(user);
-
-        // 如果用户已登录，获取 profile 信息
-        if (user) {
-          console.log('🔵 NAVBAR: 用户已登录，开始获取 profile，user.id=', user.id);
-          // 使用 try-catch 确保 profile 查询失败不会影响认证流程
-          try {
-            const profileStartTime = Date.now();
-            const { data: profileData, error } = await supabase
-              .from('profiles')
-              .select('avatar_url')
-              .eq('id', user.id)
-              .maybeSingle(); // 使用 maybeSingle 替代 single，避免抛出异常
-
-            const profileEndTime = Date.now();
-            console.log(`🔵 NAVBAR: profile 查询完成，耗时 ${profileEndTime - profileStartTime}ms`);
-            console.log('🔵 NAVBAR: profile 查询结果:', {
-              hasProfile: !!profileData,
-              avatarUrl: profileData?.avatar_url,
-              profileData: profileData,
-              error: error?.message,
-              errorDetails: error
-            });
-
-            if (error) {
-              console.error('🔴 NAVBAR: Error fetching profile:', error.message);
-              console.error('🔴 NAVBAR: Error details:', error);
-              setProfile(null);
-            } else if (profileData) {
-              console.log('🟢 NAVBAR: Profile 设置成功，avatar_url=', profileData.avatar_url);
-              setProfile(profileData);
-            } else {
-              console.log('🟡 NAVBAR: Profile 不存在，使用默认头像');
-              setProfile(null);
-            }
-          } catch (err) {
-            console.error('🔴 NAVBAR: Unexpected error fetching profile:', err);
-            setProfile(null);
-          }
-        } else {
-          console.log('🟡 NAVBAR: 用户未登录，user=', user);
-        }
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        console.error('🔴 NAVBAR: fetchUser 发生异常:', errorMessage);
-        setUser(null);
-        setProfile(null);
-      }
-    };
-    fetchUser();
-
-    console.log('🔵 NAVBAR: 设置 auth 状态监听器');
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔵 NAVBAR: Auth 状态变化:', {
         event,
         hasSession: !!session,
-        userId: session?.user?.id
+        userId: session?.user?.id,
+        timestamp: new Date().toISOString()
       });
 
-      setUser(session?.user ?? null);
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
 
       // 当用户状态变化时，更新 profile
-      if (session?.user) {
-        console.log('🔵 NAVBAR: Auth change - 用户已登录，获取 profile');
-        // 使用 try-catch 确保 profile 查询失败不会影响认证流程
+      if (currentUser) {
+        console.log('🔵 NAVBAR: 用户已登录，开始获取 profile，user.id=', currentUser.id);
         try {
+          const profileStartTime = Date.now();
           const { data: profileData, error } = await supabase
             .from('profiles')
             .select('avatar_url')
-            .eq('id', session.user.id)
-            .maybeSingle(); // 使用 maybeSingle 替代 single，避免抛出异常
+            .eq('id', currentUser.id)
+            .maybeSingle();
 
-          console.log('🔵 NAVBAR: Auth change - profile 查询结果:', {
-            hasProfile: !!profileData,
-            avatarUrl: profileData?.avatar_url,
-            error: error?.message
-          });
+          const profileEndTime = Date.now();
+          console.log(`🔵 NAVBAR: profile 查询完成，耗时 ${profileEndTime - profileStartTime}ms`);
 
           if (error) {
-            console.error('🔴 NAVBAR: Error fetching profile on auth change:', error.message);
+            console.error('🔴 NAVBAR: Error fetching profile:', error.message);
             setProfile(null);
           } else if (profileData) {
-            console.log('🟢 NAVBAR: Auth change - Profile 设置成功');
+            console.log('🟢 NAVBAR: Profile 设置成功，avatar_url=', profileData.avatar_url);
             setProfile(profileData);
           } else {
-            console.log('🟡 NAVBAR: Auth change - Profile 不存在');
+            console.log('🟡 NAVBAR: Profile 不存在，使用默认头像');
             setProfile(null);
           }
         } catch (err) {
-          console.error('🔴 NAVBAR: Unexpected error fetching profile on auth change:', err);
+          console.error('🔴 NAVBAR: Unexpected error fetching profile:', err);
           setProfile(null);
         }
       } else {
-        console.log('🟡 NAVBAR: Auth change - 用户未登录');
+        console.log('🟡 NAVBAR: 用户未登录');
         setProfile(null);
       }
     });
@@ -205,6 +96,7 @@ export default function Navbar() {
   }, []);
 
   const handleLogout = async () => {
+    console.log('🔵 NAVBAR: 开始退出登录');
     await supabase.auth.signOut();
     router.refresh();
   };
@@ -213,7 +105,7 @@ export default function Navbar() {
 
   return (
     <div className="navbar bg-base-100 border-b border-base-200 z-50">
-      
+
       {/* 左侧：Logo */}
       <div className="flex-1">
         <Link href="/" className="btn btn-ghost text-xl font-bold text-primary">
@@ -246,8 +138,8 @@ export default function Navbar() {
             </div>
 
             {/* 下拉菜单 */}
-            <ul 
-              tabIndex={0} 
+            <ul
+              tabIndex={0}
               className="menu menu-sm dropdown-content mt-3 z-1 p-2 shadow-lg bg-base-100 rounded-box w-64 border border-base-200"
             >
               {/* 用户信息头 */}
@@ -268,7 +160,7 @@ export default function Navbar() {
                 </Link>
               </li>
 
-              <div className="divider my-1"></div> 
+              <div className="divider my-1"></div>
 
               {/* === 卖家/商家区 === */}
               <li>
@@ -277,7 +169,7 @@ export default function Navbar() {
                 </Link>
               </li>
 
-              <div className="divider my-1"></div> 
+              <div className="divider my-1"></div>
 
               {/* === 退出 === */}
               <li>
