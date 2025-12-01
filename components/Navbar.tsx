@@ -56,8 +56,19 @@ export default function Navbar() {
         console.log('🔵 NAVBAR: 尝试 getSession()...');
         const startTime = Date.now();
 
-        // 先尝试 getSession（更快，不需要网络请求）
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // 添加超时保护
+        const timeoutPromise = new Promise<never>((_, reject) =>
+          setTimeout(() => {
+            console.error('🔴 NAVBAR: getSession 超时！');
+            reject(new Error('getSession timeout after 5s'));
+          }, 5000)
+        );
+
+        const sessionPromise = supabase.auth.getSession();
+        console.log('🔵 NAVBAR: getSession Promise 创建成功，开始等待...');
+
+        const result = await Promise.race([sessionPromise, timeoutPromise]);
+        const { data: { session }, error: sessionError } = result;
 
         const endTime = Date.now();
         console.log(`🔵 NAVBAR: getSession 完成，耗时 ${endTime - startTime}ms`);
@@ -66,35 +77,57 @@ export default function Navbar() {
           hasSession: !!session,
           hasUser: !!session?.user,
           userId: session?.user?.id,
+          email: session?.user?.email,
           expiresAt: session?.expires_at,
+          expiresIn: session?.expires_at ? Math.floor((session.expires_at * 1000 - Date.now()) / 1000) + 's' : 'N/A',
           error: sessionError?.message
         });
 
+        if (!session) {
+          console.warn('⚠️ NAVBAR: Session 为 null，尝试检查 localStorage...');
+          try {
+            const storageKeys = Object.keys(localStorage).filter(k => k.includes('supabase'));
+            console.log('🔵 NAVBAR: LocalStorage Supabase keys:', storageKeys);
+          } catch (e) {
+            console.error('🔴 NAVBAR: 无法访问 localStorage:', e);
+          }
+        }
+
         const user = session?.user ?? null;
+        console.log('🔵 NAVBAR: 设置 user 状态:', {
+          hasUser: !!user,
+          userId: user?.id
+        });
         setUser(user);
 
         // 如果用户已登录，获取 profile 信息
         if (user) {
-          console.log('🔵 NAVBAR: 用户已登录，开始获取 profile');
+          console.log('🔵 NAVBAR: 用户已登录，开始获取 profile，user.id=', user.id);
           // 使用 try-catch 确保 profile 查询失败不会影响认证流程
           try {
+            const profileStartTime = Date.now();
             const { data: profileData, error } = await supabase
               .from('profiles')
               .select('avatar_url')
               .eq('id', user.id)
               .maybeSingle(); // 使用 maybeSingle 替代 single，避免抛出异常
 
+            const profileEndTime = Date.now();
+            console.log(`🔵 NAVBAR: profile 查询完成，耗时 ${profileEndTime - profileStartTime}ms`);
             console.log('🔵 NAVBAR: profile 查询结果:', {
               hasProfile: !!profileData,
               avatarUrl: profileData?.avatar_url,
-              error: error?.message
+              profileData: profileData,
+              error: error?.message,
+              errorDetails: error
             });
 
             if (error) {
               console.error('🔴 NAVBAR: Error fetching profile:', error.message);
+              console.error('🔴 NAVBAR: Error details:', error);
               setProfile(null);
             } else if (profileData) {
-              console.log('🟢 NAVBAR: Profile 设置成功');
+              console.log('🟢 NAVBAR: Profile 设置成功，avatar_url=', profileData.avatar_url);
               setProfile(profileData);
             } else {
               console.log('🟡 NAVBAR: Profile 不存在，使用默认头像');
@@ -105,7 +138,7 @@ export default function Navbar() {
             setProfile(null);
           }
         } else {
-          console.log('🟡 NAVBAR: 用户未登录');
+          console.log('🟡 NAVBAR: 用户未登录，user=', user);
         }
       } catch (err) {
         const errorMessage = err instanceof Error ? err.message : String(err);
