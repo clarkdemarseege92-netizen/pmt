@@ -59,15 +59,36 @@ export function generatePromptPayPayload(promptpayId: string, amount: number): s
     let targetId: string;
     let idType: string;
 
-    // 假设手机号是 +66 开头，证件号是纯数字
-    if (promptpayId.startsWith('+66')) {
-        // 手机号，ID Type '01'。去除 +66，并用 '0' 替换第一个字符
-        targetId = '0' + promptpayId.substring(3).replace(/\D/g, '');
+    // 清理输入：移除所有空格和特殊字符
+    const cleanedId = promptpayId.trim().replace(/[\s\-]/g, '');
+
+    // 判断ID类型
+    if (cleanedId.startsWith('+66')) {
+        // 手机号处理
+        // +66812345678 → 0812345678 (10位数字)
+        const phoneDigits = cleanedId.substring(3).replace(/\D/g, '');
+        targetId = '0' + phoneDigits;
+
+        // 验证手机号长度（必须是10位）
+        if (targetId.length !== 10) {
+            throw new Error(`泰国手机号必须是10位数字，当前: ${targetId.length}位`);
+        }
+
         idType = '01'; // 手机号 (MSISDN)
+    } else if (cleanedId.startsWith('0') && /^\d{10}$/.test(cleanedId)) {
+        // 已经是 0 开头的10位手机号
+        targetId = cleanedId;
+        idType = '01';
     } else {
-        // 证件号或企业ID，ID Type '02' 或 '03' (这里我们统一用 '02' 证件号 Citizen ID)
-        targetId = promptpayId.replace(/\D/g, ''); // 只保留数字
-        idType = '02'; // 证件号/税号 (National ID/Tax ID)
+        // 证件号/税号 (National ID/Tax ID)
+        targetId = cleanedId.replace(/\D/g, ''); // 只保留数字
+
+        // 泰国身份证是13位
+        if (targetId.length !== 13) {
+            console.warn(`证件号长度异常: ${targetId.length}位，预期13位`);
+        }
+
+        idType = '02'; // 证件号
     }
 
     // PromptPay ID 块 (Tag 29)
@@ -86,15 +107,15 @@ export function generatePromptPayPayload(promptpayId: string, amount: number): s
     let payload = '';
     // Tag 00 - Payload Format Indicator: 01
     payload += '00' + formatLength('01') + '01';
-    // Tag 01 - Point of Initiation Method: 12 (Dynamic/金额特定)
+    // Tag 01 - Point of Initiation Method: 12 (Dynamic QR - one-time use)
     payload += '01' + formatLength('12') + '12';
     // Tag 29 - Merchant Account Information
     payload += tag29;
-    // Tag 52 - MCC
+    // Tag 52 - MCC (Merchant Category Code)
     payload += '52' + formatLength(MCC) + MCC;
-    // Tag 53 - Currency
+    // Tag 53 - Transaction Currency (THB = 764)
     payload += '53' + formatLength(CURRENCY_CODE) + CURRENCY_CODE;
-    // Tag 54 - Amount
+    // Tag 54 - Transaction Amount
     payload += '54' + formatLength(formattedAmount) + formattedAmount;
     // Tag 58 - Country Code
     payload += '58' + formatLength(COUNTRY_CODE) + COUNTRY_CODE;
@@ -105,6 +126,19 @@ export function generatePromptPayPayload(promptpayId: string, amount: number): s
     const crc = calculateCrc16(payload);
 
     // 5. 返回最终 Payload
-    // 将 placeholder '6304' 替换为计算出的 CRC
-    return payload.slice(0, -4) + crc;
+    const finalPayload = payload.slice(0, -4) + crc;
+
+    // 【调试日志】
+    console.log('🔵 PromptPay QR 生成成功:', {
+        originalId: promptpayId,
+        cleanedId,
+        targetId,
+        idType: idType === '01' ? '手机号' : '证件号',
+        amount: formattedAmount,
+        payloadLength: finalPayload.length,
+        payload: finalPayload.substring(0, 50) + '...',
+        crc
+    });
+
+    return finalPayload;
 }
