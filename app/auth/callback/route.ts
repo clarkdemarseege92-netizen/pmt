@@ -4,12 +4,25 @@ import { NextResponse } from "next/server";
 import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
-  console.log("AUTH CALLBACK: 路由处理器被命中");
-  console.log("AUTH CALLBACK: 完整的请求 URL:", request.url);
+  const userAgent = request.headers.get('user-agent') || 'unknown';
+  const isMobile = /iPhone|iPad|iPod|Android/i.test(userAgent);
+
+  console.log("🔵 AUTH CALLBACK: 路由处理器被命中");
+  console.log("🔵 AUTH CALLBACK: 完整的请求 URL:", request.url);
+  console.log("🔵 AUTH CALLBACK: 设备信息:", {
+    isMobile,
+    userAgent: userAgent.substring(0, 100)
+  });
 
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get("code");
   const errorFromGoogle = requestUrl.searchParams.get("error");
+
+  console.log("🔵 AUTH CALLBACK: URL 参数:", {
+    hasCode: !!code,
+    hasError: !!errorFromGoogle,
+    allParams: Object.fromEntries(requestUrl.searchParams)
+  });
 
   // 默认跳转到首页
   const nextUrl = requestUrl.searchParams.get("next") || "/";

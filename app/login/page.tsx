@@ -19,23 +19,52 @@ export default function LoginPage() {
   const handleOAuthLogin = async (provider: Provider) => {
     setLoading(true);
     setError(null);
-    const redirectTo = `${window.location.origin}/auth/callback`;
-    
-    console.log("LOGIN PAGE: 正在启动 OAuth 登录, Provider:", provider, "RedirectTo:", redirectTo);
 
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: provider,
-      options: {
-        redirectTo: redirectTo,
-      },
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+    const redirectTo = `${window.location.origin}/auth/callback`;
+
+    console.log("🔵 LOGIN: OAuth 登录开始", {
+      provider,
+      redirectTo,
+      isMobile,
+      userAgent: navigator.userAgent.substring(0, 80),
+      origin: window.location.origin
     });
 
-    if (error) {
-      console.error("LOGIN PAGE: OAuth 启动失败:", error);
-      setError(error.message);
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: provider,
+        options: {
+          redirectTo: redirectTo,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          },
+        },
+      });
+
+      if (error) {
+        console.error("🔴 LOGIN: OAuth 启动失败", {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+          isMobile
+        });
+        setError(`登录失败: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+
+      console.log("🟢 LOGIN: OAuth 启动成功，等待 Google 重定向...", {
+        hasData: !!data,
+        url: data?.url
+      });
+    } catch (err) {
+      console.error("🔴 LOGIN: OAuth 异常", err);
+      const errorMessage = err instanceof Error ? err.message : "未知错误";
+      setError(`登录异常: ${errorMessage}`);
       setLoading(false);
     }
-    console.log("LOGIN PAGE: 等待 OAuth 重定向...");
   };
 
   // ----- 邮箱/密码登录 -----
