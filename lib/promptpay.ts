@@ -9,7 +9,6 @@
 const PROMPTPAY_AID = 'A000000677010111'; // PromptPay 专用应用标识符
 const CURRENCY_CODE = '764'; // THB (Thai Baht)
 const COUNTRY_CODE = 'TH'; // Thailand
-const MCC = '0000'; // Merchant Category Code: 通用/未定义
 
 /**
  * 计算 EMVCo Payload 的 CRC16/CCITT-FALSE 校验码。
@@ -56,59 +55,54 @@ export function generatePromptPayPayload(promptpayId: string, amount: number): s
     }
 
     // 1. 预处理 PromptPay ID (Target ID)
+    // 参考: dtinth/promptpay-qr 官方实现
     let targetId: string;
     let idType: string;
 
-    // 清理输入：移除所有空格和特殊字符
-    const cleanedId = promptpayId.trim().replace(/[\s\-]/g, '');
+    // 清理输入：只保留数字
+    const numbers = promptpayId.trim().replace(/[^0-9]/g, '');
 
-    // 判断ID类型
-    if (cleanedId.startsWith('+66')) {
-        // 格式: +66812345678 → 0812345678 (10位数字)
-        const phoneDigits = cleanedId.substring(3).replace(/\D/g, '');
-        targetId = '0' + phoneDigits;
-
-        // 验证手机号长度（必须是10位）
-        if (targetId.length !== 10) {
-            throw new Error(`泰国手机号必须是10位数字，当前: ${targetId.length}位`);
-        }
-
-        idType = '01'; // 手机号 (MSISDN)
-    } else if (cleanedId.startsWith('0') && /^\d{10}$/.test(cleanedId)) {
-        // 格式: 0812345678 (已经是 0 开头的10位手机号)
-        targetId = cleanedId;
-        idType = '01';
-    } else if (/^66\d{9}$/.test(cleanedId)) {
-        // 格式: 66812345678 (11位，缺少前缀的手机号)
-        // 转换: 66812345678 → 0812345678
-        targetId = '0' + cleanedId.substring(2);
-        idType = '01'; // 手机号
-        console.log(`🔧 自动修正手机号格式: ${cleanedId} → ${targetId}`);
-    } else {
-        // 证件号/税号 (National ID/Tax ID)
-        targetId = cleanedId.replace(/\D/g, ''); // 只保留数字
-
-        // 泰国身份证是13位
-        if (targetId.length !== 13) {
-            console.warn(`证件号长度异常: ${targetId.length}位，预期13位`);
-        }
-
+    // 判断ID类型 (基于长度)
+    if (numbers.length >= 13) {
+        // 13位或更多：证件号/税号 (National ID/Tax ID)
+        targetId = numbers;
         idType = '02'; // 证件号
+    } else {
+        // 少于13位：手机号
+        // 标准格式转换 (参考 dtinth/promptpay-qr):
+        // 1. 去掉前导0 (0812345678 → 812345678)
+        // 2. 如果不是66开头，加上66 (812345678 → 66812345678)
+        // 3. 补齐到13位 (66812345678 → 0066812345678)
+
+        let phoneNumber = numbers.replace(/^0+/, ''); // 去掉所有前导0
+
+        // 如果不是66开头，加66
+        if (!phoneNumber.startsWith('66')) {
+            phoneNumber = '66' + phoneNumber;
+        }
+
+        // 补齐到13位
+        targetId = ('0000000000000' + phoneNumber).slice(-13);
+        idType = '01'; // 手机号
+
+        console.log(`🔧 手机号格式转换: ${promptpayId} → ${numbers} → ${targetId}`);
     }
 
     // PromptPay ID 块 (Tag 29)
     // Sub ID 00: PromptPay AID (固定)
     const sub00 = '00' + formatLength(PROMPTPAY_AID) + PROMPTPAY_AID;
-    // Sub ID 01: ID Type + Target ID
-    const sub01 = '01' + formatLength(idType + targetId) + idType + targetId;
+    // Sub ID 01/02/03: Target ID (sub-tag 编号本身表示ID类型)
+    // idType '01' = 手机号, '02' = 证件号, '03' = eWallet
+    const subId = idType + formatLength(targetId) + targetId;
     // 合并 Tag 29
-    const tag29Content = sub00 + sub01;
+    const tag29Content = sub00 + subId;
     const tag29 = '29' + formatLength(tag29Content) + tag29Content;
 
     // 2. 格式化金额 (必须是 'X.XX' 格式)
     const formattedAmount = amount.toFixed(2);
 
     // 3. 构建核心字符串 (不含 CRC)
+    // 字段顺序参考 dtinth/promptpay-qr: 00, 01, 29, 58, 53, 54, 63
     let payload = '';
     // Tag 00 - Payload Format Indicator: 01
     payload += '00' + formatLength('01') + '01';
@@ -116,14 +110,12 @@ export function generatePromptPayPayload(promptpayId: string, amount: number): s
     payload += '01' + formatLength('12') + '12';
     // Tag 29 - Merchant Account Information
     payload += tag29;
-    // Tag 52 - MCC (Merchant Category Code)
-    payload += '52' + formatLength(MCC) + MCC;
+    // Tag 58 - Country Code (TH) - 必须在 Tag 53 之前！
+    payload += '58' + formatLength(COUNTRY_CODE) + COUNTRY_CODE;
     // Tag 53 - Transaction Currency (THB = 764)
     payload += '53' + formatLength(CURRENCY_CODE) + CURRENCY_CODE;
     // Tag 54 - Transaction Amount
     payload += '54' + formatLength(formattedAmount) + formattedAmount;
-    // Tag 58 - Country Code
-    payload += '58' + formatLength(COUNTRY_CODE) + COUNTRY_CODE;
     // Tag 63 - CRC Checksum (Placeholder)
     payload += '6304'; 
 
@@ -138,7 +130,7 @@ export function generatePromptPayPayload(promptpayId: string, amount: number): s
     // 【调试日志】
     console.log('🔵 PromptPay QR 生成成功:', {
         originalId: promptpayId,
-        cleanedId,
+        numbersOnly: numbers,
         targetId,
         idType: idType === '01' ? '手机号' : '证件号',
         amount: formattedAmount,
