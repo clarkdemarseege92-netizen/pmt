@@ -131,7 +131,9 @@ export function generatePromptPayPayload(promptpayId: string, amount: number): s
     const crc = calculateCrc16(payload);
 
     // 5. 返回最终 Payload
-    const finalPayload = payload.slice(0, -4) + crc;
+    // payload 的最后4个字符是 '6304' (CRC placeholder)
+    // 我们需要替换为完整的 '6304' + CRC 值
+    const finalPayload = payload + crc;
 
     // 【调试日志】
     console.log('🔵 PromptPay QR 生成成功:', {
