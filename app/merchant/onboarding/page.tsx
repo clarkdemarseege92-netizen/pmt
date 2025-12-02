@@ -34,7 +34,7 @@ export default function OnboardingPage() {
           owner_id: user.id,
           shop_name: formData.shopName,
           address: formData.address,
-          shop_phone: formData.phone,
+          contact_phone: formData.phone, // 统一使用 contact_phone
           status: 'pending', // 默认为待审核
           // platform_balance 默认为 2000 (由数据库设置)
         })

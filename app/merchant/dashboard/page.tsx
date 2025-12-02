@@ -12,7 +12,7 @@ type Merchant = {
   owner_id: string; // uuid
   shop_name: string;
   address: string;
-  shop_phone: string;
+  contact_phone: string; // 统一使用 contact_phone
   status: 'pending' | 'approved' | 'rejected';
   logo_url?: string;
   cover_image_urls?: string[];
@@ -39,7 +39,7 @@ const OnboardingForm = ({ user }: { user: User }) => {
       owner_id: user.id,
       shop_name: shopName,
       address: address,
-      shop_phone: shopPhone,
+      contact_phone: shopPhone, // 统一使用 contact_phone
       status: 'pending' // 状态设为 'pending' (试用中/待审核)
     });
 
