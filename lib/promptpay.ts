@@ -64,8 +64,7 @@ export function generatePromptPayPayload(promptpayId: string, amount: number): s
 
     // 判断ID类型
     if (cleanedId.startsWith('+66')) {
-        // 手机号处理
-        // +66812345678 → 0812345678 (10位数字)
+        // 格式: +66812345678 → 0812345678 (10位数字)
         const phoneDigits = cleanedId.substring(3).replace(/\D/g, '');
         targetId = '0' + phoneDigits;
 
@@ -76,9 +75,15 @@ export function generatePromptPayPayload(promptpayId: string, amount: number): s
 
         idType = '01'; // 手机号 (MSISDN)
     } else if (cleanedId.startsWith('0') && /^\d{10}$/.test(cleanedId)) {
-        // 已经是 0 开头的10位手机号
+        // 格式: 0812345678 (已经是 0 开头的10位手机号)
         targetId = cleanedId;
         idType = '01';
+    } else if (/^66\d{9}$/.test(cleanedId)) {
+        // 格式: 66812345678 (11位，缺少前缀的手机号)
+        // 转换: 66812345678 → 0812345678
+        targetId = '0' + cleanedId.substring(2);
+        idType = '01'; // 手机号
+        console.log(`🔧 自动修正手机号格式: ${cleanedId} → ${targetId}`);
     } else {
         // 证件号/税号 (National ID/Tax ID)
         targetId = cleanedId.replace(/\D/g, ''); // 只保留数字
