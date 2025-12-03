@@ -176,19 +176,35 @@ export default function BuyButton({
           </div>
 
           <div className="flex gap-3">
-            <button 
+            <button
               className="btn btn-outline flex-1 btn-sm"
               onClick={() => setPaymentInfo(null)}
             >
               取消
             </button>
-            <button 
+            <button
               className="btn btn-primary flex-1 btn-sm text-white"
-              onClick={() => {
-                setPaymentInfo(null);
-                setError(null);
-                document.body.style.overflow = 'unset';
-                router.push('/client/orders');
+              onClick={async () => {
+                // 更新订单状态为 paid (测试模式 - 跳过支付凭证验证)
+                try {
+                  const response = await fetch('/api/confirm-payment', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ orderId: paymentInfo.orderId }),
+                  });
+
+                  if (!response.ok) {
+                    console.error('更新订单状态失败');
+                  }
+                } catch (error) {
+                  console.error('确认支付错误:', error);
+                } finally {
+                  setPaymentInfo(null);
+                  setError(null);
+                  document.body.style.overflow = 'unset';
+                  router.push('/client/orders');
+                  router.refresh();
+                }
               }}
             >
               已付款

@@ -260,11 +260,20 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // 5. 创建订单项
+    // 5. 创建订单项（插入到 order_items 表）
     if (orderItems.length > 0) {
-      await supabaseAdmin
-        .from('orders')
+      const { error: orderItemsError } = await supabaseAdmin
+        .from('order_items')
         .insert(orderItems.map(item => ({ order_id: orderId, ...item })));
+
+      if (orderItemsError) {
+        console.error('创建订单项错误:', orderItemsError);
+        // 注意：订单已创建，但订单项失败。实际项目中可能需要回滚订单
+        return NextResponse.json({
+          success: false,
+          message: '创建订单项失败: ' + orderItemsError.message
+        }, { status: 500 });
+      }
     }
 
     // 6. 生成支付二维码
