@@ -1,10 +1,11 @@
 // 文件: /components/OrderTabs.tsx
 "use client";
 
-import React, { useState } from 'react'; // 【修复】：显式引入 React
+import React, { useState, useEffect } from 'react'; // 【修复】：显式引入 React
 import QRCode from 'react-qr-code';
 import Image from 'next/image';
-import { HiTicket, HiStar, HiClock, HiShoppingBag } from 'react-icons/hi2';
+import { HiTicket, HiStar, HiClock, HiShoppingBag, HiPhoto } from 'react-icons/hi2';
+import UploadSlipModal from './UploadSlipModal';
 
 // --- 类型定义 ---
 type MultiLangName = { th: string; en: string; [key: string]: string };
@@ -37,6 +38,37 @@ const statusMap = {
 export default function OrderTabs({ orders }: { orders: Order[] }) {
     const [activeTab, setActiveTab] = useState<'all' | 'paid' | 'used' | 'expired'>('all');
     const [modalOrder, setModalOrder] = useState<Order | null>(null);
+    const [uploadSlipOrder, setUploadSlipOrder] = useState<Order | null>(null);
+    const [timeRemaining, setTimeRemaining] = useState<Record<string, number>>({});
+
+    // 计算订单剩余时间（30分钟倒计时）
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = Date.now();
+            const newTimeRemaining: Record<string, number> = {};
+
+            orders.forEach(order => {
+                if (order.status === 'pending') {
+                    const createdTime = new Date(order.created_at).getTime();
+                    const elapsed = now - createdTime;
+                    const thirtyMinutes = 30 * 60 * 1000;
+                    const remaining = Math.max(0, thirtyMinutes - elapsed);
+                    newTimeRemaining[order.order_id] = remaining;
+                }
+            });
+
+            setTimeRemaining(newTimeRemaining);
+        }, 1000);
+
+        return () => clearInterval(interval);
+    }, [orders]);
+
+    // 格式化剩余时间
+    const formatTimeRemaining = (ms: number): string => {
+        const minutes = Math.floor(ms / 60000);
+        const seconds = Math.floor((ms % 60000) / 1000);
+        return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
 
     // 添加调试日志
     console.log('=== OrderTabs 组件调试 ===');
@@ -140,9 +172,23 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
 
                                 <div className="card-actions justify-end">
                                     {order.status === 'pending' && (
-                                        <span className="text-sm text-warning flex items-center gap-1">
-                                            <HiClock className="w-4 h-4" /> 等待支付确认
-                                        </span>
+                                        <div className="flex flex-col gap-2 w-full">
+                                            <div className="flex items-center justify-between gap-2">
+                                                <span className="text-xs text-warning flex items-center gap-1">
+                                                    <HiClock className="w-4 h-4" />
+                                                    {timeRemaining[order.order_id] > 0
+                                                        ? `剩余 ${formatTimeRemaining(timeRemaining[order.order_id])}`
+                                                        : '已过期'}
+                                                </span>
+                                                <button
+                                                    className="btn btn-sm btn-primary"
+                                                    onClick={() => setUploadSlipOrder(order)}
+                                                    disabled={timeRemaining[order.order_id] === 0}
+                                                >
+                                                    <HiPhoto className="w-4 h-4" /> 上传凭证
+                                                </button>
+                                            </div>
+                                        </div>
                                     )}
                                     {order.status === 'paid' && (
                                         <button
@@ -232,6 +278,16 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
                         </div>
                     </div>
                 </dialog>
+            )}
+
+            {/* --- 上传付款凭证模态框 --- */}
+            {uploadSlipOrder && (
+                <UploadSlipModal
+                    orderId={uploadSlipOrder.order_id}
+                    orderAmount={uploadSlipOrder.purchase_price}
+                    isOpen={!!uploadSlipOrder}
+                    onClose={() => setUploadSlipOrder(null)}
+                />
             )}
         </div>
     );
