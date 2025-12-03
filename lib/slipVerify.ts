@@ -1,5 +1,5 @@
 // 文件: lib/slipVerify.ts
-// Slip Verify API 集成 - 用于验证 PromptPay 付款凭证
+// Slip2Go API 集成 - 用于验证 PromptPay 付款凭证
 
 export interface SlipVerifyResponse {
   success: boolean;
@@ -19,40 +19,53 @@ export interface SlipVerifyResponse {
 }
 
 /**
- * 验证付款凭证（通过 Slip Verify API）
+ * 验证付款凭证（通过 Slip2Go API）
  * @param base64Image - Base64 编码的付款凭证图片
  * @returns 验证结果
  */
 export async function verifySlip(base64Image: string): Promise<SlipVerifyResponse> {
-  // Slip OK API endpoint
-  const apiUrl = 'https://api.slipok.com/api/line/apikey/14821';
+  const apiUrl = process.env.SLIP2GO_BASE_URL || 'https://connect.slip2go.com/api';
+  const apiSecret = process.env.SLIP2GO_SECRET;
+
+  if (!apiSecret) {
+    console.error('❌ 缺少 SLIP2GO_SECRET 环境变量');
+    return {
+      success: false,
+      error: 'Slip2Go API 配置错误',
+    };
+  }
 
   try {
-    console.log('🔍 开始调用 Slip Verify API...');
+    console.log('🔍 开始调用 Slip2Go API...');
 
-    // 移除 base64 前缀（如果存在）
-    const cleanBase64 = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+    // 将 base64 转换为 Blob 和 File 对象
+    const base64Data = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
+    const byteString = Buffer.from(base64Data, 'base64');
+    const blob = new Blob([byteString], { type: 'image/png' });
+    const file = new File([blob], 'slip.png', { type: 'image/png' });
 
-    console.log('📤 发送请求到:', apiUrl);
-    console.log('📤 Base64 长度:', cleanBase64.length);
+    // 构造 FormData（按照 Slip2Go API 要求）
+    const formData = new FormData();
+    formData.append('file', file);
+    // 不添加 payload，只做基础验证（无条件检查）
 
-    const response = await fetch(apiUrl, {
+    console.log('📤 发送请求到:', `${apiUrl}/verify-slip/qr-image/info`);
+
+    const response = await fetch(`${apiUrl}/verify-slip/qr-image/info`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiSecret}`,
       },
-      body: JSON.stringify({
-        data: cleanBase64,
-        log: true,
-      }),
+      body: formData,
     });
 
     const result = await response.json();
-    console.log('📥 Slip Verify API 响应状态:', response.status);
-    console.log('📥 Slip Verify API 响应内容:', JSON.stringify(result, null, 2));
+    console.log('📥 Slip2Go API 响应状态:', response.status);
+    console.log('📥 Slip2Go API 响应码:', result.code);
+    console.log('📥 Slip2Go API 响应内容:', JSON.stringify(result, null, 2));
 
     if (!response.ok) {
-      console.error('❌ Slip Verify API 返回错误:', response.status, response.statusText);
+      console.error('❌ Slip2Go API 返回错误:', response.status, response.statusText);
       console.error('❌ 错误详情:', result);
       return {
         success: false,
@@ -61,8 +74,9 @@ export async function verifySlip(base64Image: string): Promise<SlipVerifyRespons
       };
     }
 
-    // 检查 API 返回的数据结构
-    if (result.success === false || !result.data) {
+    // 检查 Slip2Go API 返回码
+    // 200000 = Slip found, 200200 = Slip is Valid
+    if (!result.data || (result.code !== '200000' && result.code !== '200200')) {
       return {
         success: false,
         error: result.message || '无法验证付款凭证',
@@ -70,26 +84,27 @@ export async function verifySlip(base64Image: string): Promise<SlipVerifyRespons
       };
     }
 
-    // 提取关键信息
+    // 提取关键信息（按照 Slip2Go API 响应格式）
     const slipData = result.data;
 
     return {
       success: true,
       data: {
-        amount: parseFloat(slipData.amount || slipData.value || '0'),
-        receiverAccount: slipData.receiver?.account || slipData.receiverAccount || '',
-        receiverName: slipData.receiver?.name || slipData.receiverName,
-        transactionDateTime: slipData.transDate || slipData.transactionDateTime || '',
-        transactionId: slipData.transRef || slipData.transactionId || '',
+        amount: parseFloat(slipData.amount || '0'),
+        receiverAccount: slipData.receiver?.account?.proxy?.account ||
+                        slipData.receiver?.account?.bank?.account || '',
+        receiverName: slipData.receiver?.account?.name || '',
+        transactionDateTime: slipData.dateTime || '',
+        transactionId: slipData.transRef || '',
         sender: {
-          account: slipData.sender?.account || '',
-          name: slipData.sender?.name || '',
+          account: slipData.sender?.account?.bank?.account || '',
+          name: slipData.sender?.account?.name || '',
         },
       },
     };
 
   } catch (error) {
-    console.error('❌ Slip Verify API 调用异常:', error);
+    console.error('❌ Slip2Go API 调用异常:', error);
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Unknown error',
@@ -99,7 +114,7 @@ export async function verifySlip(base64Image: string): Promise<SlipVerifyRespons
 
 /**
  * 验证付款凭证是否匹配订单信息
- * @param slipData - Slip Verify 返回的数据
+ * @param slipData - Slip2Go 返回的数据
  * @param expectedAmount - 预期金额
  * @param expectedReceiver - 预期收款账号（PromptPay ID）
  * @param orderCreatedAt - 订单创建时间
