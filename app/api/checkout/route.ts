@@ -260,19 +260,29 @@ export async function POST(request: Request) {
       }, { status: 500 });
     }
 
-    // 5. 创建订单项（插入到 order_items 表）
+    // 5. 创建订单项（仅用于商品购买，插入到 order_items 表）
+    // 注意：优惠券购买不需要 order_items，因为 coupon_id 已存储在 orders 表中
     if (orderItems.length > 0) {
-      const { error: orderItemsError } = await supabaseAdmin
-        .from('order_items')
-        .insert(orderItems.map(item => ({ order_id: orderId, ...item })));
+      // 过滤掉优惠券项（只保留有 product_id 的项）
+      const productItems = orderItems.filter(item => item.product_id);
 
-      if (orderItemsError) {
-        console.error('创建订单项错误:', orderItemsError);
-        // 注意：订单已创建，但订单项失败。实际项目中可能需要回滚订单
-        return NextResponse.json({
-          success: false,
-          message: '创建订单项失败: ' + orderItemsError.message
-        }, { status: 500 });
+      if (productItems.length > 0) {
+        const { error: orderItemsError } = await supabaseAdmin
+          .from('order_items')
+          .insert(productItems.map(item => ({ order_id: orderId, ...item })));
+
+        if (orderItemsError) {
+          console.error('创建订单项错误:', orderItemsError);
+          // 注意：订单已创建，但订单项失败。实际项目中可能需要回滚订单
+          return NextResponse.json({
+            success: false,
+            message: '创建订单项失败: ' + orderItemsError.message
+          }, { status: 500 });
+        }
+
+        console.log(`✅ 成功创建 ${productItems.length} 个商品订单项`);
+      } else {
+        console.log('ℹ️ 优惠券订单，跳过 order_items 创建（coupon_id 已存储在 orders 表）');
       }
     }
 
