@@ -24,7 +24,8 @@ export interface SlipVerifyResponse {
  * @returns 验证结果
  */
 export async function verifySlip(base64Image: string): Promise<SlipVerifyResponse> {
-  const apiUrl = process.env.SLIP_VERIFY_API_URL || 'https://api.slipok.com/api/line/apikey/14821';
+  // Slip OK API endpoint
+  const apiUrl = 'https://api.slipok.com/api/line/apikey/14821';
 
   try {
     console.log('🔍 开始调用 Slip Verify API...');
@@ -32,28 +33,33 @@ export async function verifySlip(base64Image: string): Promise<SlipVerifyRespons
     // 移除 base64 前缀（如果存在）
     const cleanBase64 = base64Image.replace(/^data:image\/[a-z]+;base64,/, '');
 
+    console.log('📤 发送请求到:', apiUrl);
+    console.log('📤 Base64 长度:', cleanBase64.length);
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-authorization': process.env.SLIP_VERIFY_API_KEY || '',
       },
       body: JSON.stringify({
-        files: [cleanBase64],
-        log: true, // 启用日志以便调试
+        data: cleanBase64,
+        log: true,
       }),
     });
 
+    const result = await response.json();
+    console.log('📥 Slip Verify API 响应状态:', response.status);
+    console.log('📥 Slip Verify API 响应内容:', JSON.stringify(result, null, 2));
+
     if (!response.ok) {
       console.error('❌ Slip Verify API 返回错误:', response.status, response.statusText);
+      console.error('❌ 错误详情:', result);
       return {
         success: false,
-        error: `API 请求失败: ${response.status} ${response.statusText}`,
+        error: result.message || `API 请求失败: ${response.status} ${response.statusText}`,
+        message: result.message,
       };
     }
-
-    const result = await response.json();
-    console.log('✅ Slip Verify API 响应:', JSON.stringify(result, null, 2));
 
     // 检查 API 返回的数据结构
     if (result.success === false || !result.data) {
