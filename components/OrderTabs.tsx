@@ -17,9 +17,9 @@ type Order = {
     coupon_id: string | null;
     redemption_code: string;
     purchase_price: number;
-    status: 'paid' | 'used' | 'expired';
+    status: 'paid' | 'used' | 'expired' | 'pending'; // 添加 pending 状态
     created_at: string;
-    coupons: { name: MultiLangName; image_urls: string[] }[] | null; 
+    coupons: { name: MultiLangName; image_urls: string[] } | null; // 单个对象，不是数组
     order_items: {
         quantity: number;
         products: { name: MultiLangName; image_urls: string[] } | null;
@@ -45,15 +45,16 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
             paid: orders.filter(o => o.status === 'paid').length,
             used: orders.filter(o => o.status === 'used').length,
             expired: orders.filter(o => o.status === 'expired').length,
-            other: orders.filter(o => !['paid', 'used', 'expired'].includes(o.status)).length
+            pending: orders.filter(o => o.status === 'pending').length,
+            other: orders.filter(o => !['paid', 'used', 'expired', 'pending'].includes(o.status)).length
         });
 
         orders.forEach((order, index) => {
             console.log(`订单 ${index + 1}:`, {
                 status: order.status,
-                has_coupons: !!order.coupons && order.coupons.length > 0,
+                has_coupons: !!order.coupons,
                 has_order_items: !!order.order_items && order.order_items.length > 0,
-                will_display: (order.coupons && order.coupons.length > 0) || (order.order_items && order.order_items.length > 0)
+                will_display: !!order.coupons || (order.order_items && order.order_items.length > 0)
             });
         });
     }
@@ -76,17 +77,15 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
                     let isProductOrder = false;
 
                     console.log(`  处理订单 ${order.order_id.slice(0, 8)}:`, {
-                        has_coupons: !!order.coupons && order.coupons.length > 0,
-                        coupons_length: order.coupons?.length || 0,
+                        has_coupons: !!order.coupons,
                         has_order_items: !!order.order_items && order.order_items.length > 0,
                         order_items_length: order.order_items?.length || 0
                     });
 
                     // 优先检查是否有优惠券信息
-                    if (order.coupons && order.coupons.length > 0) {
-                        const c = order.coupons[0];
-                        displayImage = c.image_urls?.[0] || displayImage;
-                        displayName = c.name?.th || '优惠券';
+                    if (order.coupons) {
+                        displayImage = order.coupons.image_urls?.[0] || displayImage;
+                        displayName = order.coupons.name?.th || '优惠券';
                         console.log(`    ✅ 使用优惠券数据: ${displayName}`);
                     }
                     // 如果没有优惠券，检查是否有商品信息

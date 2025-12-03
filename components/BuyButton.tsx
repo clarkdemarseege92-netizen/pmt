@@ -186,24 +186,45 @@ export default function BuyButton({
               className="btn btn-primary flex-1 btn-sm text-white"
               onClick={async () => {
                 // 更新订单状态为 paid (测试模式 - 跳过支付凭证验证)
+                console.log('🔵 点击"已付款"按钮，订单ID:', paymentInfo.orderId);
+
                 try {
+                  console.log('🔵 开始调用 /api/confirm-payment...');
                   const response = await fetch('/api/confirm-payment', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ orderId: paymentInfo.orderId }),
                   });
 
+                  console.log('🔵 API 响应状态:', response.status, response.ok ? '成功' : '失败');
+
                   if (!response.ok) {
-                    console.error('更新订单状态失败');
+                    console.error('❌ 更新订单状态失败，HTTP', response.status);
+                    const errorData = await response.json();
+                    console.error('❌ 错误详情:', errorData);
+                    setError('订单确认失败: ' + (errorData.message || '请稍后重试'));
+                    return; // 不要跳转
                   }
-                } catch (error) {
-                  console.error('确认支付错误:', error);
-                } finally {
+
+                  const result = await response.json();
+                  console.log('✅ 订单状态更新成功:', result);
+
+                  // 关闭模态框
                   setPaymentInfo(null);
                   setError(null);
                   document.body.style.overflow = 'unset';
+
+                  // 等待一小段时间让状态更新生效
+                  await new Promise(resolve => setTimeout(resolve, 500));
+
+                  // 跳转到订单页面
+                  console.log('🔵 跳转到订单页面...');
                   router.push('/client/orders');
                   router.refresh();
+
+                } catch (error) {
+                  console.error('❌ 确认支付异常:', error);
+                  setError('网络错误，请稍后重试');
                 }
               }}
             >

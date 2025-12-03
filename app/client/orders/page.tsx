@@ -31,11 +31,11 @@ type Order = {
   customer_id: string;
   redemption_code: string;
   purchase_price: number;
-  status: 'paid' | 'used' | 'expired';
+  status: 'paid' | 'used' | 'expired' | 'pending'; // 添加 pending 状态
   created_at: string;
   coupon_id: string | null; // 允许为空
-  // Supabase 联表查询返回数组（即使是多对一，取决于查询写法，通常这里前端接收数组处理更灵活）
-  coupons: CouponData[] | null; 
+  // Supabase 通过 coupon_id 外键关联返回单个对象（不是数组）
+  coupons: CouponData | null;
   order_items: OrderItemData[];
 };
 
