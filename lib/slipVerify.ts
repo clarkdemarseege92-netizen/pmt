@@ -139,12 +139,26 @@ export function validateSlipData(
     };
   }
 
-  // 2. 验证收款账号
-  const normalizedReceiver = expectedReceiver.replace(/\D/g, ''); // 只保留数字
-  const normalizedSlipReceiver = slipData.receiverAccount.replace(/\D/g, '');
+  // 2. 验证收款账号（处理国家代码）
+  // 移除所有非数字字符
+  const normalizedReceiver = expectedReceiver.replace(/\D/g, ''); // 例如: "66626369169" 或 "+66626369169" -> "66626369169"
+  const normalizedSlipReceiver = slipData.receiverAccount.replace(/\D/g, ''); // 例如: "0626369169" -> "0626369169"
 
-  if (!normalizedSlipReceiver.includes(normalizedReceiver) &&
-      !normalizedReceiver.includes(normalizedSlipReceiver)) {
+  // 处理泰国国家代码：66 开头的号码去掉 66，0 开头的号码去掉 0
+  const cleanReceiver = normalizedReceiver.replace(/^66/, '').replace(/^0/, ''); // "66626369169" -> "626369169"
+  const cleanSlipReceiver = normalizedSlipReceiver.replace(/^66/, '').replace(/^0/, ''); // "0626369169" -> "626369169"
+
+  console.log('🔍 验证收款账号:', {
+    expected: expectedReceiver,
+    slip: slipData.receiverAccount,
+    normalizedReceiver,
+    normalizedSlipReceiver,
+    cleanReceiver,
+    cleanSlipReceiver,
+  });
+
+  // 比较去掉国家代码和前导 0 后的号码
+  if (cleanReceiver !== cleanSlipReceiver) {
     return {
       valid: false,
       reason: `收款账号不匹配：凭证收款人 ${slipData.receiverAccount}，预期 ${expectedReceiver}`,
