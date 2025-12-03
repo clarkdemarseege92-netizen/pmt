@@ -35,14 +35,21 @@ const statusMap = {
     expired: { label: '已过期', color: 'bg-neutral' },
 };
 
-export default function OrderTabs({ orders }: { orders: Order[] }) {
+function OrderTabs({ orders }: { orders: Order[] }) {
     const [activeTab, setActiveTab] = useState<'all' | 'paid' | 'used' | 'expired'>('all');
     const [modalOrder, setModalOrder] = useState<Order | null>(null);
     const [uploadSlipOrder, setUploadSlipOrder] = useState<Order | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<Record<string, number>>({});
 
     // 计算订单剩余时间（30分钟倒计时）
+    // 只在有 pending 订单时才启动定时器
     useEffect(() => {
+        const hasPendingOrders = orders.some(order => order.status === 'pending');
+
+        if (!hasPendingOrders) {
+            return; // 没有待确认订单，不启动定时器
+        }
+
         const interval = setInterval(() => {
             const now = Date.now();
             const newTimeRemaining: Record<string, number> = {};
@@ -70,35 +77,11 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
     };
 
-    // 添加调试日志
-    console.log('=== OrderTabs 组件调试 ===');
-    console.log('接收到的订单数量:', orders.length);
-
-    if (orders.length > 0) {
-        console.log('订单状态分布:', {
-            paid: orders.filter(o => o.status === 'paid').length,
-            used: orders.filter(o => o.status === 'used').length,
-            expired: orders.filter(o => o.status === 'expired').length,
-            pending: orders.filter(o => o.status === 'pending').length,
-            other: orders.filter(o => !['paid', 'used', 'expired', 'pending'].includes(o.status)).length
-        });
-
-        orders.forEach((order, index) => {
-            console.log(`订单 ${index + 1}:`, {
-                status: order.status,
-                has_coupons: !!order.coupons,
-                has_order_items: !!order.order_items && order.order_items.length > 0,
-                will_display: !!order.coupons || (order.order_items && order.order_items.length > 0)
-            });
-        });
-    }
 
     const renderOrders = (status: 'all' | 'paid' | 'used' | 'expired') => {
         const list = status === 'all'
             ? orders
             : orders.filter(order => order.status === status);
-
-        console.log(`renderOrders(${status}): 筛选后数量 =`, list.length);
 
         if (list.length === 0) {
             return <p className="text-center py-10 text-base-content/60">该分类下暂无订单记录。</p>;
@@ -112,17 +95,10 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
                     let displayName = '未知商品';
                     let isProductOrder = false;
 
-                    console.log(`  处理订单 ${order.order_id.slice(0, 8)}:`, {
-                        has_coupons: !!order.coupons,
-                        has_order_items: !!order.order_items && order.order_items.length > 0,
-                        order_items_length: order.order_items?.length || 0
-                    });
-
                     // 优先检查是否有优惠券信息
                     if (order.coupons) {
                         displayImage = order.coupons.image_urls?.[0] || displayImage;
                         displayName = order.coupons.name?.th || '优惠券';
-                        console.log(`    ✅ 使用优惠券数据: ${displayName}`);
                     }
                     // 如果没有优惠券，检查是否有商品信息
                     else if (order.order_items && order.order_items.length > 0) {
@@ -136,13 +112,9 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
                             displayName = count > 1
                                 ? `${firstItem.products.name?.th} และอื่นๆ (${count} รายการ)`
                                 : firstItem.products.name?.th || '商品';
-                            console.log(`    ✅ 使用商品数据: ${displayName}`);
-                        } else {
-                            console.log(`    ⚠️ order_items 存在但 products 为空`);
                         }
                     } else {
-                        // 数据异常，跳过或显示错误
-                        console.log(`    ❌ 订单 ${order.order_id.slice(0, 8)} 既无优惠券也无商品，跳过显示`);
+                        // 数据异常，跳过显示
                         return null;
                     }
 
@@ -292,3 +264,27 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
         </div>
     );
 }
+
+// 使用 React.memo 优化性能，只在 orders 改变时重新渲染
+export default React.memo(OrderTabs, (prevProps, nextProps) => {
+    // 比较订单数组是否真的改变了
+    if (prevProps.orders.length !== nextProps.orders.length) {
+        return false; // 数量变了，需要重新渲染
+    }
+
+    // 比较每个订单的关键属性
+    for (let i = 0; i < prevProps.orders.length; i++) {
+        const prev = prevProps.orders[i];
+        const next = nextProps.orders[i];
+
+        if (
+            prev.order_id !== next.order_id ||
+            prev.status !== next.status ||
+            prev.redemption_code !== next.redemption_code
+        ) {
+            return false; // 订单有变化，需要重新渲染
+        }
+    }
+
+    return true; // 订单没有实质性变化，跳过渲染
+});
