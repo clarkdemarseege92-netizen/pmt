@@ -160,14 +160,12 @@ export async function POST(request: Request) {
 
     console.log('✅ 凭证数据验证通过');
 
-    // 9. 更新订单状态为 paid，并保存凭证信息
+    // 9. 更新订单状态为 paid
     console.log('6. 更新订单状态为 paid...');
     const { error: updateError } = await supabaseAdmin
       .from('orders')
       .update({
         status: 'paid',
-        payment_verified_at: new Date().toISOString(),
-        payment_slip_data: slipVerifyResult.data,
       })
       .eq('order_id', orderId);
 
