@@ -27,13 +27,15 @@ type Order = {
 };
 
 const statusMap = {
+    all: { label: '全部订单', color: 'bg-info' },
+    pending: { label: '等待确认', color: 'bg-warning' },
     paid: { label: '待使用', color: 'bg-primary' },
     used: { label: '待评价', color: 'bg-warning' },
     expired: { label: '已过期', color: 'bg-neutral' },
 };
 
 export default function OrderTabs({ orders }: { orders: Order[] }) {
-    const [activeTab, setActiveTab] = useState<'paid' | 'used' | 'expired'>('paid');
+    const [activeTab, setActiveTab] = useState<'all' | 'paid' | 'used' | 'expired'>('all');
     const [modalOrder, setModalOrder] = useState<Order | null>(null);
 
     // 添加调试日志
@@ -59,8 +61,10 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
         });
     }
 
-    const renderOrders = (status: 'paid' | 'used' | 'expired') => {
-        const list = orders.filter(order => order.status === status);
+    const renderOrders = (status: 'all' | 'paid' | 'used' | 'expired') => {
+        const list = status === 'all'
+            ? orders
+            : orders.filter(order => order.status === status);
 
         console.log(`renderOrders(${status}): 筛选后数量 =`, list.length);
 
@@ -135,8 +139,13 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
                                 </div>
 
                                 <div className="card-actions justify-end">
+                                    {order.status === 'pending' && (
+                                        <span className="text-sm text-warning flex items-center gap-1">
+                                            <HiClock className="w-4 h-4" /> 等待支付确认
+                                        </span>
+                                    )}
                                     {order.status === 'paid' && (
-                                        <button 
+                                        <button
                                             className="btn btn-sm btn-primary"
                                             onClick={() => setModalOrder(order)}
                                         >
@@ -166,17 +175,22 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
         <div className="w-full">
             {/* 标签页导航 */}
             <div role="tablist" className="tabs tabs-boxed">
-                <a role="tab" 
+                <a role="tab"
+                   className={`tab ${activeTab === 'all' ? 'tab-active' : ''}`}
+                   onClick={() => setActiveTab('all')}>
+                    全部订单
+                </a>
+                <a role="tab"
                    className={`tab ${activeTab === 'paid' ? 'tab-active' : ''}`}
                    onClick={() => setActiveTab('paid')}>
                     待使用
                 </a>
-                <a role="tab" 
+                <a role="tab"
                    className={`tab ${activeTab === 'used' ? 'tab-active' : ''}`}
                    onClick={() => setActiveTab('used')}>
                     待评价
                 </a>
-                <a role="tab" 
+                <a role="tab"
                    className={`tab ${activeTab === 'expired' ? 'tab-active' : ''}`}
                    onClick={() => setActiveTab('expired')}>
                     已过期
@@ -185,6 +199,7 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
 
             {/* 标签页内容 */}
             <div className="py-6">
+                {activeTab === 'all' && renderOrders('all')}
                 {activeTab === 'paid' && renderOrders('paid')}
                 {activeTab === 'used' && renderOrders('used')}
                 {activeTab === 'expired' && renderOrders('expired')}
