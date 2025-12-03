@@ -1,4 +1,4 @@
-// 文件: /app/api/checkout/route.ts
+// 文件: /app/api/checkout/route.ts 已经在开发服务正常工作
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
