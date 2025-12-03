@@ -1,5 +1,6 @@
 // 文件: /app/page.tsx (Sprint 2 - 首页)
 import Navbar from "@/components/Navbar";
+import NearbyCoupons from "@/components/NearbyCoupons";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import Link from "next/link";
@@ -94,6 +95,11 @@ export default async function Home() {
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* 附近优惠券板块 */}
+      <div className="w-full max-w-6xl p-4">
+        <NearbyCoupons />
       </div>
 
       {/* Sprint 2 - Coupons Grid (优惠券卡片网格)  */}
