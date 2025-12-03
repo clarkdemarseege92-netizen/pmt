@@ -36,8 +36,33 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
     const [activeTab, setActiveTab] = useState<'paid' | 'used' | 'expired'>('paid');
     const [modalOrder, setModalOrder] = useState<Order | null>(null);
 
+    // 添加调试日志
+    console.log('=== OrderTabs 组件调试 ===');
+    console.log('接收到的订单数量:', orders.length);
+
+    if (orders.length > 0) {
+        console.log('订单状态分布:', {
+            paid: orders.filter(o => o.status === 'paid').length,
+            used: orders.filter(o => o.status === 'used').length,
+            expired: orders.filter(o => o.status === 'expired').length,
+            other: orders.filter(o => !['paid', 'used', 'expired'].includes(o.status)).length
+        });
+
+        orders.forEach((order, index) => {
+            console.log(`订单 ${index + 1}:`, {
+                status: order.status,
+                has_coupons: !!order.coupons && order.coupons.length > 0,
+                has_order_items: !!order.order_items && order.order_items.length > 0,
+                will_display: (order.coupons && order.coupons.length > 0) || (order.order_items && order.order_items.length > 0)
+            });
+        });
+    }
+
     const renderOrders = (status: 'paid' | 'used' | 'expired') => {
         const list = orders.filter(order => order.status === status);
+
+        console.log(`renderOrders(${status}): 筛选后数量 =`, list.length);
+
         if (list.length === 0) {
             return <p className="text-center py-10 text-base-content/60">该分类下暂无订单记录。</p>;
         }
@@ -50,12 +75,20 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
                     let displayName = '未知商品';
                     let isProductOrder = false;
 
+                    console.log(`  处理订单 ${order.order_id.slice(0, 8)}:`, {
+                        has_coupons: !!order.coupons && order.coupons.length > 0,
+                        coupons_length: order.coupons?.length || 0,
+                        has_order_items: !!order.order_items && order.order_items.length > 0,
+                        order_items_length: order.order_items?.length || 0
+                    });
+
                     // 优先检查是否有优惠券信息
                     if (order.coupons && order.coupons.length > 0) {
                         const c = order.coupons[0];
                         displayImage = c.image_urls?.[0] || displayImage;
                         displayName = c.name?.th || '优惠券';
-                    } 
+                        console.log(`    ✅ 使用优惠券数据: ${displayName}`);
+                    }
                     // 如果没有优惠券，检查是否有商品信息
                     else if (order.order_items && order.order_items.length > 0) {
                         isProductOrder = true;
@@ -64,14 +97,18 @@ export default function OrderTabs({ orders }: { orders: Order[] }) {
                         if (firstItem.products) {
                             displayImage = firstItem.products.image_urls?.[0] || displayImage;
                             const count = order.order_items.length;
-                            // 如果有多个商品，显示“XX 等 N 件商品”
-                            displayName = count > 1 
-                                ? `${firstItem.products.name?.th} และอื่นๆ (${count} รายการ)` 
+                            // 如果有多个商品，显示"XX 等 N 件商品"
+                            displayName = count > 1
+                                ? `${firstItem.products.name?.th} และอื่นๆ (${count} รายการ)`
                                 : firstItem.products.name?.th || '商品';
+                            console.log(`    ✅ 使用商品数据: ${displayName}`);
+                        } else {
+                            console.log(`    ⚠️ order_items 存在但 products 为空`);
                         }
                     } else {
                         // 数据异常，跳过或显示错误
-                        return null; 
+                        console.log(`    ❌ 订单 ${order.order_id.slice(0, 8)} 既无优惠券也无商品，跳过显示`);
+                        return null;
                     }
 
                     return (

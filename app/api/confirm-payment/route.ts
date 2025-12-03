@@ -9,7 +9,11 @@ export async function POST(request: Request) {
   try {
     const { orderId } = await request.json();
 
+    console.log('=== Confirm Payment API ===');
+    console.log('1. 收到订单 ID:', orderId);
+
     if (!orderId) {
+      console.log('❌ 缺少订单 ID');
       return NextResponse.json({
         success: false,
         message: '缺少订单 ID'
@@ -20,7 +24,10 @@ export async function POST(request: Request) {
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
+    console.log('2. 用户信息:', user ? { id: user.id, email: user.email } : 'null');
+
     if (!user) {
+      console.log('❌ 用户未登录');
       return NextResponse.json({
         success: false,
         message: '请先登录'
@@ -35,7 +42,14 @@ export async function POST(request: Request) {
       .eq('customer_id', user.id)
       .single();
 
+    console.log('3. 查询订单结果:', {
+      found: !!order,
+      error: fetchError ? fetchError.message : 'null',
+      order_status: order?.status
+    });
+
     if (fetchError || !order) {
+      console.log('❌ 订单不存在或不属于当前用户');
       return NextResponse.json({
         success: false,
         message: '订单不存在或不属于您'
@@ -43,6 +57,7 @@ export async function POST(request: Request) {
     }
 
     if (order.status !== 'pending') {
+      console.log(`⚠️ 订单状态不是 pending，当前为: ${order.status}`);
       return NextResponse.json({
         success: false,
         message: `订单状态错误：当前为 ${order.status}`
@@ -50,18 +65,22 @@ export async function POST(request: Request) {
     }
 
     // 更新订单状态为 paid
+    console.log('4. 开始更新订单状态为 paid...');
     const { error: updateError } = await supabase
       .from('orders')
       .update({ status: 'paid' })
       .eq('order_id', orderId);
 
     if (updateError) {
-      console.error('更新订单状态错误:', updateError);
+      console.error('❌ 更新订单状态错误:', updateError);
       return NextResponse.json({
         success: false,
         message: '更新订单状态失败'
       }, { status: 500 });
     }
+
+    console.log('✅ 订单状态已更新为 paid');
+    console.log('=== Confirm Payment API 完成 ===\n');
 
     return NextResponse.json({
       success: true,
@@ -69,7 +88,7 @@ export async function POST(request: Request) {
     });
 
   } catch (error) {
-    console.error('Confirm Payment API 错误:', error);
+    console.error('❌ Confirm Payment API 错误:', error);
     return NextResponse.json({
       success: false,
       message: '服务器内部错误'

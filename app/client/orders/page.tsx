@@ -40,16 +40,23 @@ type Order = {
 };
 
 export default async function MyOrdersPage() {
-    
+
     const supabase = await createSupabaseServerClient();
-    
+
     // 1. 检查用户登录状态
     const { data: { user } } = await supabase.auth.getUser();
+
+    console.log('=== 订单页面调试日志 ===');
+    console.log('1. 用户信息:', user ? { id: user.id, email: user.email } : 'null');
+
     if (!user) {
+        console.log('❌ 用户未登录，重定向到登录页');
         redirect("/login");
     }
 
     // 2. 核心查询
+    console.log('2. 开始查询订单，customer_id:', user.id);
+
     const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -59,7 +66,7 @@ export default async function MyOrdersPage() {
             purchase_price,
             status,
             created_at,
-            coupon_id,  
+            coupon_id,
             coupons (
                 name,
                 image_urls
@@ -75,13 +82,38 @@ export default async function MyOrdersPage() {
         .eq('customer_id', user.id)
         .order('created_at', { ascending: false });
 
+    console.log('3. 查询结果:');
+    console.log('   - Error:', error ? error.message : 'null');
+    console.log('   - Data 数量:', data ? data.length : 0);
+
+    if (data && data.length > 0) {
+        console.log('   - 订单详情:');
+        data.forEach((order: Record<string, unknown>, index: number) => {
+            const orderData = order as Order;
+            console.log(`      订单 ${index + 1}:`, {
+                order_id: orderData.order_id,
+                status: orderData.status,
+                purchase_price: orderData.purchase_price,
+                has_coupons: !!orderData.coupons,
+                coupons_count: orderData.coupons ? 1 : 0,
+                has_order_items: !!orderData.order_items,
+                order_items_count: orderData.order_items?.length || 0
+            });
+        });
+    } else {
+        console.log('   ⚠️ 没有查询到任何订单数据');
+    }
+
     if (error) {
-        console.error("Error fetching orders:", error.message);
+        console.error("❌ Error fetching orders:", error.message);
     }
 
     // 【修复】：将查询结果断言为 Order[]，消除 'any' 警告
     // 注意：这里假设 status 数据库值与 TypeScript 类型匹配，实际项目中可能需要更严格的校验
     const orders = (data as unknown as Order[]) || [];
+
+    console.log('4. 最终传递给 OrderTabs 的订单数量:', orders.length);
+    console.log('=== 订单页面调试日志结束 ===\n');
 
     // 3. 渲染 Client Component
     return (
