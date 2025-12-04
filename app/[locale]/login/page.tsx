@@ -1,15 +1,17 @@
-// 文件: /app/login/page.tsx
-"use client"; 
+// 文件: /app/[locale]/login/page.tsx
+"use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import { supabase } from "@/lib/supabaseClient"; 
-import { Provider } from '@supabase/supabase-js'; 
+import { useRouter } from "@/i18n/routing";
+import { supabase } from "@/lib/supabaseClient";
+import { Provider } from '@supabase/supabase-js';
+import { useTranslations } from 'next-intl';
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const router = useRouter();
+  const t = useTranslations('login');
 
   // 状态
   const [email, setEmail] = useState("");
@@ -50,7 +52,7 @@ export default function LoginPage() {
           name: error.name,
           isMobile
         });
-        setError(`登录失败: ${error.message}`);
+        setError(`${t('loginFailed')}: ${error.message}`);
         setLoading(false);
         return;
       }
@@ -61,8 +63,8 @@ export default function LoginPage() {
       });
     } catch (err) {
       console.error("🔴 LOGIN: OAuth 异常", err);
-      const errorMessage = err instanceof Error ? err.message : "未知错误";
-      setError(`登录异常: ${errorMessage}`);
+      const errorMessage = err instanceof Error ? err.message : t('unknownError');
+      setError(`${t('loginError')}: ${errorMessage}`);
       setLoading(false);
     }
   };
@@ -98,8 +100,9 @@ export default function LoginPage() {
       await new Promise(resolve => setTimeout(resolve, 500));
 
       console.log('🟢 LOGIN PAGE: 准备跳转到首页');
-      // 【关键修复】使用 window.location.href 强制刷新，确保服务器端获取新的 cookies
-      window.location.href = '/';
+      // 使用 next-intl 的路由器跳转
+      router.push('/');
+      router.refresh();
     }
   };
 
@@ -130,8 +133,9 @@ export default function LoginPage() {
     }
 
     console.log('🟢 LOGIN PAGE: 注册成功，准备跳转到首页');
-    // 【关键修复】使用 window.location.href 强制刷新，确保服务器端获取新的 cookies
-    window.location.href = '/';
+    // 使用 next-intl 的路由器跳转
+    router.push('/');
+    router.refresh();
   };
 
   return (
@@ -140,58 +144,58 @@ export default function LoginPage() {
         <div className="card w-full shadow-2xl bg-base-100">
           <div className="card-body">
             
-            <h1 className="card-title text-2xl text-center">欢迎来到 PMT</h1>
-            
+            <h1 className="card-title text-2xl text-center">{t('title')}</h1>
+
             {/* ----- 社交登录按钮 ----- */}
             <div className="space-y-2 my-4">
-              <button 
-                className="btn btn-outline w-full" 
+              <button
+                className="btn btn-outline w-full"
                 onClick={() => handleOAuthLogin('google')}
                 disabled={loading}
               >
-                使用 Google 登录
+                {t('googleLogin')}
               </button>
             </div>
 
-            <div className="divider">或使用邮箱</div>
+            <div className="divider">{t('orUseEmail')}</div>
 
             {/* ----- 邮箱/密码 ----- */}
             <div className="form-control">
-              <label className="label"><span className="label-text">邮箱</span></label>
+              <label className="label"><span className="label-text">{t('email')}</span></label>
               <input
                 type="email"
-                placeholder="test@example.com"
+                placeholder={t('emailPlaceholder')}
                 className="input input-bordered"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
-            
+
             <div className="form-control mt-4">
-              <label className="label"><span className="label-text">密码</span></label>
+              <label className="label"><span className="label-text">{t('password')}</span></label>
               <input
                 type="password"
-                placeholder="••••••••"
+                placeholder={t('passwordPlaceholder')}
                 className="input input-bordered"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-            
+
             <div className="form-control mt-6 grid grid-cols-2 gap-4">
-              <button 
-                className="btn btn-primary" 
-                onClick={handleEmailLogin} 
+              <button
+                className="btn btn-primary"
+                onClick={handleEmailLogin}
                 disabled={loading}
               >
-                登录
+                {t('loginButton')}
               </button>
-              <button 
-                className="btn btn-outline" 
-                onClick={handleEmailSignUp} 
+              <button
+                className="btn btn-outline"
+                onClick={handleEmailSignUp}
                 disabled={loading}
               >
-                注册
+                {t('signUpButton')}
               </button>
             </div>
 

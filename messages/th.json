@@ -1,0 +1,79 @@
+{
+  "nav": {
+    "home": "หน้าแรก",
+    "categories": "หมวดหมู่",
+    "orders": "คำสั่งซื้อของฉัน",
+    "login": "เข้าสู่ระบบ / ลงทะเบียน",
+    "logout": "ออกจากระบบ",
+    "profile": "โปรไฟล์",
+    "user": "ผู้ใช้",
+    "regularUser": "ผู้ใช้ทั่วไป",
+    "myProfile": "ข้อมูลส่วนตัว",
+    "myOrders": "คำสั่งซื้อของฉัน",
+    "merchantCenter": "ศูนย์ผู้ค้า / เปิดร้านค้า"
+  },
+  "home": {
+    "title": "ยินดีต้อนรับสู่แพลตฟอร์มคูปอง",
+    "subtitle": "ค้นพบดีลและส่วนลดที่ดีที่สุดใกล้คุณ",
+    "viewAll": "ดูทั้งหมด",
+    "popularCoupons": "คูปองยอดนิยม",
+    "nearbyCoupons": "คูปองใกล้ฉัน",
+    "categories": "หมวดหมู่",
+    "browseByCategory": "เรียกดูตามหมวดหมู่",
+    "hero": {
+      "title": "PMT แพลตฟอร์มคูปอง",
+      "subtitle": "ค้นหาดีลที่ดีที่สุดรอบตัวคุณ",
+      "searchPlaceholder": "ค้นหาร้านค้าหรือคูปอง..."
+    },
+    "featuredDeals": "ดีลแนะนำ"
+  },
+  "nearby": {
+    "title": "คูปองใกล้ฉัน",
+    "gettingLocation": "กำลังรับตำแหน่งของคุณ",
+    "allowLocation": "โปรดอนุญาตให้เบราว์เซอร์เข้าถึงตำแหน่งของคุณเพื่อแนะนำคูปองใกล้คุณ",
+    "permissionDenied": "สิทธิ์การเข้าถึงตำแหน่งถูกปฏิเสธ",
+    "permissionDeniedDesc": "โปรดอนุญาตสิทธิ์การเข้าถึงตำแหน่งในการตั้งค่าเบราว์เซอร์เพื่อดูคูปองใกล้เคียง",
+    "locationFailed": "การรับตำแหน่งล้มเหลว",
+    "retry": "ลองอีกครั้ง",
+    "refresh": "รีเฟรช",
+    "noNearbyCoupons": "ไม่มีคูปองในรัศมี 10 กิโลเมตร",
+    "stockRemaining": "เหลือ",
+    "pieces": "ใบ",
+    "distance": "ระยะทาง"
+  },
+  "coupon": {
+    "buy": "ซื้อเลย",
+    "viewDetails": "ดูรายละเอียด",
+    "soldOut": "ขายหมดแล้ว",
+    "discount": "ส่วนลด"
+  },
+  "common": {
+    "loading": "กำลังโหลด...",
+    "error": "เกิดข้อผิดพลาด",
+    "success": "สำเร็จ",
+    "confirm": "ยืนยัน",
+    "cancel": "ยกเลิก",
+    "save": "บันทึก",
+    "delete": "ลบ",
+    "edit": "แก้ไข",
+    "back": "กลับ",
+    "next": "ถัดไป",
+    "search": "ค้นหา",
+    "filter": "กรอง",
+    "sort": "เรียงลำดับ"
+  },
+  "login": {
+    "title": "ยินดีต้อนรับสู่ PMT",
+    "googleLogin": "เข้าสู่ระบบด้วย Google",
+    "orUseEmail": "หรือใช้อีเมล",
+    "email": "อีเมล",
+    "emailPlaceholder": "test@example.com",
+    "password": "รหัสผ่าน",
+    "passwordPlaceholder": "••••••••",
+    "loginButton": "เข้าสู่ระบบ",
+    "signUpButton": "ลงทะเบียน",
+    "loginFailed": "เข้าสู่ระบบล้มเหลว",
+    "loginError": "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
+    "unknownError": "ข้อผิดพลาดที่ไม่ทราบสาเหตุ"
+  }
+}

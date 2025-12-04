@@ -1,0 +1,79 @@
+{
+  "nav": {
+    "home": "首页",
+    "categories": "分类",
+    "orders": "我的订单",
+    "login": "登录 / 注册",
+    "logout": "退出登录",
+    "profile": "个人资料",
+    "user": "用户",
+    "regularUser": "普通用户",
+    "myProfile": "个人中心 / 资料",
+    "myOrders": "我的订单",
+    "merchantCenter": "商家中心 / 我要开店"
+  },
+  "home": {
+    "title": "欢迎来到优惠券平台",
+    "subtitle": "发现您附近最好的优惠和折扣",
+    "viewAll": "查看全部",
+    "popularCoupons": "热门优惠券",
+    "nearbyCoupons": "附近优惠",
+    "categories": "分类",
+    "browseByCategory": "按分类浏览",
+    "hero": {
+      "title": "PMT 优惠平台",
+      "subtitle": "发现您身边的最佳优惠",
+      "searchPlaceholder": "搜索商家或优惠券..."
+    },
+    "featuredDeals": "精选优惠"
+  },
+  "nearby": {
+    "title": "附近优惠",
+    "gettingLocation": "正在获取您的位置",
+    "allowLocation": "请允许浏览器访问您的位置，以便为您推荐附近的优惠券",
+    "permissionDenied": "位置权限被拒绝",
+    "permissionDeniedDesc": "请在浏览器设置中允许位置权限，以查看附近优惠",
+    "locationFailed": "获取位置失败",
+    "retry": "重试",
+    "refresh": "刷新",
+    "noNearbyCoupons": "附近 10 公里内暂无优惠券",
+    "stockRemaining": "剩余",
+    "pieces": "张",
+    "distance": "距离"
+  },
+  "coupon": {
+    "buy": "立即购买",
+    "viewDetails": "查看详情",
+    "soldOut": "已售罄",
+    "discount": "折扣"
+  },
+  "common": {
+    "loading": "加载中...",
+    "error": "发生错误",
+    "success": "成功",
+    "confirm": "确认",
+    "cancel": "取消",
+    "save": "保存",
+    "delete": "删除",
+    "edit": "编辑",
+    "back": "返回",
+    "next": "下一步",
+    "search": "搜索",
+    "filter": "筛选",
+    "sort": "排序"
+  },
+  "login": {
+    "title": "欢迎来到 PMT",
+    "googleLogin": "使用 Google 登录",
+    "orUseEmail": "或使用邮箱",
+    "email": "邮箱",
+    "emailPlaceholder": "test@example.com",
+    "password": "密码",
+    "passwordPlaceholder": "••••••••",
+    "loginButton": "登录",
+    "signUpButton": "注册",
+    "loginFailed": "登录失败",
+    "loginError": "登录异常",
+    "unknownError": "未知错误"
+  }
+}

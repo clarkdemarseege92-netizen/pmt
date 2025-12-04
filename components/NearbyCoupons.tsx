@@ -6,9 +6,11 @@
 import { useState, useEffect } from 'react';
 import { useGeolocation } from '@/hooks/useGeolocation';
 import { formatDistance } from '@/lib/distance';
-import Link from 'next/link';
+import {Link} from '@/i18n/routing';
 import Image from 'next/image';
 import { HiLocationMarker, HiRefresh } from 'react-icons/hi';
+import {useTranslations, useLocale} from 'next-intl';
+import { getLocalizedValue } from '@/lib/i18nUtils';
 
 // 优惠券数据类型
 type MultiLangName = {
@@ -34,18 +36,16 @@ type NearbyCoupon = {
   distance: number; // 距离（公里）
 };
 
-// 辅助函数：获取多语言名称
-const getLangName = (name: string | MultiLangName, lang = 'th'): string => {
-  if (typeof name === 'string') return name;
-  return name[lang] || name['en'] || 'N/A';
-};
-
 export default function NearbyCoupons() {
-  const { coordinates, error, loading, permissionDenied, requestLocation } = useGeolocation();
+  // 自动请求位置权限（首次加载时）
+  const { coordinates, error, loading, permissionDenied, requestLocation } = useGeolocation(true);
   const [coupons, setCoupons] = useState<NearbyCoupon[]>([]);
   const [fetchingCoupons, setFetchingCoupons] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
-  const [showLocationPrompt, setShowLocationPrompt] = useState(true);
+
+  // 国际化
+  const t = useTranslations('nearby');
+  const locale = useLocale();
 
   // 当获取到位置后，自动请求附近优惠券
   useEffect(() => {
@@ -71,49 +71,28 @@ export default function NearbyCoupons() {
       if (result.success) {
         setCoupons(result.data || []);
       } else {
-        setFetchError(result.message || '获取失败');
+        setFetchError(result.message || t('locationFailed'));
       }
     } catch (error) {
-      console.error('获取附近优惠券错误:', error);
-      setFetchError('网络错误，请稍后重试');
+      console.error('Error fetching nearby coupons:', error);
+      setFetchError(t('locationFailed'));
     } finally {
       setFetchingCoupons(false);
     }
   };
 
-  // 处理用户点击"查看附近优惠"
-  const handleRequestLocation = () => {
-    setShowLocationPrompt(false);
-    requestLocation();
-  };
-
-  // 如果用户还没有请求位置，显示提示
-  if (showLocationPrompt && !coordinates) {
+  // 正在首次加载位置
+  if (loading && !coordinates) {
     return (
-      <section className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 text-center">
+      <section className="bg-linear-to-r from-primary/10 to-secondary/10 rounded-2xl p-8 text-center">
         <div className="max-w-md mx-auto">
-          <HiLocationMarker className="w-16 h-16 text-primary mx-auto mb-4" />
-          <h2 className="text-2xl font-bold mb-3">发现附近优惠</h2>
-          <p className="text-base-content/70 mb-6">
-            开启位置权限，为您推荐附近的优惠券
+          <div className="flex items-center justify-center mb-4">
+            <span className="loading loading-spinner loading-lg text-primary"></span>
+          </div>
+          <h2 className="text-2xl font-bold mb-3">{t('gettingLocation')}</h2>
+          <p className="text-base-content/70">
+            {t('allowLocation')}
           </p>
-          <button
-            onClick={handleRequestLocation}
-            className="btn btn-primary btn-lg text-white"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="loading loading-spinner loading-sm"></span>
-                获取位置中...
-              </>
-            ) : (
-              <>
-                <HiLocationMarker className="w-5 h-5" />
-                查看附近优惠
-              </>
-            )}
-          </button>
         </div>
       </section>
     );
@@ -124,13 +103,13 @@ export default function NearbyCoupons() {
     return (
       <section className="bg-warning/10 rounded-2xl p-8 text-center">
         <div className="max-w-md mx-auto">
-          <h2 className="text-xl font-bold mb-3 text-warning">位置权限被拒绝</h2>
+          <h2 className="text-xl font-bold mb-3 text-warning">{t('permissionDenied')}</h2>
           <p className="text-base-content/70 mb-4">
-            请在浏览器设置中允许位置权限，以查看附近优惠
+            {t('permissionDeniedDesc')}
           </p>
-          <button onClick={handleRequestLocation} className="btn btn-outline btn-sm">
+          <button onClick={requestLocation} className="btn btn-outline btn-sm">
             <HiRefresh className="w-4 h-4" />
-            重新请求
+            {t('retry')}
           </button>
         </div>
       </section>
@@ -142,11 +121,11 @@ export default function NearbyCoupons() {
     return (
       <section className="bg-error/10 rounded-2xl p-8 text-center">
         <div className="max-w-md mx-auto">
-          <h2 className="text-xl font-bold mb-3 text-error">获取位置失败</h2>
+          <h2 className="text-xl font-bold mb-3 text-error">{t('locationFailed')}</h2>
           <p className="text-base-content/70 mb-4">{error}</p>
-          <button onClick={handleRequestLocation} className="btn btn-outline btn-sm">
+          <button onClick={requestLocation} className="btn btn-outline btn-sm">
             <HiRefresh className="w-4 h-4" />
-            重试
+            {t('retry')}
           </button>
         </div>
       </section>
@@ -159,7 +138,7 @@ export default function NearbyCoupons() {
       <section className="py-8">
         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
           <HiLocationMarker className="text-primary" />
-          附近优惠
+          {t('title')}
         </h2>
         <div className="flex items-center justify-center py-12">
           <span className="loading loading-spinner loading-lg text-primary"></span>
@@ -174,15 +153,15 @@ export default function NearbyCoupons() {
       <section className="py-8">
         <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
           <HiLocationMarker className="text-primary" />
-          附近优惠
+          {t('title')}
         </h2>
         <div className="bg-base-200 rounded-2xl p-8 text-center">
           <p className="text-base-content/70 mb-4">
-            附近 10 公里内暂无优惠券
+            {t('noNearbyCoupons')}
           </p>
           <button onClick={fetchNearbyCoupons} className="btn btn-outline btn-sm">
             <HiRefresh className="w-4 h-4" />
-            刷新
+            {t('refresh')}
           </button>
         </div>
       </section>
@@ -195,7 +174,7 @@ export default function NearbyCoupons() {
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2">
           <HiLocationMarker className="text-primary" />
-          附近优惠
+          {t('title')}
         </h2>
         <button
           onClick={fetchNearbyCoupons}
@@ -203,7 +182,7 @@ export default function NearbyCoupons() {
           disabled={fetchingCoupons}
         >
           <HiRefresh className={`w-4 h-4 ${fetchingCoupons ? 'animate-spin' : ''}`} />
-          刷新
+          {t('refresh')}
         </button>
       </div>
 
@@ -224,7 +203,7 @@ export default function NearbyCoupons() {
             <figure className="relative h-48 bg-base-200">
               <Image
                 src={coupon.image_urls[0] || '/placeholder-coupon.png'}
-                alt={getLangName(coupon.name)}
+                alt={getLocalizedValue(coupon.name, locale as 'th' | 'zh' | 'en') || ''}
                 fill
                 className="object-cover"
               />
@@ -238,12 +217,12 @@ export default function NearbyCoupons() {
             <div className="card-body p-4">
               {/* 优惠券名称 */}
               <h3 className="card-title text-base line-clamp-2">
-                {getLangName(coupon.name)}
+                {getLocalizedValue(coupon.name, locale as 'th' | 'zh' | 'en')}
               </h3>
 
               {/* 商户名称 */}
               <p className="text-sm text-base-content/60 line-clamp-1">
-                {getLangName(coupon.merchant.shop_name)}
+                {getLocalizedValue(coupon.merchant.shop_name, locale as 'th' | 'zh' | 'en')}
               </p>
 
               {/* 价格 */}
@@ -258,7 +237,7 @@ export default function NearbyCoupons() {
 
               {/* 库存 */}
               <div className="text-xs text-base-content/60 mt-1">
-                剩余 {coupon.stock_quantity} 张
+                {t('stockRemaining')} {coupon.stock_quantity} {t('pieces')}
               </div>
             </div>
           </Link>

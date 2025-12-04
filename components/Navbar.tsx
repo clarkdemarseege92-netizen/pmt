@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
+import {Link} from "@/i18n/routing";
 import Image from "next/image";
 import { createBrowserClient } from "@supabase/ssr";
 import { User } from "@supabase/supabase-js";
@@ -13,7 +13,9 @@ import {
   HiSquares2X2,
   HiUserCircle
 } from "react-icons/hi2";
-import { useRouter } from "next/navigation";
+import {useRouter} from "@/i18n/routing";
+import {useTranslations} from 'next-intl';
+import LanguageSwitcher from "./LanguageSwitcherNew";
 
 // 定义 Supabase 客户端创建逻辑
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -30,6 +32,17 @@ export default function Navbar() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
+  const t = useTranslations('nav');
+
+  // 调试：检查翻译是否正确加载
+  useEffect(() => {
+    console.log('🌐 NAVBAR: Translation check:', {
+      home: t('home'),
+      login: t('login'),
+      logout: t('logout'),
+      myProfile: t('myProfile')
+    });
+  }, [t]);
 
   useEffect(() => {
     console.log('🔵 NAVBAR: useEffect 开始执行');
@@ -161,7 +174,10 @@ export default function Navbar() {
       </div>
 
       {/* 右侧：用户区域 */}
-      <div className="flex-none">
+      <div className="flex-none gap-2">
+        {/* 语言切换器 */}
+        <LanguageSwitcher />
+
         {user ? (
           <div className="dropdown dropdown-end">
             {/* 头像触发器 */}
@@ -191,19 +207,19 @@ export default function Navbar() {
             >
               {/* 用户信息头 */}
               <li className="menu-title px-4 py-2 border-b border-base-200 mb-2">
-                 <span className="block truncate font-bold text-base-content">{user.email || user.phone || '用户'}</span>
-                 <span className="block text-xs font-normal opacity-50">普通用户</span>
+                 <span className="block truncate font-bold text-base-content">{user.email || user.phone || t('user')}</span>
+                 <span className="block text-xs font-normal opacity-50">{t('regularUser')}</span>
               </li>
 
               {/* === 买家功能区 === */}
               <li>
                 <Link href="/client/profile" className="py-3">
-                  <HiUserCircle className="w-5 h-5" /> 个人中心 / 资料
+                  <HiUserCircle className="w-5 h-5" /> {t('myProfile')}
                 </Link>
               </li>
               <li>
                 <Link href="/client/orders" className="py-3">
-                  <HiTicket className="w-5 h-5" /> 我的订单
+                  <HiTicket className="w-5 h-5" /> {t('myOrders')}
                 </Link>
               </li>
 
@@ -212,7 +228,7 @@ export default function Navbar() {
               {/* === 卖家/商家区 === */}
               <li>
                 <Link href="/merchant/dashboard" className="py-3 text-secondary">
-                   <HiSquares2X2 className="w-5 h-5" /> 商家中心 / 我要开店
+                   <HiSquares2X2 className="w-5 h-5" /> {t('merchantCenter')}
                 </Link>
               </li>
 
@@ -221,14 +237,14 @@ export default function Navbar() {
               {/* === 退出 === */}
               <li>
                 <button onClick={handleLogout} className="text-error py-3">
-                  <HiArrowRightOnRectangle className="w-5 h-5" /> 退出登录
+                  <HiArrowRightOnRectangle className="w-5 h-5" /> {t('logout')}
                 </button>
               </li>
             </ul>
           </div>
         ) : (
           <Link href="/login" className="btn btn-primary btn-sm">
-            登录 / 注册
+            {t('login')}
           </Link>
         )}
       </div>

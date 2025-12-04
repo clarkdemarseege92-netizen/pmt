@@ -4,7 +4,6 @@
 import { useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import MerchantSidebar from "@/components/MerchantSidebar";
-import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { 
   HiSquares2X2, 
@@ -63,13 +62,7 @@ export default function MerchantLayoutWrapper({
   if (isMerchant) {
     return (
       <div className="flex flex-col h-screen bg-base-200">
-        
-        {/* 1. 顶部导航 */}
-        <div className="shrink-0 z-20 bg-base-100 shadow-xs">
-          <Navbar />
-        </div>
-
-        {/* 2. 中间主体 */}
+        {/* 中间主体 */}
         <div className="flex flex-1 overflow-hidden">
           <MerchantSidebar />
           <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 pb-24 md:pb-8 relative">
@@ -142,9 +135,6 @@ export default function MerchantLayoutWrapper({
   // --- 新手入驻模式 ---
   return (
     <div className="flex flex-col h-screen bg-base-200">
-       <div className="shrink-0 z-20 bg-base-100 shadow-xs">
-          <Navbar />
-       </div>
        <main className="flex-1 overflow-y-auto p-4 md:p-8 flex items-center justify-center">
           {children}
        </main>

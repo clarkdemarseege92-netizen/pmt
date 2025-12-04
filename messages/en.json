@@ -1,0 +1,79 @@
+{
+  "nav": {
+    "home": "Home",
+    "categories": "Categories",
+    "orders": "My Orders",
+    "login": "Login / Register",
+    "logout": "Logout",
+    "profile": "Profile",
+    "user": "User",
+    "regularUser": "Regular User",
+    "myProfile": "My Profile",
+    "myOrders": "My Orders",
+    "merchantCenter": "Merchant Center / Open Shop"
+  },
+  "home": {
+    "title": "Welcome to Coupon Platform",
+    "subtitle": "Discover the best deals and discounts near you",
+    "viewAll": "View All",
+    "popularCoupons": "Popular Coupons",
+    "nearbyCoupons": "Nearby Coupons",
+    "categories": "Categories",
+    "browseByCategory": "Browse by Category",
+    "hero": {
+      "title": "PMT Coupon Platform",
+      "subtitle": "Discover the best deals around you",
+      "searchPlaceholder": "Search for merchants or coupons..."
+    },
+    "featuredDeals": "Featured Deals"
+  },
+  "nearby": {
+    "title": "Nearby Coupons",
+    "gettingLocation": "Getting your location",
+    "allowLocation": "Please allow browser to access your location to recommend nearby coupons",
+    "permissionDenied": "Location permission denied",
+    "permissionDeniedDesc": "Please allow location permission in browser settings to view nearby coupons",
+    "locationFailed": "Failed to get location",
+    "retry": "Retry",
+    "refresh": "Refresh",
+    "noNearbyCoupons": "No coupons within 10 km",
+    "stockRemaining": "Remaining",
+    "pieces": "pcs",
+    "distance": "Distance"
+  },
+  "coupon": {
+    "buy": "Buy Now",
+    "viewDetails": "View Details",
+    "soldOut": "Sold Out",
+    "discount": "Discount"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error occurred",
+    "success": "Success",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "save": "Save",
+    "delete": "Delete",
+    "edit": "Edit",
+    "back": "Back",
+    "next": "Next",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort"
+  },
+  "login": {
+    "title": "Welcome to PMT",
+    "googleLogin": "Sign in with Google",
+    "orUseEmail": "Or use email",
+    "email": "Email",
+    "emailPlaceholder": "test@example.com",
+    "password": "Password",
+    "passwordPlaceholder": "••••••••",
+    "loginButton": "Login",
+    "signUpButton": "Sign Up",
+    "loginFailed": "Login failed",
+    "loginError": "Login error",
+    "unknownError": "Unknown error"
+  }
+}

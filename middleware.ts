@@ -1,8 +1,36 @@
 // middleware.ts
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import createIntlMiddleware from 'next-intl/middleware';
+import {routing} from './i18n/routing';
+
+// 创建 next-intl 中间件
+const intlMiddleware = createIntlMiddleware(routing);
 
 export async function middleware(request: NextRequest) {
+  const pathname = request.nextUrl.pathname;
+
+  console.log('🔵 MIDDLEWARE START:', {
+    pathname,
+    locale: request.nextUrl.locale,
+    search: request.nextUrl.search,
+  });
+
+  // 1. 首先处理 i18n 路由
+  const intlResponse = intlMiddleware(request);
+
+  console.log('🟢 INTL MIDDLEWARE RESULT:', {
+    status: intlResponse.status,
+    redirectTo: intlResponse.headers.get('location'),
+  });
+
+  // 2. 然后处理 Supabase 认证
+  // 如果 intl 中间件返回了重定向，直接返回
+  if (intlResponse.status === 307 || intlResponse.status === 308) {
+    console.log('↪️ MIDDLEWARE: Redirecting via intl middleware');
+    return intlResponse;
+  }
+
   let response = NextResponse.next({
     request: {
       headers: request.headers,
@@ -79,11 +107,12 @@ export const config = {
   matcher: [
     /*
      * 匹配所有请求路径，除了：
+     * - api (API 路由)
      * - _next/static (静态文件)
      * - _next/image (图片优化文件)
      * - favicon.ico (网站图标)
      * - public 文件夹中的文件（如图片）
      */
-    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
 }

@@ -2,7 +2,6 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import ClientSidebar from "@/components/ClientSidebar";
-import Navbar from "@/components/Navbar";
 import Link from "next/link";
 import { HiHome, HiTicket, HiUser } from "react-icons/hi2";
 
@@ -20,11 +19,6 @@ export default async function ClientLayout({
 
   return (
     <div className="flex flex-col h-screen bg-base-200">
-      {/* 顶部导航 */}
-      <div className="shrink-0 z-20 bg-base-100 shadow-xs">
-        <Navbar />
-      </div>
-
       <div className="flex flex-1 overflow-hidden">
         {/* 桌面端：侧边栏 */}
         <ClientSidebar />
