@@ -2,7 +2,7 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { HiHome, HiFolder, HiUsers, HiCog, HiArrowRightOnRectangle } from "react-icons/hi2";
+import { HiHome, HiFolder, HiUsers, HiCog, HiWrench, HiArrowRightOnRectangle } from "react-icons/hi2";
 import AdminLogoutButton from "./AdminLogoutButton";
 
 export default async function AdminLayout({
@@ -83,6 +83,12 @@ export default async function AdminLayout({
               <Link href="/admin/users" className="gap-3">
                 <HiUsers className="w-5 h-5" />
                 用户管理
+              </Link>
+            </li>
+            <li>
+              <Link href="/admin/tools" className="gap-3">
+                <HiWrench className="w-5 h-5" />
+                管理员工具
               </Link>
             </li>
             <li>
