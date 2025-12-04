@@ -71,22 +71,34 @@ export async function GET(request: Request) {
       console.log("AUTH CALLBACK: 交换 code 成功！用户ID:", data.user.id);
 
       // 【修改 2】如果是管理员登录流程，验证管理员权限
-      if (nextUrl === '/admin') {
+      if (nextUrl === '/admin' || nextUrl.startsWith('/admin/')) {
         console.log("AUTH CALLBACK: 检测到管理员登录流程，验证权限...");
+        console.log("AUTH CALLBACK: 用户 ID:", data.user.id);
+        console.log("AUTH CALLBACK: 用户邮箱:", data.user.email);
 
         // 检查用户是否为管理员
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('role')
+          .select('role, email')
           .eq('id', data.user.id)
           .single();
 
-        if (profileError) {
-          console.error("AUTH CALLBACK: 获取 profile 失败:", profileError.message);
+        console.log("AUTH CALLBACK: Profile 查询结果:", {
+          found: !!profile,
+          error: profileError ? profileError.message : null,
+          role: profile?.role,
+          email: profile?.email,
+        });
+
+        // 如果查询出错（非 PGRST116 错误）
+        if (profileError && profileError.code !== 'PGRST116') {
+          console.error("AUTH CALLBACK: 获取 profile 失败:", profileError);
+          await supabase.auth.signOut();
+          return NextResponse.redirect(new URL("/admin-login?error=profile_error", request.url));
         }
 
         // 如果用户还没有 profile，创建一个默认的 user 角色
-        if (!profile) {
+        if (!profile || profileError?.code === 'PGRST116') {
           console.log("AUTH CALLBACK: 用户没有 profile，创建默认 user 角色");
           const { error: insertError } = await supabase
             .from('profiles')
@@ -102,7 +114,7 @@ export async function GET(request: Request) {
 
           // 非管理员用户，退出登录并重定向
           await supabase.auth.signOut();
-          console.log("AUTH CALLBACK: 非管理员用户，已退出登录");
+          console.log("AUTH CALLBACK: 新用户不是管理员，已退出登录");
           return NextResponse.redirect(new URL("/admin-login?error=not_admin", request.url));
         }
 
@@ -114,7 +126,7 @@ export async function GET(request: Request) {
           return NextResponse.redirect(new URL("/admin-login?error=not_admin", request.url));
         }
 
-        console.log("AUTH CALLBACK: 管理员权限验证通过");
+        console.log("AUTH CALLBACK: ✅ 管理员权限验证通过，角色:", profile.role);
       } else {
         // 普通用户登录，确保有 profile 记录（如果没有则创建）
         console.log("AUTH CALLBACK: 普通用户登录流程");

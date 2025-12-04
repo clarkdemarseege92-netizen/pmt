@@ -115,13 +115,28 @@ export default function AdminLoginForm() {
 
           {/* 安全提示 */}
           <div className="divider mt-6"></div>
-          <div className="text-center">
+          <div className="text-center space-y-2">
             <p className="text-xs text-base-content/50">
               🔒 仅限授权管理员访问
             </p>
-            <p className="text-xs text-base-content/50 mt-1">
-              如遇问题请联系系统管理员
-            </p>
+            <details className="text-left">
+              <summary className="text-xs text-primary cursor-pointer hover:underline">
+                如何设置管理员权限？
+              </summary>
+              <div className="mt-2 p-3 bg-base-200 rounded-lg text-xs space-y-2">
+                <p className="font-semibold">在 Supabase SQL Editor 中执行：</p>
+                <pre className="bg-base-300 p-2 rounded overflow-x-auto">
+                  <code>
+{`UPDATE profiles
+SET role = 'admin'
+WHERE email = '你的邮箱@gmail.com';`}
+                  </code>
+                </pre>
+                <p className="text-base-content/60">
+                  详细说明请查看项目根目录的 <code className="bg-base-300 px-1 rounded">ADMIN_SETUP.md</code> 文件
+                </p>
+              </div>
+            </details>
           </div>
         </div>
       </div>
