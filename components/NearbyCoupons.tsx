@@ -26,7 +26,7 @@ type NearbyCoupon = {
   stock_quantity: number;
   merchant: {
     merchant_id: string;
-    business_name: MultiLangName;
+    shop_name: MultiLangName;
     address: string;
     latitude: number;
     longitude: number;
@@ -243,7 +243,7 @@ export default function NearbyCoupons() {
 
               {/* 商户名称 */}
               <p className="text-sm text-base-content/60 line-clamp-1">
-                {getLangName(coupon.merchant.business_name)}
+                {getLangName(coupon.merchant.shop_name)}
               </p>
 
               {/* 价格 */}

@@ -30,6 +30,8 @@ export async function GET(request: Request) {
 
     const supabase = await createSupabaseServerClient();
 
+    console.log('🔵 开始查询附近优惠券，参数:', { latitude, longitude, radius, limit });
+
     // 查询优惠券及其关联的商户信息（包括位置）
     const { data: coupons, error } = await supabase
       .from('coupons')
@@ -43,24 +45,26 @@ export async function GET(request: Request) {
         merchant_id,
         merchants!inner (
           merchant_id,
-          business_name,
+          shop_name,
           latitude,
           longitude,
           address
         )
       `)
-      .eq('is_active', true)
       .gt('stock_quantity', 0)
       .not('merchants.latitude', 'is', null)
       .not('merchants.longitude', 'is', null);
 
     if (error) {
-      console.error('查询优惠券错误:', error);
+      console.error('🔴 查询优惠券错误:', error);
+      console.error('🔴 错误详情:', JSON.stringify(error, null, 2));
       return NextResponse.json(
-        { success: false, message: '查询失败' },
+        { success: false, message: '查询失败', error: error.message },
         { status: 500 }
       );
     }
+
+    console.log('🟢 查询成功，找到', coupons?.length || 0, '个优惠券');
 
     if (!coupons || coupons.length === 0) {
       return NextResponse.json({
@@ -92,7 +96,7 @@ export async function GET(request: Request) {
           stock_quantity: coupon.stock_quantity,
           merchant: {
             merchant_id: merchant.merchant_id,
-            business_name: merchant.business_name,
+            shop_name: merchant.shop_name,
             address: merchant.address,
             latitude: merchant.latitude,
             longitude: merchant.longitude,

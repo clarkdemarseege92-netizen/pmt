@@ -18,6 +18,9 @@ interface Merchant {
   status: string;
   is_suspended: boolean;
   promptpay_id: string | null;
+  address: string | null;
+  latitude: number | null;
+  longitude: number | null;
 }
 
 interface CouponWithMerchant {
@@ -45,6 +48,10 @@ interface OrderData {
   redemption_code: string;
   quantity?: number;
   payment_method?: string;
+  merchant_shop_name_snapshot?: string | null;
+  merchant_address_snapshot?: string | null;
+  merchant_latitude_snapshot?: number | null;
+  merchant_longitude_snapshot?: number | null;
 }
 
 export async function POST(request: Request) {
@@ -104,6 +111,12 @@ export async function POST(request: Request) {
     let merchantPromptPayId = '';
     let orderItems: OrderItem[] = [];
     let targetCouponId: string | null = null;
+    let merchantSnapshot: {
+      shop_name: string;
+      address: string | null;
+      latitude: number | null;
+      longitude: number | null;
+    } | null = null;
 
     // 2. 单商品购买模式 (优惠券)
     if (couponId) {
@@ -123,7 +136,10 @@ export async function POST(request: Request) {
             shop_name,
             status,
             is_suspended,
-            promptpay_id
+            promptpay_id,
+            address,
+            latitude,
+            longitude
           )
         `)
         .eq('coupon_id', couponId)
@@ -168,6 +184,14 @@ export async function POST(request: Request) {
       merchantPromptPayId = merchant.promptpay_id;
       orderItems = [{ coupon_id: couponId, quantity }];
 
+      // 保存商户地址快照
+      merchantSnapshot = {
+        shop_name: merchant.shop_name,
+        address: merchant.address,
+        latitude: merchant.latitude,
+        longitude: merchant.longitude,
+      };
+
     } 
     // 3. 购物车模式 (商品)
     else if (productIds && Array.isArray(productIds)) {
@@ -184,7 +208,10 @@ export async function POST(request: Request) {
             shop_name,
             status,
             is_suspended,
-            promptpay_id
+            promptpay_id,
+            address,
+            latitude,
+            longitude
           )
         `)
         .in('product_id', productIds);
@@ -221,13 +248,20 @@ export async function POST(request: Request) {
 
       merchantId = merchant.merchant_id;
       merchantPromptPayId = merchant.promptpay_id;
-      
+
+      // 保存商户地址快照
+      merchantSnapshot = {
+        shop_name: merchant.shop_name,
+        address: merchant.address,
+        latitude: merchant.latitude,
+        longitude: merchant.longitude,
+      };
 
       targetCouponId = null;
 
-      orderItems = productsWithValidMerchants.map(p => ({ 
-        product_id: p.product_id, 
-        quantity 
+      orderItems = productsWithValidMerchants.map(p => ({
+        product_id: p.product_id,
+        quantity
       }));
     }
 
@@ -245,7 +279,12 @@ export async function POST(request: Request) {
       status: 'pending',
       redemption_code: redemptionCode,
       quantity: quantity,
-      payment_method: 'promptpay'
+      payment_method: 'promptpay',
+      // 保存商户地址快照（下单时的商户信息）
+      merchant_shop_name_snapshot: merchantSnapshot?.shop_name,
+      merchant_address_snapshot: merchantSnapshot?.address,
+      merchant_latitude_snapshot: merchantSnapshot?.latitude,
+      merchant_longitude_snapshot: merchantSnapshot?.longitude,
     };
 
     const { error: orderError } = await supabaseAdmin
