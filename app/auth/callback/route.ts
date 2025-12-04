@@ -98,7 +98,7 @@ export async function GET(request: Request) {
         }
 
         // 如果用户还没有 profile，创建一个默认的 user 角色
-        if (!profile || profileError?.code === 'PGRST116') {
+        if (!profile) {
           console.log("AUTH CALLBACK: 用户没有 profile，创建默认 user 角色");
           const { error: insertError } = await supabase
             .from('profiles')
