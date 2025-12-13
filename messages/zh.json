@@ -75,5 +75,46 @@
     "loginFailed": "登录失败",
     "loginError": "登录异常",
     "unknownError": "未知错误"
+  },
+  "search": {
+    "title": "搜索结果",
+    "breadcrumbs": {
+      "home": "首页",
+      "allResults": "全部结果"
+    },
+    "sort": {
+      "label": "排序方式",
+      "priceLowHigh": "价格 (低到高)",
+      "priceHighLow": "价格 (高到低)",
+      "popular": "最热销"
+    },
+    "viewDetails": "查看详情",
+    "noResults": "未找到匹配结果"
+  },
+  "couponDetail": {
+    "noImage": "暂无图片",
+    "shop": "店铺",
+    "visitShop": "进店逛逛",
+    "unknownMerchant": "未知商户",
+    "stock": "库存",
+    "soldCount": "已售出 {count}+",
+    "tabs": {
+      "details": "套餐详情",
+      "rules": "购买须知"
+    },
+    "packageContents": "套餐包含内容",
+    "originalPrice": "原价",
+    "noProductInfo": "暂无详细商品信息",
+    "usageRules": "使用规则",
+    "noRules": "暂无特殊说明，请遵循商家通用规则。",
+    "totalPrice": "总价"
+  },
+  "checkout": {
+    "loading": "加载中...",
+    "title": "订单结算",
+    "total": "总计",
+    "registerAndPay": "注册并支付",
+    "payNow": "立即支付",
+    "registerBenefits": "注册后可查看订单历史和享受会员优惠"
   }
 }

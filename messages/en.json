@@ -75,5 +75,46 @@
     "loginFailed": "Login failed",
     "loginError": "Login error",
     "unknownError": "Unknown error"
+  },
+  "search": {
+    "title": "Search Results",
+    "breadcrumbs": {
+      "home": "Home",
+      "allResults": "All Results"
+    },
+    "sort": {
+      "label": "Sort by",
+      "priceLowHigh": "Price (Low - High)",
+      "priceHighLow": "Price (High - Low)",
+      "popular": "Most Popular"
+    },
+    "viewDetails": "View Details",
+    "noResults": "No matching items found"
+  },
+  "couponDetail": {
+    "noImage": "No image available",
+    "shop": "Shop",
+    "visitShop": "Visit shop",
+    "unknownMerchant": "Unknown merchant",
+    "stock": "Stock",
+    "soldCount": "Sold {count}+",
+    "tabs": {
+      "details": "Package Details",
+      "rules": "Purchase Terms"
+    },
+    "packageContents": "Package Contents",
+    "originalPrice": "Original price",
+    "noProductInfo": "No detailed product information",
+    "usageRules": "Usage Rules",
+    "noRules": "No special instructions, please follow the merchant's general rules.",
+    "totalPrice": "Total Price"
+  },
+  "checkout": {
+    "loading": "Loading...",
+    "title": "Checkout",
+    "total": "Total",
+    "registerAndPay": "Register & Pay",
+    "payNow": "Pay Now",
+    "registerBenefits": "Register to view order history and enjoy member benefits"
   }
 }

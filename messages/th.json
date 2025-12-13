@@ -75,5 +75,46 @@
     "loginFailed": "เข้าสู่ระบบล้มเหลว",
     "loginError": "เกิดข้อผิดพลาดในการเข้าสู่ระบบ",
     "unknownError": "ข้อผิดพลาดที่ไม่ทราบสาเหตุ"
+  },
+  "search": {
+    "title": "ผลการค้นหา",
+    "breadcrumbs": {
+      "home": "หน้าแรก",
+      "allResults": "ผลการค้นหาทั้งหมด"
+    },
+    "sort": {
+      "label": "เรียงลำดับ",
+      "priceLowHigh": "ราคา (ต่ำ - สูง)",
+      "priceHighLow": "ราคา (สูง - ต่ำ)",
+      "popular": "ยอดนิยม"
+    },
+    "viewDetails": "ดูรายละเอียด",
+    "noResults": "ไม่พบรายการที่ตรงกัน"
+  },
+  "couponDetail": {
+    "noImage": "ไม่มีรูปภาพ",
+    "shop": "ร้านค้า",
+    "visitShop": "เข้าชมร้านค้า",
+    "unknownMerchant": "ผู้ขายไม่ทราบชื่อ",
+    "stock": "สต็อก",
+    "soldCount": "ขายแล้ว {count}+",
+    "tabs": {
+      "details": "รายละเอียดแพ็กเกจ",
+      "rules": "ข้อกำหนดการซื้อ"
+    },
+    "packageContents": "เนื้อหาแพ็กเกจ",
+    "originalPrice": "ราคาเดิม",
+    "noProductInfo": "ไม่มีข้อมูลผลิตภัณฑ์โดยละเอียด",
+    "usageRules": "กฎการใช้งาน",
+    "noRules": "ไม่มีคำอธิบายพิเศษ โปรดปฏิบัติตามกฎทั่วไปของผู้ขาย",
+    "totalPrice": "ราคารวม"
+  },
+  "checkout": {
+    "loading": "กำลังโหลด...",
+    "title": "การชำระเงิน",
+    "total": "ยอดรวม",
+    "registerAndPay": "ลงทะเบียนและชำระเงิน",
+    "payNow": "ชำระเงินทันที",
+    "registerBenefits": "ลงทะเบียนเพื่อดูประวัติคำสั่งซื้อและรับส่วนลดสมาชิก"
   }
 }

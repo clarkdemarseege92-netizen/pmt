@@ -8,10 +8,10 @@
 
 ## 📊 整体进度
 
-- **总进度：** 33% (3/9 阶段完成) ✅
-- **当前阶段：** 阶段1-3已完成，测试通过
-- **实际用时：** 约1.5小时（含调试）
-- **预计剩余时间：** 约6.75小时
+- **总进度：** 44% (4/9 阶段完成) ✅
+- **当前阶段：** 阶段1-4已完成，测试通过
+- **实际用时：** 约2小时（含调试）
+- **预计剩余时间：** 约6.25小时
 
 ---
 
@@ -76,15 +76,35 @@
 
 ---
 
-### ⏳ 第4阶段：关键功能页面迁移（1小时）
-**状态：** ⏳ 待开始
-**预计时间：** 1小时
+### ✅ 第4阶段：关键功能页面迁移（1小时）
+**状态：** ✅ 已完成
+**实际用时：** 30分钟
 
-- [ ] 迁移搜索页 app/search/
-- [ ] 迁移优惠券详情 app/coupon/[id]/
-- [ ] 迁移结账页 app/checkout/
-- [ ] 添加翻译key到 messages/*.json
-- [ ] 测试所有迁移页面
+- [x] 迁移搜索页 app/search/ → app/[locale]/search/
+- [x] 迁移优惠券详情 app/coupon/[id]/ → app/[locale]/coupon/[id]/
+- [x] 迁移结账页 app/checkout/ → app/[locale]/checkout/
+- [x] 添加翻译key到 messages/*.json（search, couponDetail, checkout）
+- [x] 测试所有迁移页面（npm run build 成功）
+
+**迁移要点：**
+- 搜索页面：
+  - 更新 params 为 Promise 类型
+  - 替换 Link 导入为 @/i18n/routing
+  - 使用 getLocalizedValue 替代 getLangName
+  - 添加 search 命名空间翻译
+- 优惠券详情页：
+  - 添加 locale 到 params
+  - 使用 getTranslations('couponDetail')
+  - 添加 couponDetail 命名空间翻译
+- 结账页：
+  - 客户端组件使用 useTranslations
+  - 服务端组件使用 getTranslations
+  - 添加 checkout 命名空间翻译
+
+**测试结果：**
+- [x] Build 成功 ✅
+- [x] i18n 正确加载所有语言 (th, zh, en) ✅
+- [x] 所有页面编译通过 ✅
 
 ---
 
@@ -155,9 +175,16 @@
 
 ## 📝 变更日志
 
-### 2025-12-14
+### 2025-12-14 (下午)
+- ✅ 完成第4阶段：关键功能页面迁移
+- 迁移搜索页、优惠券详情页、结账页到 locale 结构
+- 添加所有必要的翻译（th/zh/en）
+- Build 测试通过
+
+### 2025-12-14 (上午)
 - 创建迁移进度跟踪文件
-- 准备开始阶段1-3的核心迁移
+- 完成阶段1-3的核心迁移
+- 修复 i18n 语言切换 bug (setRequestLocale)
 
 ---
 
