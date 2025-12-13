@@ -2,7 +2,7 @@
 // next-intl 标准路由 - locale 特定布局
 
 import {NextIntlClientProvider} from 'next-intl';
-import {getMessages} from 'next-intl/server';
+import {getMessages, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
 import Navbar from '@/components/Navbar';
@@ -26,6 +26,9 @@ export default async function LocaleLayout({
   if (!routing.locales.includes(locale as any)) {
     notFound();
   }
+
+  // 设置请求的 locale (关键！这会让 getRequestConfig 中的 requestLocale 有值)
+  setRequestLocale(locale);
 
   // 获取翻译消息
   const messages = await getMessages();
