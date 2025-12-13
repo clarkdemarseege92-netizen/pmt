@@ -1,9 +1,9 @@
-// 文件: app/[locale]/page.tsx (首页 - 支持 i18n)
+// 文件: app/page.tsx (首页 - 支持 i18n 方案A)
 import NearbyCoupons from "@/components/NearbyCoupons";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import {Link} from '@/i18n/routing';
-import {getTranslations} from 'next-intl/server';
+import {getTranslations, getLocale} from 'next-intl/server';
 import {getLocalizedValue} from '@/lib/i18nUtils';
 
 // 【关键修复】禁用静态生成和缓存，确保每次请求都是动态的
@@ -18,7 +18,7 @@ type MultiLangName = {
   [key: string]: string | undefined;
 };
 
-// 分类 [cite: 445, 10]
+// 分类
 type Category = {
   category_id: string;
   name: string | MultiLangName;
@@ -35,13 +35,9 @@ type Coupon = {
 };
 
 // 这是一个服务器组件 (Server Component)，它可以直接异步获取数据
-export default async function Home({
-  params
-}: {
-  params: Promise<{locale: string}>;
-}) {
-  // 获取当前语言
-  const {locale} = await params;
+export default async function Home() {
+  // 获取当前语言（方案A：从中间件获取）
+  const locale = await getLocale();
 
   console.log('🌐 HOME PAGE: Current locale =', locale);
 
@@ -57,7 +53,7 @@ export default async function Home({
   // 1. 获取数据
   const supabase = await createSupabaseServerClient();
 
-  // 获取所有一级分类 (parent_id 为 null) [cite: 10, 113]
+  // 获取所有一级分类 (parent_id 为 null)
   const { data: categories, error: categoriesError } = await supabase
     .from('categories')
     .select('category_id, name, parent_id')

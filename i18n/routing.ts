@@ -11,6 +11,9 @@ export const routing = defineRouting({
   // 默认语言（泰语 - 因为是泰国市场）
   defaultLocale: 'th',
 
+  // 始终显示语言前缀（方案A：标准路由）
+  localePrefix: 'always',
+
   // 基于浏览器语言自动检测
   localeDetection: true,
 
