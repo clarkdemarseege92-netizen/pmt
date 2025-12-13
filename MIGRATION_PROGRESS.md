@@ -8,60 +8,71 @@
 
 ## 📊 整体进度
 
-- **总进度：** 0% (0/9 阶段完成)
-- **当前阶段：** 准备中
-- **预计完成时间：** 8.25小时
+- **总进度：** 33% (3/9 阶段完成) ✅
+- **当前阶段：** 阶段1-3已完成，测试通过
+- **实际用时：** 约1.5小时（含调试）
+- **预计剩余时间：** 约6.75小时
 
 ---
 
 ## 🎯 各阶段详细进度
 
 ### ✅ 第1阶段：准备和备份（15分钟）
-**状态：** ⏳ 待开始
-**预计时间：** 15分钟
+**状态：** ✅ 已完成
+**实际用时：** 10分钟
 
-- [ ] 提交当前代码作为备份
-- [ ] 检查 package.json 确认 next-intl 依赖
-- [ ] 备份 app/[locale]/ 目录
-
----
-
-### 🔄 第2阶段：建立标准next-intl结构（30分钟）
-**状态：** ⏳ 待开始
-**预计时间：** 30分钟
-
-- [ ] 检查/更新 i18n/routing.ts 配置
-- [ ] 检查/更新 i18n/request.ts 配置
-- [ ] 更新 middleware.ts
-- [ ] 更新 next.config.ts
-- [ ] 更新 app/layout.tsx 根布局
-
-**关键文件：**
-- `i18n/routing.ts` - 路由定义
-- `i18n/request.ts` - 服务器端配置
-- `middleware.ts` - 中间件
-- `next.config.ts` - Next.js配置
-- `app/layout.tsx` - 根布局
+- [x] 提交当前代码作为备份
+- [x] 检查 package.json 确认 next-intl 依赖
+- [x] 创建 MIGRATION_PROGRESS.md 跟踪文件
 
 ---
 
-### 🔄 第3阶段：核心页面迁移（45分钟）
-**状态：** ⏳ 待开始
-**预计时间：** 45分钟
+### ✅ 第2阶段：建立标准next-intl结构（30分钟）
+**状态：** ✅ 已完成
+**实际用时：** 20分钟
 
-- [ ] 迁移首页 app/page.tsx
-- [ ] 迁移登录页 app/login/page.tsx
-- [ ] 更新 Navbar 组件
-- [ ] 更新 LanguageSwitcher 组件
-- [ ] 删除 app/[locale]/ 目录
-- [ ] 本地测试基础功能
+- [x] 更新 i18n/routing.ts 配置（添加 localePrefix: 'always'）
+- [x] 检查 i18n/request.ts 配置（已正确）
+- [x] 检查 middleware.ts（已集成）
+- [x] 更新 next.config.ts（修复 staleTimes 配置）
+- [x] 更新 app/layout.tsx 根布局（移除 Navbar）
+- [x] 创建 app/[locale]/layout.tsx（添加 NextIntlClientProvider 和 Navbar）
+
+**关键文件状态：**
+- ✅ `i18n/routing.ts` - 路由定义（localePrefix: 'always'）
+- ✅ `i18n/request.ts` - 服务器端配置
+- ✅ `middleware.ts` - 中间件集成
+- ✅ `next.config.ts` - Next.js配置
+- ✅ `app/layout.tsx` - 根布局（HTML/Body）
+- ✅ `app/[locale]/layout.tsx` - Locale布局（Provider + Navbar）
+
+---
+
+### ✅ 第3阶段：核心页面迁移（45分钟）
+**状态：** ✅ 已完成
+**实际用时：** 1小时（含调试）
+
+- [x] 创建 app/[locale]/layout.tsx
+- [x] 迁移首页到 app/[locale]/page.tsx
+- [x] 迁移登录页到 app/[locale]/login/page.tsx
+- [x] 检查 Navbar 组件（已使用正确导入）
+- [x] 检查 LanguageSwitcher 组件（已使用正确导入）
+- [x] 本地测试基础功能
+- [x] 修复发现的问题（Navbar 在 Provider 内部）
 
 **测试清单：**
-- [ ] 访问 `/` 自动重定向
-- [ ] `/th`、`/zh`、`/en` 路由正常
-- [ ] 语言切换功能正常
-- [ ] 页面内容显示正确
-- [ ] 控制台无错误
+- [x] 访问 `/` 自动重定向到 `/th` ✅
+- [x] `/th`、`/zh`、`/en` 路由正常返回200 ✅
+- [x] `/th/login`、`/zh/login` 登录页正常 ✅
+- [x] 中间件正确处理语言检测 ✅
+- [x] 翻译正确加载 ✅
+
+**调试过程：**
+1. 初始实现：误删除 app/[locale]/ 目录导致404
+2. 修复：恢复 app/[locale]/ 结构（next-intl 标准要求）
+3. 遇到500错误：Navbar 在 Provider 外部
+4. 修复：将 Navbar 移到 app/[locale]/layout.tsx 内部
+5. 测试通过：所有路由正常工作
 
 ---
 

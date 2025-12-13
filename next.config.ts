@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
   experimental: {
     staleTimes: {
       dynamic: 0,
-      static: 0,
+      static: 30, // 最小值为30
     },
   },
   // 【关键修复】禁用 Vercel 的自动静态优化

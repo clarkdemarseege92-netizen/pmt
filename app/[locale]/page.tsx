@@ -3,7 +3,7 @@ import NearbyCoupons from "@/components/NearbyCoupons";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import {Link} from '@/i18n/routing';
-import {getTranslations, getLocale} from 'next-intl/server';
+import {getTranslations} from 'next-intl/server';
 import {getLocalizedValue} from '@/lib/i18nUtils';
 
 // 【关键修复】禁用静态生成和缓存，确保每次请求都是动态的
@@ -35,9 +35,13 @@ type Coupon = {
 };
 
 // 这是一个服务器组件 (Server Component)，它可以直接异步获取数据
-export default async function Home() {
-  // 获取当前语言（方案A：从中间件获取）
-  const locale = await getLocale();
+export default async function Home({
+  params
+}: {
+  params: Promise<{locale: string}>;
+}) {
+  // 获取当前语言（从路由参数获取）
+  const {locale} = await params;
 
   console.log('🌐 HOME PAGE: Current locale =', locale);
 
