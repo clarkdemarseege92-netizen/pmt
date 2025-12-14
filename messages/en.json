@@ -212,5 +212,46 @@
       "joinDate": "Join Date",
       "notBound": "Not Bound"
     }
+  },
+  "profileEdit": {
+    "title": "Edit Profile",
+    "avatar": {
+      "clickToChange": "Click to change avatar"
+    },
+    "fields": {
+      "nickname": "Nickname",
+      "nicknamePlaceholder": "Set a nice name"
+    },
+    "binding": {
+      "title": "Account Binding",
+      "phoneNotBound": "Phone not bound",
+      "emailNotBound": "Email not bound",
+      "bind": "Bind",
+      "change": "Change"
+    },
+    "phone": {
+      "title": "Bind/Change Phone Number",
+      "description": "After verification, you can use the new phone number to receive OTP for login.",
+      "newPhone": "New Phone Number",
+      "getOtp": "Get OTP",
+      "otpCode": "SMS Verification Code",
+      "otpSent": "OTP sent!",
+      "changeSuccess": "Phone number changed successfully!"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save Changes",
+      "saving": "Saving...",
+      "back": "Back",
+      "confirm": "Confirm Change",
+      "verifying": "Verifying..."
+    },
+    "errors": {
+      "saveFailed": "Save failed",
+      "enterPhone": "Please enter new phone number",
+      "sendFailed": "Send failed",
+      "enterOtp": "Please enter OTP",
+      "verifyFailed": "Verification failed"
+    }
   }
 }
