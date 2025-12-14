@@ -8,10 +8,10 @@
 
 ## 📊 整体进度
 
-- **总进度：** 44% (4/9 阶段完成) ✅
-- **当前阶段：** 阶段1-4已完成，测试通过
-- **实际用时：** 约2小时（含调试）
-- **预计剩余时间：** 约6.25小时
+- **总进度：** 56% (5/9 阶段完成) ✅
+- **当前阶段：** 阶段5已完成，准备开始阶段6
+- **实际用时：** 约3.5小时（含调试）
+- **预计剩余时间：** 约4.75小时
 
 ---
 
@@ -108,32 +108,69 @@
 
 ---
 
-### ⏳ 第5阶段：用户中心迁移（1.5小时）
-**状态：** ⏳ 待开始
-**预计时间：** 1.5小时
+### ✅ 第5阶段：用户中心迁移（1.5小时）
+**状态：** ✅ 已完成
+**实际用时：** 1.5小时
 
 **迁移页面：**
-- [ ] app/client/layout.tsx
-- [ ] app/client/profile/
-- [ ] app/client/orders/
-- [ ] app/client/favorites/
-- [ ] app/client/history/
-- [ ] app/client/reviews/
+- [x] app/[locale]/client/layout.tsx - 添加locale支持
+- [x] app/[locale]/client/profile/ - ProfilePageClient 国际化
+- [x] app/[locale]/client/orders/ - OrderTabs 组件国际化
+- [x] app/[locale]/client/favorites/ - FavoritesClient 组件国际化
+- [x] app/[locale]/client/history/ - 历史浏览页面国际化
+- [x] app/[locale]/client/reviews/ - 待评价页面国际化
+- [x] components/ClientSidebar.tsx - 侧边栏国际化
+- [x] components/ProfileEditModal.tsx - 资料编辑弹窗国际化
+
+**关键组件国际化：**
+- ✅ ClientSidebar - 使用 useTranslations('client')
+- ✅ ProfilePageClient - 使用 useTranslations('profile')
+- ✅ ProfileEditModal - 使用 useTranslations('profileEdit')
+- ✅ OrderTabs - 使用 useTranslations('orderTabs') + getLocalizedValue
+- ✅ FavoritesClient - 使用 useTranslations('favorites')
+
+**添加的翻译命名空间：**
+- client（导航、侧边栏）
+- orders（订单列表）
+- history（浏览历史）
+- reviews（待评价）
+- profile（个人资料）
+- profileEdit（资料编辑，含头像、字段、绑定、手机、操作、错误）
+- orderTabs（订单标签页，含tabs、status、actions、modal）
+- favorites（收藏，含tabs、价格、折扣等）
+
+**测试结果：**
+- [x] Build 成功 ✅
+- [x] 所有用户中心页面正常显示 ✅
+- [x] 三种语言（th/zh/en）切换正常 ✅
 
 ---
 
-### ⏳ 第6阶段：商家中心迁移（2小时）
-**状态：** ⏳ 待开始
+### 🔄 第6阶段：商家中心迁移（2小时）
+**状态：** 🔄 进行中
 **预计时间：** 2小时
 
 **迁移页面：**
-- [ ] app/merchant/layout.tsx
-- [ ] app/merchant/dashboard/
-- [ ] app/merchant/coupons/
-- [ ] app/merchant/products/
-- [ ] app/merchant/orders/
-- [ ] app/merchant/redeem/
-- [ ] app/merchant/settings/
+- [ ] app/merchant/ → app/[locale]/merchant/
+  - [ ] layout.tsx
+  - [ ] dashboard/
+  - [ ] coupons/
+  - [ ] products/
+  - [ ] orders/
+  - [ ] redeem/
+  - [ ] settings/
+  - [ ] staff/
+  - [ ] wallet/
+  - [ ] design/
+  - [ ] onboarding/
+  - [ ] reviews/
+
+**迁移要点：**
+1. 所有页面添加 locale 参数支持
+2. 服务器组件使用 getTranslations + setRequestLocale
+3. 客户端组件使用 useTranslations
+4. Link/useRouter 从 @/i18n/routing 导入
+5. 多语言数据使用 getLocalizedValue
 
 ---
 
@@ -174,6 +211,14 @@
 ---
 
 ## 📝 变更日志
+
+### 2025-12-14 (晚上)
+- ✅ 完成第5阶段：用户中心迁移
+- 迁移所有用户中心页面到 app/[locale]/client/
+- 国际化所有关键组件（ClientSidebar, ProfileEditModal, OrderTabs, FavoritesClient）
+- 添加8个翻译命名空间（client, orders, history, reviews, profile, profileEdit, orderTabs, favorites）
+- Build 测试通过
+- 🔄 开始第6阶段：商家中心迁移
 
 ### 2025-12-14 (下午)
 - ✅ 完成第4阶段：关键功能页面迁移

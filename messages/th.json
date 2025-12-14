@@ -287,5 +287,21 @@
       "warning": "(โปรดอย่าเปิดเผยรหัสการแลก)",
       "close": "ปิด"
     }
+  },
+  "favorites": {
+    "title": "รายการโปรด",
+    "totalCount": "ทั้งหมด {count} รายการ",
+    "tabs": {
+      "product": "สินค้า",
+      "coupon": "คูปอง",
+      "merchant": "ร้านค้า"
+    },
+    "price": "ราคา",
+    "discount": "ส่วนลด",
+    "noImage": "ไม่มีรูปภาพ",
+    "noLogo": "ไม่มีโลโก้",
+    "officialStore": "ร้านค้าอย่างเป็นทางการ",
+    "empty": "ไม่มี{type}ที่คุณชื่นชอบ",
+    "goShopping": "ไปช้อปปิ้ง"
   }
 }

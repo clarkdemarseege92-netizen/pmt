@@ -287,5 +287,21 @@
       "warning": "(Do not share the redemption code)",
       "close": "Close"
     }
+  },
+  "favorites": {
+    "title": "My Favorites",
+    "totalCount": "Total {count} items",
+    "tabs": {
+      "product": "Products",
+      "coupon": "Coupons",
+      "merchant": "Stores"
+    },
+    "price": "Price",
+    "discount": "Discount",
+    "noImage": "No Image",
+    "noLogo": "No Logo",
+    "officialStore": "Official Store",
+    "empty": "No favorite {type} yet",
+    "goShopping": "Go Shopping"
   }
 }

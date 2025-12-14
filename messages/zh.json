@@ -287,5 +287,21 @@
       "warning": "(核销码请勿泄露)",
       "close": "关闭"
     }
+  },
+  "favorites": {
+    "title": "我的收藏",
+    "totalCount": "共 {count} 项",
+    "tabs": {
+      "product": "商品",
+      "coupon": "优惠券",
+      "merchant": "店铺"
+    },
+    "price": "价格",
+    "discount": "折扣",
+    "noImage": "无图片",
+    "noLogo": "无Logo",
+    "officialStore": "官方旗舰店",
+    "empty": "暂无收藏的{type}",
+    "goShopping": "去逛逛"
   }
 }

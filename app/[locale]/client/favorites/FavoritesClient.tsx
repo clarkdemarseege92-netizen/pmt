@@ -5,6 +5,7 @@ import {Link} from "@/i18n/routing";
 import Image from "next/image";
 import { HiShoppingBag, HiTicket, HiBuildingStorefront, HiPhoto } from "react-icons/hi2";
 import FavoriteButton from "@/components/FavoriteButton";
+import { useTranslations } from 'next-intl';
 
 // 定义收藏项的接口 - 统一数据结构
 interface ProductItem {
@@ -37,11 +38,12 @@ interface FavoritesClientProps {
   favoriteMerchants: MerchantItem[];
 }
 
-export default function FavoritesClient({ 
-  favoriteProducts, 
-  favoriteCoupons, 
-  favoriteMerchants 
+export default function FavoritesClient({
+  favoriteProducts,
+  favoriteCoupons,
+  favoriteMerchants
 }: FavoritesClientProps) {
+  const t = useTranslations('favorites');
   const [activeTab, setActiveTab] = useState<'product' | 'coupon' | 'merchant'>('product');
 
   // 计算总数
@@ -49,9 +51,9 @@ export default function FavoritesClient({
 
   // 选项卡配置
   const tabs = [
-    { id: 'product' as const, label: '商品', icon: <HiShoppingBag className="w-4 h-4" />, count: favoriteProducts.length },
-    { id: 'coupon' as const, label: '优惠券', icon: <HiTicket className="w-4 h-4" />, count: favoriteCoupons.length },
-    { id: 'merchant' as const, label: '店铺', icon: <HiBuildingStorefront className="w-4 h-4" />, count: favoriteMerchants.length },
+    { id: 'product' as const, label: t('tabs.product'), icon: <HiShoppingBag className="w-4 h-4" />, count: favoriteProducts.length },
+    { id: 'coupon' as const, label: t('tabs.coupon'), icon: <HiTicket className="w-4 h-4" />, count: favoriteCoupons.length },
+    { id: 'merchant' as const, label: t('tabs.merchant'), icon: <HiBuildingStorefront className="w-4 h-4" />, count: favoriteMerchants.length },
   ];
 
   return (
@@ -59,10 +61,10 @@ export default function FavoritesClient({
       {/* 顶部标题 */}
       <div className="navbar bg-base-100 sticky top-0 z-20 shadow-sm px-4 min-h-16">
         <div className="flex-1">
-          <h1 className="text-xl font-bold">我的收藏</h1>
+          <h1 className="text-xl font-bold">{t('title')}</h1>
         </div>
         <div className="flex-none text-sm text-base-content/60">
-          共 {totalCount} 项
+          {t('totalCount', { count: totalCount })}
         </div>
       </div>
 
@@ -113,7 +115,7 @@ export default function FavoritesClient({
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-base-content/20 bg-base-200 gap-2">
                       <HiPhoto className="w-8 h-8" />
-                      <span className="text-xs">无图片</span>
+                      <span className="text-xs">{t('noImage')}</span>
                     </div>
                   )}
 
@@ -128,7 +130,7 @@ export default function FavoritesClient({
 
                   <div className="flex justify-between items-end mt-2">
                     <div className="flex flex-col">
-                      <span className="text-xs text-base-content/40">价格</span>
+                      <span className="text-xs text-base-content/40">{t('price')}</span>
                       <span className="text-lg font-bold text-primary">฿{product.price.toLocaleString()}</span>
                     </div>
 
@@ -170,7 +172,7 @@ export default function FavoritesClient({
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-base-content/20 bg-base-200 gap-2">
                       <HiTicket className="w-8 h-8" />
-                      <span className="text-xs">无图片</span>
+                      <span className="text-xs">{t('noImage')}</span>
                     </div>
                   )}
                 </figure>
@@ -187,7 +189,7 @@ export default function FavoritesClient({
 
                   <div className="flex justify-between items-end mt-2">
                     <div className="flex flex-col">
-                      <span className="text-xs text-base-content/40">折扣</span>
+                      <span className="text-xs text-base-content/40">{t('discount')}</span>
                       <span className="text-lg font-bold text-secondary">-฿{coupon.discount_value}</span>
                     </div>
 
@@ -229,7 +231,7 @@ export default function FavoritesClient({
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-base-content/20 bg-base-200 gap-2">
                       <HiBuildingStorefront className="w-8 h-8" />
-                      <span className="text-xs">无Logo</span>
+                      <span className="text-xs">{t('noLogo')}</span>
                     </div>
                   )}
 
@@ -247,7 +249,7 @@ export default function FavoritesClient({
                     )}
                     <div className="flex items-center gap-1 text-xs text-base-content/50">
                       <HiBuildingStorefront className="w-3 h-3" />
-                      <span>官方旗舰店</span>
+                      <span>{t('officialStore')}</span>
                     </div>
                   </div>
 
@@ -275,10 +277,12 @@ export default function FavoritesClient({
 
 // 空状态组件
 function EmptyState({ type }: { type: 'product' | 'coupon' | 'merchant' }) {
+  const t = useTranslations('favorites');
+
   const config = {
-    product: { icon: <HiShoppingBag className="w-10 h-10" />, text: '商品' },
-    coupon: { icon: <HiTicket className="w-10 h-10" />, text: '优惠券' },
-    merchant: { icon: <HiBuildingStorefront className="w-10 h-10" />, text: '店铺' },
+    product: { icon: <HiShoppingBag className="w-10 h-10" />, text: t('tabs.product') },
+    coupon: { icon: <HiTicket className="w-10 h-10" />, text: t('tabs.coupon') },
+    merchant: { icon: <HiBuildingStorefront className="w-10 h-10" />, text: t('tabs.merchant') },
   };
 
   return (
@@ -286,9 +290,9 @@ function EmptyState({ type }: { type: 'product' | 'coupon' | 'merchant' }) {
       <div className="w-24 h-24 bg-base-200 rounded-full flex items-center justify-center">
         {config[type].icon}
       </div>
-      <p className="text-sm">暂无收藏的{config[type].text}</p>
+      <p className="text-sm">{t('empty', { type: config[type].text })}</p>
       <Link href="/" className="btn btn-primary btn-sm btn-outline mt-4">
-        去逛逛
+        {t('goShopping')}
       </Link>
     </div>
   );
