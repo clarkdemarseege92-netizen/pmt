@@ -116,5 +116,49 @@
     "registerAndPay": "Register & Pay",
     "payNow": "Pay Now",
     "registerBenefits": "Register to view order history and enjoy member benefits"
+  },
+  "buyButton": {
+    "buyNow": "Buy Now",
+    "outOfStock": "Out of Stock",
+    "errors": {
+      "invalidFileType": "Please upload an image file",
+      "fileTooLarge": "Image size cannot exceed 5MB",
+      "selectSlipFirst": "Please select payment slip image first",
+      "verificationFailed": "Payment slip verification failed",
+      "readFileFailed": "Failed to read image, please try again",
+      "uploadFailed": "Upload failed, please try again later",
+      "merchantNotConfigured": "Merchant payment setup incomplete, purchase unavailable",
+      "purchaseFailed": "Purchase failed, please check login status or try again",
+      "networkError": "Network or server error, please try again later"
+    },
+    "upload": {
+      "title": "Upload Payment Slip",
+      "subtitle": "Please upload your PromptPay transfer screenshot",
+      "timeout": "Order will be automatically cancelled in 30 minutes",
+      "orderAmount": "Order Amount",
+      "orderId": "Order ID",
+      "fileSelected": "File selected",
+      "clickToSelect": "Click to select image",
+      "orDragDrop": "or drag and drop image here",
+      "supportedFormats": "Supports JPG, PNG (max 5MB)",
+      "back": "Back",
+      "verifying": "Verifying...",
+      "submitVerify": "Submit for Verification"
+    },
+    "payment": {
+      "title": "Scan to Pay",
+      "amount": "Order Amount",
+      "items": "items",
+      "merchant": "Merchant",
+      "order": "Order",
+      "cancel": "Cancel",
+      "uploadSlip": "Paid, upload slip"
+    }
+  },
+  "favoriteButton": {
+    "favorite": "Favorite",
+    "favorited": "Favorited",
+    "unfavorite": "Unfavorite",
+    "loginRequired": "Please login first to add favorites. Do you want to go to login?"
   }
 }

@@ -3,9 +3,10 @@
 
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom"; // 1. 引入 createPortal
-import QRCode from 'react-qr-code'; 
+import QRCode from 'react-qr-code';
 import { HiXMark, HiMinus, HiPlus } from 'react-icons/hi2';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface BuyButtonProps {
   couponId?: string;
@@ -34,9 +35,10 @@ export default function BuyButton({
   quantity: externalQuantity,
   onQuantityChange,
   showQuantitySelector = true,
-  buttonText = "立即购买",
+  buttonText,
   className = ""
 }: BuyButtonProps) {
+  const t = useTranslations('buyButton');
   const [loading, setLoading] = useState(false);
   const [paymentInfo, setPaymentInfo] = useState<PaymentInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -49,6 +51,9 @@ export default function BuyButton({
   const quantity = externalQuantity !== undefined ? externalQuantity : internalQuantity;
 
   const router = useRouter();
+
+  // 使用翻译的默认按钮文本
+  const displayButtonText = buttonText || t('buyNow');
 
   // 2. 防止背景滚动 (当模态框打开时)
   useEffect(() => {
@@ -91,12 +96,12 @@ export default function BuyButton({
     if (file) {
       // 验证文件类型
       if (!file.type.startsWith('image/')) {
-        setError('请上传图片文件');
+        setError(t('errors.invalidFileType'));
         return;
       }
       // 验证文件大小（最大 5MB）
       if (file.size > 5 * 1024 * 1024) {
-        setError('图片大小不能超过 5MB');
+        setError(t('errors.fileTooLarge'));
         return;
       }
       setSelectedSlipFile(file);
@@ -107,7 +112,7 @@ export default function BuyButton({
   // 上传并验证付款凭证
   const handleUploadSlip = async () => {
     if (!selectedSlipFile || !paymentInfo) {
-      setError('请先选择付款凭证图片');
+      setError(t('errors.selectSlipFirst'));
       return;
     }
 
@@ -137,7 +142,7 @@ export default function BuyButton({
         console.log('📥 验证结果:', result);
 
         if (!response.ok || !result.success) {
-          setError(result.message || '付款凭证验证失败');
+          setError(result.message || t('errors.verificationFailed'));
           setUploadingSlip(false);
           return;
         }
@@ -160,20 +165,20 @@ export default function BuyButton({
       };
 
       reader.onerror = () => {
-        setError('读取图片失败，请重试');
+        setError(t('errors.readFileFailed'));
         setUploadingSlip(false);
       };
 
     } catch (error) {
       console.error('❌ 上传付款凭证异常:', error);
-      setError('上传失败，请稍后重试');
+      setError(t('errors.uploadFailed'));
       setUploadingSlip(false);
     }
   };
 
   const handleCheckout = async () => {
     if (!merchantPromptPayId) {
-        setError('商户收款设置不完整，暂时无法购买。');
+        setError(t('errors.merchantNotConfigured'));
         return;
     }
     
@@ -202,11 +207,11 @@ export default function BuyButton({
             promptpayPayload: data.promptpayPayload,
         });
       } else {
-        setError(data.message || '购买失败，请检查登录状态或重试。');
+        setError(data.message || t('errors.purchaseFailed'));
       }
 
     } catch (e) {
-      setError('网络或服务器错误，请稍后重试。');
+      setError(t('errors.networkError'));
       console.error(e);
     } finally {
       setLoading(false);
@@ -245,24 +250,24 @@ export default function BuyButton({
         </button>
 
         <div className="text-center pt-2">
-          <h3 className="font-bold text-2xl text-primary mb-3">上传付款凭证</h3>
+          <h3 className="font-bold text-2xl text-primary mb-3">{t('upload.title')}</h3>
           <p className="text-sm text-base-content/70 mb-2">
-            请上传您的 PromptPay 转账截图
+            {t('upload.subtitle')}
           </p>
           <p className="text-xs text-warning mb-6">
-            ⏰ 订单将在 30 分钟后自动取消
+            ⏰ {t('upload.timeout')}
           </p>
 
           {/* 订单信息 */}
           <div className="bg-base-100 p-4 rounded-lg mb-6 text-left">
             <p className="text-sm mb-2">
-              <span className="font-semibold">订单金额:</span>{' '}
+              <span className="font-semibold">{t('upload.orderAmount')}:</span>{' '}
               <span className="text-lg font-bold text-error">
                 ฿{paymentInfo.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </p>
             <p className="text-xs text-base-content/60 truncate">
-              <span className="font-semibold">订单号:</span> {paymentInfo.orderId.slice(0, 20)}...
+              <span className="font-semibold">{t('upload.orderId')}:</span> {paymentInfo.orderId.slice(0, 20)}...
             </p>
           </div>
 
@@ -285,7 +290,7 @@ export default function BuyButton({
                       clipRule="evenodd"
                     />
                   </svg>
-                  <p className="text-sm font-medium text-success">已选择文件</p>
+                  <p className="text-sm font-medium text-success">{t('upload.fileSelected')}</p>
                   <p className="text-xs text-base-content/60 mt-1 truncate max-w-[200px]">
                     {selectedSlipFile.name}
                   </p>
@@ -300,9 +305,9 @@ export default function BuyButton({
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                     />
                   </svg>
-                  <p className="text-sm font-medium text-base-content/70">点击选择图片</p>
-                  <p className="text-xs text-base-content/50 mt-1">或拖放图片到此处</p>
-                  <p className="text-xs text-base-content/40 mt-2">支持 JPG, PNG（最大 5MB）</p>
+                  <p className="text-sm font-medium text-base-content/70">{t('upload.clickToSelect')}</p>
+                  <p className="text-xs text-base-content/50 mt-1">{t('upload.orDragDrop')}</p>
+                  <p className="text-xs text-base-content/40 mt-2">{t('upload.supportedFormats')}</p>
                 </div>
               )}
               <input
@@ -326,7 +331,7 @@ export default function BuyButton({
               }}
               disabled={uploadingSlip}
             >
-              返回
+              {t('upload.back')}
             </button>
             <button
               className="btn btn-primary flex-1 text-white"
@@ -336,10 +341,10 @@ export default function BuyButton({
               {uploadingSlip ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
-                  验证中...
+                  {t('upload.verifying')}
                 </>
               ) : (
-                '提交验证'
+                t('upload.submitVerify')
               )}
             </button>
           </div>
@@ -367,9 +372,9 @@ export default function BuyButton({
         </button>
 
         <div className="text-center pt-2">
-          <h3 className="font-bold text-2xl text-primary mb-3">扫码支付</h3>
-          <p className="text-sm text-base-content/80 mb-1">订单金额</p>
-          <p className="text-sm text-base-content/60 mb-3">({quantity} 件商品)</p>
+          <h3 className="font-bold text-2xl text-primary mb-3">{t('payment.title')}</h3>
+          <p className="text-sm text-base-content/80 mb-1">{t('payment.amount')}</p>
+          <p className="text-sm text-base-content/60 mb-3">({quantity} {t('payment.items')})</p>
           <p className="font-bold text-3xl text-error mb-6">
             ฿{paymentInfo.amount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
           </p>
@@ -390,8 +395,8 @@ export default function BuyButton({
           </div>
           
           <div className="text-xs text-base-content/50 space-y-1 mb-6 bg-base-100 p-3 rounded-lg text-left">
-            <p className="truncate"><span className="font-semibold">商户:</span> {paymentInfo.promptPayId}</p>
-            <p className="truncate"><span className="font-semibold">订单:</span> {paymentInfo.orderId.slice(0, 12)}...</p>
+            <p className="truncate"><span className="font-semibold">{t('payment.merchant')}:</span> {paymentInfo.promptPayId}</p>
+            <p className="truncate"><span className="font-semibold">{t('payment.order')}:</span> {paymentInfo.orderId.slice(0, 12)}...</p>
           </div>
 
           <div className="flex gap-3">
@@ -399,7 +404,7 @@ export default function BuyButton({
               className="btn btn-outline flex-1 btn-sm"
               onClick={() => setPaymentInfo(null)}
             >
-              取消
+              {t('payment.cancel')}
             </button>
             <button
               className="btn btn-primary flex-1 btn-sm text-white"
@@ -408,7 +413,7 @@ export default function BuyButton({
                 setShowUploadSlip(true);
               }}
             >
-              已付款，上传凭证
+              {t('payment.uploadSlip')}
             </button>
           </div>
         </div>
@@ -439,12 +444,12 @@ export default function BuyButton({
           </div>
         )}
 
-        <button 
+        <button
             className="btn btn-primary h-12 px-8 text-lg shadow-lg shadow-primary/30 flex-1 min-w-[120px]"
-            onClick={handleCheckout} 
+            onClick={handleCheckout}
             disabled={loading || isOutOfStock}
         >
-            {loading ? <span className="loading loading-spinner"></span> : (isOutOfStock ? "缺货" : buttonText)}
+            {loading ? <span className="loading loading-spinner"></span> : (isOutOfStock ? t('outOfStock') : displayButtonText)}
         </button>
       </div>
 

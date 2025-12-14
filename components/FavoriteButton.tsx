@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabaseClient"; // 确保使用客户端 Supabase
 import { HiHeart } from "react-icons/hi2";
 import { HiOutlineHeart } from "react-icons/hi2";
+import { useTranslations } from 'next-intl';
 
 interface FavoriteButtonProps {
   itemId: string;
@@ -20,6 +21,7 @@ export default function FavoriteButton({
   className = "",
   themeColor = "#3b82f6" // 默认蓝色
 }: FavoriteButtonProps) {
+  const t = useTranslations('favoriteButton');
   const [isFavorited, setIsFavorited] = useState(false);
   const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -56,7 +58,7 @@ useEffect(() => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       // 未登录提示，可以使用 toast，这里简单 alert
-      if(confirm("请先登录才能收藏，是否去登录？")) {
+      if(confirm(t('loginRequired'))) {
         window.location.href = "/login";
       }
       setLoading(false);
@@ -104,7 +106,7 @@ useEffect(() => {
         className={`btn btn-circle btn-sm bg-base-100/80 backdrop-blur-xs border-0 hover:bg-white shadow-sm ${className}`}
         onClick={toggleFavorite}
         disabled={loading}
-        title={isFavorited ? "取消收藏" : "收藏"}
+        title={isFavorited ? t('unfavorite') : t('favorite')}
       >
         {isFavorited ? (
           <HiHeart className="w-5 h-5 text-error" />
@@ -127,11 +129,11 @@ useEffect(() => {
     >
       {isFavorited ? (
         <>
-          <HiHeart className="w-4 h-4" /> 已收藏
+          <HiHeart className="w-4 h-4" /> {t('favorited')}
         </>
       ) : (
         <>
-          <HiOutlineHeart className="w-4 h-4" /> 收藏
+          <HiOutlineHeart className="w-4 h-4" /> {t('favorite')}
         </>
       )}
     </button>

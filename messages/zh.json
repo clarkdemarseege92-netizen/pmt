@@ -116,5 +116,49 @@
     "registerAndPay": "注册并支付",
     "payNow": "立即支付",
     "registerBenefits": "注册后可查看订单历史和享受会员优惠"
+  },
+  "buyButton": {
+    "buyNow": "立即购买",
+    "outOfStock": "缺货",
+    "errors": {
+      "invalidFileType": "请上传图片文件",
+      "fileTooLarge": "图片大小不能超过 5MB",
+      "selectSlipFirst": "请先选择付款凭证图片",
+      "verificationFailed": "付款凭证验证失败",
+      "readFileFailed": "读取图片失败，请重试",
+      "uploadFailed": "上传失败，请稍后重试",
+      "merchantNotConfigured": "商户收款设置不完整，暂时无法购买",
+      "purchaseFailed": "购买失败，请检查登录状态或重试",
+      "networkError": "网络或服务器错误，请稍后重试"
+    },
+    "upload": {
+      "title": "上传付款凭证",
+      "subtitle": "请上传您的 PromptPay 转账截图",
+      "timeout": "订单将在 30 分钟后自动取消",
+      "orderAmount": "订单金额",
+      "orderId": "订单号",
+      "fileSelected": "已选择文件",
+      "clickToSelect": "点击选择图片",
+      "orDragDrop": "或拖放图片到此处",
+      "supportedFormats": "支持 JPG, PNG（最大 5MB）",
+      "back": "返回",
+      "verifying": "验证中...",
+      "submitVerify": "提交验证"
+    },
+    "payment": {
+      "title": "扫码支付",
+      "amount": "订单金额",
+      "items": "件商品",
+      "merchant": "商户",
+      "order": "订单",
+      "cancel": "取消",
+      "uploadSlip": "已付款，上传凭证"
+    }
+  },
+  "favoriteButton": {
+    "favorite": "收藏",
+    "favorited": "已收藏",
+    "unfavorite": "取消收藏",
+    "loginRequired": "请先登录才能收藏，是否去登录？"
   }
 }
