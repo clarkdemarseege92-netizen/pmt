@@ -160,5 +160,45 @@
     "favorited": "Favorited",
     "unfavorite": "Unfavorite",
     "loginRequired": "Please login first to add favorites. Do you want to go to login?"
+  },
+  "client": {
+    "nav": {
+      "home": "Home",
+      "orders": "Orders",
+      "profile": "My"
+    },
+    "sidebar": {
+      "title": "User Center",
+      "profile": "Profile",
+      "orders": "My Orders",
+      "favorites": "Favorites",
+      "history": "Recently Viewed",
+      "reviews": "Pending Reviews",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "backHome": "Back to Home"
+    }
+  },
+  "orders": {
+    "title": "My Orders"
+  },
+  "history": {
+    "title": "Recently Viewed",
+    "empty": {
+      "title": "No browsing history",
+      "goHome": "Go to home"
+    },
+    "types": {
+      "product": "Product",
+      "coupon": "Coupon",
+      "merchant": "Shop"
+    }
+  },
+  "reviews": {
+    "title": "Pending Reviews",
+    "empty": "You don't have any orders pending review.",
+    "unknownProduct": "Unknown product",
+    "purchaseTime": "Purchase time",
+    "reviewButton": "Review"
   }
 }
