@@ -14,8 +14,9 @@ export const routing = defineRouting({
   // 始终显示语言前缀（方案A：标准路由）
   localePrefix: 'always',
 
-  // 基于浏览器语言自动检测
-  localeDetection: true,
+  // 【修复】禁用自动语言检测，保持用户选择的语言
+  // 语言检测只在中间件的根路径重定向时进行
+  localeDetection: false,
 
   // 路径名称（可选，用于本地化 URL 路径）
   // 例如：/en/about -> /th/เกี่ยวกับเรา

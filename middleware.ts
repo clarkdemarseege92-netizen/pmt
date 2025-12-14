@@ -16,7 +16,42 @@ export async function middleware(request: NextRequest) {
     search: request.nextUrl.search,
   });
 
-  // 1. 首先处理 i18n 路由
+  // 【新增】处理根路径的语言检测
+  if (pathname === '/') {
+    // 从 Accept-Language 头获取浏览器首选语言
+    const acceptLanguage = request.headers.get('accept-language');
+    let detectedLocale = routing.defaultLocale;
+
+    if (acceptLanguage) {
+      // 解析 Accept-Language 头 (例如: "zh-CN,zh;q=0.9,en;q=0.8")
+      const languages = acceptLanguage
+        .split(',')
+        .map(lang => lang.split(';')[0].trim().toLowerCase());
+
+      // 查找匹配的语言
+      for (const lang of languages) {
+        if (lang.startsWith('zh')) {
+          detectedLocale = 'zh';
+          break;
+        } else if (lang.startsWith('en')) {
+          detectedLocale = 'en';
+          break;
+        } else if (lang.startsWith('th')) {
+          detectedLocale = 'th';
+          break;
+        }
+      }
+    }
+
+    console.log('🌐 ROOT PATH - Detected locale:', detectedLocale, 'from:', acceptLanguage);
+
+    // 重定向到检测到的语言
+    const url = request.nextUrl.clone();
+    url.pathname = `/${detectedLocale}`;
+    return NextResponse.redirect(url);
+  }
+
+  // 1. 处理其他路径的 i18n 路由
   const intlResponse = intlMiddleware(request);
 
   console.log('🟢 INTL MIDDLEWARE RESULT:', {
