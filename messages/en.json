@@ -200,5 +200,17 @@
     "unknownProduct": "Unknown product",
     "purchaseTime": "Purchase time",
     "reviewButton": "Review"
+  },
+  "profile": {
+    "title": "Profile",
+    "editProfile": "Edit Profile",
+    "memberType": "Regular Member",
+    "details": {
+      "title": "Details",
+      "email": "Email",
+      "phone": "Phone",
+      "joinDate": "Join Date",
+      "notBound": "Not Bound"
+    }
   }
 }

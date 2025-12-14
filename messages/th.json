@@ -200,5 +200,17 @@
     "unknownProduct": "สินค้าที่ไม่รู้จัก",
     "purchaseTime": "เวลาซื้อ",
     "reviewButton": "รีวิว"
+  },
+  "profile": {
+    "title": "ข้อมูลส่วนตัว",
+    "editProfile": "แก้ไขข้อมูล",
+    "memberType": "สมาชิกทั่วไป",
+    "details": {
+      "title": "ข้อมูลโดยละเอียด",
+      "email": "อีเมล",
+      "phone": "เบอร์โทรศัพท์",
+      "joinDate": "วันที่ลงทะเบียน",
+      "notBound": "ไม่ได้ผูก"
+    }
   }
 }

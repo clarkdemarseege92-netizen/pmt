@@ -200,5 +200,17 @@
     "unknownProduct": "未知商品",
     "purchaseTime": "消费时间",
     "reviewButton": "去评价"
+  },
+  "profile": {
+    "title": "个人资料",
+    "editProfile": "编辑资料",
+    "memberType": "普通会员",
+    "details": {
+      "title": "详细信息",
+      "email": "邮箱",
+      "phone": "手机号",
+      "joinDate": "注册时间",
+      "notBound": "未绑定"
+    }
   }
 }
