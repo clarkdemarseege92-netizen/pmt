@@ -253,5 +253,39 @@
       "enterOtp": "กรุณาใส่รหัส OTP",
       "verifyFailed": "ตรวจสอบล้มเหลว"
     }
+  },
+  "orderTabs": {
+    "tabs": {
+      "all": "คำสั่งซื้อทั้งหมด",
+      "paid": "รอใช้งาน",
+      "used": "รอรีวิว",
+      "expired": "หมดอายุ"
+    },
+    "status": {
+      "all": "คำสั่งซื้อทั้งหมด",
+      "pending": "รอการยืนยัน",
+      "paid": "รอใช้งาน",
+      "used": "รอรีวิว",
+      "expired": "หมดอายุ"
+    },
+    "empty": "ไม่มีคำสั่งซื้อในหมวดหมู่นี้",
+    "unknownProduct": "สินค้าที่ไม่รู้จัก",
+    "coupon": "คูปอง",
+    "product": "สินค้า",
+    "multipleProducts": "{name} และอื่นๆ ({count} รายการ)",
+    "timeRemaining": "เหลือ {time}",
+    "actions": {
+      "uploadSlip": "อัพโหลดสลิป",
+      "redeem": "ใช้งานทันที",
+      "review": "รอรีวิว",
+      "expired": "หมดอายุ",
+      "transactionExpired": "ธุรกรรมหมดอายุ"
+    },
+    "modal": {
+      "title": "รหัสการแลกคูปอง",
+      "description": "กรุณาแสดง QR Code นี้ให้กับร้านค้า",
+      "warning": "(โปรดอย่าเปิดเผยรหัสการแลก)",
+      "close": "ปิด"
+    }
   }
 }

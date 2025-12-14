@@ -253,5 +253,39 @@
       "enterOtp": "Please enter OTP",
       "verifyFailed": "Verification failed"
     }
+  },
+  "orderTabs": {
+    "tabs": {
+      "all": "All Orders",
+      "paid": "Pending Use",
+      "used": "Pending Review",
+      "expired": "Expired"
+    },
+    "status": {
+      "all": "All Orders",
+      "pending": "Awaiting Confirmation",
+      "paid": "Pending Use",
+      "used": "Pending Review",
+      "expired": "Expired"
+    },
+    "empty": "No orders in this category.",
+    "unknownProduct": "Unknown product",
+    "coupon": "Coupon",
+    "product": "Product",
+    "multipleProducts": "{name} and {count} more items",
+    "timeRemaining": "Remaining {time}",
+    "actions": {
+      "uploadSlip": "Upload Slip",
+      "redeem": "Redeem Now",
+      "review": "Pending Review",
+      "expired": "Expired",
+      "transactionExpired": "Transaction Expired"
+    },
+    "modal": {
+      "title": "Order Redemption Code",
+      "description": "Please show this QR code to the merchant.",
+      "warning": "(Do not share the redemption code)",
+      "close": "Close"
+    }
   }
 }

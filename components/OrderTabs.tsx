@@ -6,6 +6,9 @@ import QRCode from 'react-qr-code';
 import Image from 'next/image';
 import { HiTicket, HiStar, HiClock, HiShoppingBag, HiPhoto } from 'react-icons/hi2';
 import UploadSlipModal from './UploadSlipModal';
+import { useTranslations } from 'next-intl';
+import { useLocale } from 'next-intl';
+import { getLocalizedValue } from '@/lib/i18nUtils';
 
 // --- 类型定义 ---
 type MultiLangName = { th: string; en: string; [key: string]: string };
@@ -27,19 +30,22 @@ type Order = {
     }[];
 };
 
-const statusMap = {
-    all: { label: '全部订单', color: 'bg-info' },
-    pending: { label: '等待确认', color: 'bg-warning' },
-    paid: { label: '待使用', color: 'bg-primary' },
-    used: { label: '待评价', color: 'bg-warning' },
-    expired: { label: '已过期', color: 'bg-neutral' },
-};
-
 function OrderTabs({ orders }: { orders: Order[] }) {
+    const t = useTranslations('orderTabs');
+    const locale = useLocale();
+
     const [activeTab, setActiveTab] = useState<'all' | 'paid' | 'used' | 'expired'>('all');
     const [modalOrder, setModalOrder] = useState<Order | null>(null);
     const [uploadSlipOrder, setUploadSlipOrder] = useState<Order | null>(null);
     const [timeRemaining, setTimeRemaining] = useState<Record<string, number>>({});
+
+    const statusMap = {
+        all: { label: t('status.all'), color: 'bg-info' },
+        pending: { label: t('status.pending'), color: 'bg-warning' },
+        paid: { label: t('status.paid'), color: 'bg-primary' },
+        used: { label: t('status.used'), color: 'bg-warning' },
+        expired: { label: t('status.expired'), color: 'bg-neutral' },
+    };
 
     // 计算订单剩余时间（30分钟倒计时）
     // 只在有 pending 订单时才启动定时器
@@ -84,7 +90,7 @@ function OrderTabs({ orders }: { orders: Order[] }) {
             : orders.filter(order => order.status === status);
 
         if (list.length === 0) {
-            return <p className="text-center py-10 text-base-content/60">该分类下暂无订单记录。</p>;
+            return <p className="text-center py-10 text-base-content/60">{t('empty')}</p>;
         }
 
         return (
@@ -92,13 +98,13 @@ function OrderTabs({ orders }: { orders: Order[] }) {
                  {list.map(order => {
                     // --- 核心逻辑：智能判断显示内容 ---
                     let displayImage = '/placeholder.jpg';
-                    let displayName = '未知商品';
+                    let displayName = t('unknownProduct');
                     let isProductOrder = false;
 
                     // 优先检查是否有优惠券信息
                     if (order.coupons) {
                         displayImage = order.coupons.image_urls?.[0] || displayImage;
-                        displayName = order.coupons.name?.th || '优惠券';
+                        displayName = getLocalizedValue(order.coupons.name, locale as 'th' | 'zh' | 'en') || t('coupon');
                     }
                     // 如果没有优惠券，检查是否有商品信息
                     else if (order.order_items && order.order_items.length > 0) {
@@ -108,10 +114,11 @@ function OrderTabs({ orders }: { orders: Order[] }) {
                         if (firstItem.products) {
                             displayImage = firstItem.products.image_urls?.[0] || displayImage;
                             const count = order.order_items.length;
+                            const productName = getLocalizedValue(firstItem.products.name, locale as 'th' | 'zh' | 'en') || t('product');
                             // 如果有多个商品，显示"XX 等 N 件商品"
                             displayName = count > 1
-                                ? `${firstItem.products.name?.th} และอื่นๆ (${count} รายการ)`
-                                : firstItem.products.name?.th || '商品';
+                                ? t('multipleProducts', { name: productName, count })
+                                : productName;
                         }
                     } else {
                         // 数据异常，跳过显示
@@ -149,15 +156,15 @@ function OrderTabs({ orders }: { orders: Order[] }) {
                                                 <span className="text-xs text-warning flex items-center gap-1">
                                                     <HiClock className="w-4 h-4" />
                                                     {timeRemaining[order.order_id] > 0
-                                                        ? `剩余 ${formatTimeRemaining(timeRemaining[order.order_id])}`
-                                                        : '已过期'}
+                                                        ? t('timeRemaining', { time: formatTimeRemaining(timeRemaining[order.order_id]) })
+                                                        : t('actions.expired')}
                                                 </span>
                                                 <button
                                                     className="btn btn-sm btn-primary"
                                                     onClick={() => setUploadSlipOrder(order)}
                                                     disabled={timeRemaining[order.order_id] === 0}
                                                 >
-                                                    <HiPhoto className="w-4 h-4" /> 上传凭证
+                                                    <HiPhoto className="w-4 h-4" /> {t('actions.uploadSlip')}
                                                 </button>
                                             </div>
                                         </div>
@@ -167,17 +174,17 @@ function OrderTabs({ orders }: { orders: Order[] }) {
                                             className="btn btn-sm btn-primary"
                                             onClick={() => setModalOrder(order)}
                                         >
-                                            <HiTicket className="w-4 h-4" /> 立即核销
+                                            <HiTicket className="w-4 h-4" /> {t('actions.redeem')}
                                         </button>
                                     )}
                                     {order.status === 'used' && (
                                         <button className="btn btn-sm btn-warning">
-                                            <HiStar className="w-4 h-4" /> 待评价
+                                            <HiStar className="w-4 h-4" /> {t('actions.review')}
                                         </button>
                                     )}
                                     {order.status === 'expired' && (
                                         <span className="text-sm text-base-content/50 flex items-center gap-1">
-                                            <HiClock className="w-4 h-4" /> 交易已过期
+                                            <HiClock className="w-4 h-4" /> {t('actions.transactionExpired')}
                                         </span>
                                     )}
                                 </div>
@@ -196,22 +203,22 @@ function OrderTabs({ orders }: { orders: Order[] }) {
                 <a role="tab"
                    className={`tab ${activeTab === 'all' ? 'tab-active' : ''}`}
                    onClick={() => setActiveTab('all')}>
-                    全部订单
+                    {t('tabs.all')}
                 </a>
                 <a role="tab"
                    className={`tab ${activeTab === 'paid' ? 'tab-active' : ''}`}
                    onClick={() => setActiveTab('paid')}>
-                    待使用
+                    {t('tabs.paid')}
                 </a>
                 <a role="tab"
                    className={`tab ${activeTab === 'used' ? 'tab-active' : ''}`}
                    onClick={() => setActiveTab('used')}>
-                    待评价
+                    {t('tabs.used')}
                 </a>
                 <a role="tab"
                    className={`tab ${activeTab === 'expired' ? 'tab-active' : ''}`}
                    onClick={() => setActiveTab('expired')}>
-                    已过期
+                    {t('tabs.expired')}
                 </a>
             </div>
 
@@ -227,11 +234,11 @@ function OrderTabs({ orders }: { orders: Order[] }) {
             {modalOrder && (
                 <dialog className="modal modal-open">
                     <div className="modal-box w-11/12 max-w-sm text-center">
-                        <h3 className="font-bold text-xl mb-4">订单核销码</h3>
-                        <p className="text-sm text-base-content/60 mb-6">请向商家出示此二维码。</p>
-                        
+                        <h3 className="font-bold text-xl mb-4">{t('modal.title')}</h3>
+                        <p className="text-sm text-base-content/60 mb-6">{t('modal.description')}</p>
+
                         <div className="flex justify-center mb-6 p-4 bg-white rounded-lg shadow">
-                            <QRCode 
+                            <QRCode
                                 value={modalOrder.redemption_code}
                                 size={200}
                                 level="H"
@@ -242,11 +249,11 @@ function OrderTabs({ orders }: { orders: Order[] }) {
                            {modalOrder.redemption_code}
                         </p>
                         <p className="text-xs text-base-content/70">
-                            (核销码请勿泄露)
+                            {t('modal.warning')}
                         </p>
 
                         <div className="modal-action justify-center mt-6">
-                            <button className="btn" onClick={() => setModalOrder(null)}>关闭</button>
+                            <button className="btn" onClick={() => setModalOrder(null)}>{t('modal.close')}</button>
                         </div>
                     </div>
                 </dialog>
