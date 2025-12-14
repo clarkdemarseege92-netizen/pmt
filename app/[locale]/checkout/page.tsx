@@ -1,11 +1,20 @@
 // app/[locale]/checkout/page.tsx
 import { Suspense } from 'react';
 import CheckoutClient from './CheckoutClient';
-import {getTranslations} from 'next-intl/server';
+import {getTranslations, setRequestLocale} from 'next-intl/server';
 
 export const dynamic = 'force-dynamic';
 
-export default async function CheckoutPage() {
+export default async function CheckoutPage({
+  params
+}: {
+  params: Promise<{locale: string}>;
+}) {
+  const {locale} = await params;
+
+  // 设置请求的 locale
+  setRequestLocale(locale);
+
   const t = await getTranslations('checkout');
 
   return (

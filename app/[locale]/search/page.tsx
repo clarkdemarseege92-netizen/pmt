@@ -2,7 +2,7 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import {Link} from '@/i18n/routing';
-import {getTranslations} from 'next-intl/server';
+import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {getLocalizedValue} from '@/lib/i18nUtils';
 
 // ----- 类型定义 -----
@@ -40,6 +40,10 @@ export default async function SearchPage({
 }) {
   const {locale} = await params;
   const resolvedSearchParams = await searchParams;
+
+  // 设置请求的 locale
+  setRequestLocale(locale);
+
   const t = await getTranslations('search');
 
   const supabase = await createSupabaseServerClient();

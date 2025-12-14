@@ -8,7 +8,7 @@ import BackButton from "@/components/BackButton";
 import FavoriteButton from "@/components/FavoriteButton";
 import {Link} from '@/i18n/routing';
 import { recordBrowsingHistory } from "@/lib/recordBrowsingHistory";
-import {getTranslations} from 'next-intl/server';
+import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {getLocalizedValue} from '@/lib/i18nUtils';
 
 // ----- 类型定义 -----
@@ -60,6 +60,10 @@ export default async function CouponDetailPage({
   params: Promise<{ locale: string; id: string }>
 }) {
   const { locale, id } = await params;
+
+  // 设置请求的 locale
+  setRequestLocale(locale);
+
   const t = await getTranslations('couponDetail');
   const supabase = await createSupabaseServerClient();
 

@@ -3,7 +3,7 @@ import NearbyCoupons from "@/components/NearbyCoupons";
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import {Link} from '@/i18n/routing';
-import {getTranslations} from 'next-intl/server';
+import {getTranslations, setRequestLocale} from 'next-intl/server';
 import {getLocalizedValue} from '@/lib/i18nUtils';
 
 // 【关键修复】禁用静态生成和缓存，确保每次请求都是动态的
@@ -44,6 +44,9 @@ export default async function Home({
   const {locale} = await params;
 
   console.log('🌐 HOME PAGE: Current locale =', locale);
+
+  // 【关键修复】设置请求的 locale（让 getRequestConfig 中的 requestLocale 有值）
+  setRequestLocale(locale);
 
   // 获取翻译
   const t = await getTranslations('home');
