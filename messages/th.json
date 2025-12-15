@@ -706,5 +706,16 @@
     "sending": "กำลังส่ง...",
     "replyButton": "ตอบกลับรีวิว",
     "replyFailed": "การตอบกลับล้มเหลว"
+  },
+  "shop": {
+    "coverImagePlaceholder": "รูปปกร้านค้า",
+    "welcomeMessage": "ยินดีต้อนรับ กรุณาสั่งอาหารด้วยตัวเอง",
+    "verifiedMerchant": "ร้านค้าที่ได้รับการรับรอง (4.8 คะแนน)",
+    "addressNavigation": "ที่อยู่ (นำทาง)",
+    "noAddress": "ไม่มีที่อยู่",
+    "phone": "โทรศัพท์",
+    "followUs": "ติดตามโซเชียลมีเดียของเรา",
+    "allProducts": "สินค้าทั้งหมด ({count})",
+    "noProducts": "ร้านค้านี้ยังไม่มีสินค้า"
   }
 }

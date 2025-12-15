@@ -706,5 +706,16 @@
     "sending": "Sending...",
     "replyButton": "Reply to Review",
     "replyFailed": "Reply failed"
+  },
+  "shop": {
+    "coverImagePlaceholder": "Store Cover Image",
+    "welcomeMessage": "Welcome! Please order by yourself",
+    "verifiedMerchant": "Verified Merchant (4.8 rating)",
+    "addressNavigation": "Address (Navigation)",
+    "noAddress": "No address available",
+    "phone": "Phone",
+    "followUs": "Follow us on social media",
+    "allProducts": "All Products ({count})",
+    "noProducts": "This store has not published any products yet."
   }
 }
