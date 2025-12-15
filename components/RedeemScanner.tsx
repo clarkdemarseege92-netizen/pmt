@@ -4,6 +4,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Html5Qrcode } from 'html5-qrcode';
 import { HiCheckCircle, HiXCircle, HiQrCode, HiOutlineArrowPath, HiCamera } from 'react-icons/hi2';
+import { useTranslations } from 'next-intl';
 
 interface RedemptionDetails {
     redemption_code: string;
@@ -18,9 +19,11 @@ interface RedeemState {
 }
 
 export default function RedeemScanner() {
+    const t = useTranslations('redeemScanner');
+
     const [state, setState] = useState<RedeemState>({
         status: 'initial',
-        message: '点击开始扫描，对准客户的核销二维码。',
+        message: '',
         details: null,
     });
 
@@ -39,7 +42,7 @@ export default function RedeemScanner() {
             }
         }
 
-        setState(prev => ({ ...prev, status: 'scanning', message: '正在验证核销码...' }));
+        setState(prev => ({ ...prev, status: 'scanning', message: t('verifying') }));
 
         try {
             const response = await fetch('/api/redeem', {
@@ -54,7 +57,7 @@ export default function RedeemScanner() {
                 await stopScanner(); // 成功后彻底关闭
                 setState({
                     status: 'success',
-                    message: `核销成功！`,
+                    message: t('redeemSuccess'),
                     details: result.order_details,
                 });
             } else {
@@ -69,15 +72,15 @@ export default function RedeemScanner() {
                 setState(prev => ({
                     ...prev,
                     status: 'error',
-                    message: `核销失败: ${result.message || '无效代码'}`,
+                    message: `${t('redeemFailed')}: ${result.message || t('invalidCode')}`,
                     details: null,
                 }));
                 
                 // 3秒后自动清除错误提示
                 setTimeout(() => {
-                    setState(current => 
-                        current.status === 'error' && html5QrcodeRef.current 
-                            ? { ...current, status: 'scanning', message: '请对准二维码' } 
+                    setState(current =>
+                        current.status === 'error' && html5QrcodeRef.current
+                            ? { ...current, status: 'scanning', message: t('aimAtQR') }
                             : current
                     );
                 }, 3000);
@@ -86,12 +89,12 @@ export default function RedeemScanner() {
             console.error(error);
             setState({
                 status: 'error',
-                message: '网络错误或服务器连接失败。',
+                message: t('networkError'),
                 details: null,
             });
             await stopScanner();
         }
-    }, []);
+    }, [t]);
 
     // ─── 工具：停止扫描器 ───
     const stopScanner = async () => {
@@ -119,7 +122,7 @@ export default function RedeemScanner() {
                 const permissionName = 'camera' as unknown as PermissionName;
                 const permissionStatus = await navigator.permissions.query({ name: permissionName });
                 if (permissionStatus.state === 'denied') {
-                    setState({ status: 'error', message: '摄像头权限被拒绝，请在手机设置中允许浏览器访问相机', details: null });
+                    setState({ status: 'error', message: t('cameraPermissionDenied'), details: null });
                     return;
                 }
             }
@@ -128,14 +131,14 @@ export default function RedeemScanner() {
         }
 
         isInitializingRef.current = true;
-        setState({ status: 'scanning', message: '正在启动摄像头...', details: null });
+        setState({ status: 'scanning', message: t('startingCamera'), details: null });
 
         // 启动超时熔断
         const timeoutId = setTimeout(() => {
             if (isInitializingRef.current) {
                 console.error("摄像头启动超时");
                 isInitializingRef.current = false;
-                setState({ status: 'error', message: '摄像头启动超时，请刷新页面或检查权限', details: null });
+                setState({ status: 'error', message: t('cameraTimeout'), details: null });
                 stopScanner();
             }
         }, 10000);
@@ -175,12 +178,12 @@ export default function RedeemScanner() {
                 }
             );
             
-            setState(prev => ({ ...prev, message: '请对准二维码' }));
+            setState(prev => ({ ...prev, message: t('aimAtQR') }));
 
         } catch (error: unknown) {
             console.error('启动失败:', error);
             
-            let errorMessage = '未知错误';
+            let errorMessage = t('unknownError');
             if (error instanceof Error) {
                 errorMessage = error.message;
             } else if (typeof error === 'string') {
@@ -189,7 +192,7 @@ export default function RedeemScanner() {
 
             setState({
                 status: 'error',
-                message: `无法启动摄像头: ${errorMessage || '请检查权限'}`,
+                message: `${t('cameraStartFailed')}: ${errorMessage || t('checkPermissions')}`,
                 details: null,
             });
             await stopScanner();
@@ -206,7 +209,7 @@ export default function RedeemScanner() {
 
     const resetScanner = async () => {
         await stopScanner();
-        setState({ status: 'initial', message: '点击开始扫描，对准客户的核销二维码。', details: null });
+        setState({ status: 'initial', message: t('initialMessage'), details: null });
     };
 
     useEffect(() => {
@@ -223,11 +226,11 @@ export default function RedeemScanner() {
                 <div role="alert" className="alert alert-success mt-4 shadow-lg">
                     <HiCheckCircle className="w-6 h-6" />
                     <div>
-                        <h3 className="font-bold">核销成功</h3>
+                        <h3 className="font-bold">{t('successTitle')}</h3>
                         {state.details && (
                             <div className="text-xs mt-1">
-                                订单号: {state.details.order_id.slice(0, 8)}... <br/>
-                                金额: ฿{state.details.price}
+                                {t('orderId')}: {state.details.order_id.slice(0, 8)}... <br/>
+                                {t('amount')}: ฿{state.details.price}
                             </div>
                         )}
                     </div>
@@ -248,7 +251,7 @@ export default function RedeemScanner() {
     return (
         <div className="w-full max-w-lg mx-auto p-4">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <HiQrCode className="w-6 h-6"/> 扫码核销
+                <HiQrCode className="w-6 h-6"/> {t('scanTitle')}
             </h2>
 
             <div className="card bg-base-100 shadow-xl border overflow-hidden">
@@ -256,13 +259,13 @@ export default function RedeemScanner() {
                     
                     {state.status === 'initial' && (
                         <div className="flex flex-col items-center justify-center h-full py-10">
-                            <button 
-                                className="btn btn-lg btn-primary shadow-lg" 
+                            <button
+                                className="btn btn-lg btn-primary shadow-lg"
                                 onClick={startScanner}
                             >
-                                <HiCamera className="w-6 h-6"/> 开启摄像头扫码
+                                <HiCamera className="w-6 h-6"/> {t('startCameraButton')}
                             </button>
-                            <p className="mt-4 text-base-content/60 text-sm">请确保允许浏览器访问相机权限</p>
+                            <p className="mt-4 text-base-content/60 text-sm">{t('cameraPermissionNote')}</p>
                         </div>
                     )}
 
@@ -286,10 +289,10 @@ export default function RedeemScanner() {
                              
                              <div className="flex gap-2 mt-6">
                                 <button className="btn btn-outline" onClick={restartScanner}>
-                                    <HiOutlineArrowPath className="w-4 h-4"/> 继续扫码
+                                    <HiOutlineArrowPath className="w-4 h-4"/> {t('continueScan')}
                                 </button>
                                 <button className="btn btn-ghost" onClick={resetScanner}>
-                                    返回
+                                    {t('back')}
                                 </button>
                              </div>
                          </div>
@@ -307,10 +310,11 @@ export default function RedeemScanner() {
     );
 }
 
-function ManualInputFallback({ onManualRedeem, disabled }: { 
-    onManualRedeem: (code: string) => void; 
+function ManualInputFallback({ onManualRedeem, disabled }: {
+    onManualRedeem: (code: string) => void;
     disabled: boolean;
 }) {
+    const t = useTranslations('redeemScanner');
     const [manualCode, setManualCode] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
@@ -323,22 +327,22 @@ function ManualInputFallback({ onManualRedeem, disabled }: {
 
     return (
         <div className="mt-6 border-t pt-4">
-            <h3 className="text-lg font-semibold mb-2 text-base-content/80">手动输入核销码</h3>
+            <h3 className="text-lg font-semibold mb-2 text-base-content/80">{t('manualInputTitle')}</h3>
             <form onSubmit={handleSubmit} className="flex gap-2">
                 <input
                     type="text"
-                    placeholder="输入核销码..."
+                    placeholder={t('manualInputPlaceholder')}
                     className="input input-bordered flex-1"
                     value={manualCode}
                     onChange={(e) => setManualCode(e.target.value)}
                     disabled={disabled}
                 />
-                <button 
-                    type="submit" 
+                <button
+                    type="submit"
                     className="btn btn-neutral"
                     disabled={!manualCode.trim() || disabled}
                 >
-                    核销
+                    {t('redeemButton')}
                 </button>
             </form>
         </div>

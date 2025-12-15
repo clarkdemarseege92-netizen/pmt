@@ -2,9 +2,9 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { 
+import { Link, usePathname } from "@/i18n/routing";
+import { useTranslations } from 'next-intl';
+import {
   HiSquares2X2,
   HiShoppingBag,
   HiTicket,
@@ -16,25 +16,28 @@ import {
   HiChevronRight,
   HiPaintBrush,
   HiArrowLeftStartOnRectangle,
-  HiClipboardDocumentList
+  HiClipboardDocumentList,
+  HiUserGroup
 } from "react-icons/hi2";
 
 export default function MerchantSidebar() {
+  const t = useTranslations('merchantNav');
   const [isExpanded, setIsExpanded] = useState(true);
   const pathname = usePathname();
 
   const toggleSidebar = () => setIsExpanded(!isExpanded);
 
   const navItems = [
-    { name: "仪表板", href: "/merchant/dashboard", icon: <HiSquares2X2 className="w-6 h-6" /> },
-    { name: "订单管理", href: "/merchant/orders", icon: <HiClipboardDocumentList className="w-6 h-6" /> },
-    { name: "商品目录", href: "/merchant/products", icon: <HiShoppingBag className="w-6 h-6" /> },
-    { name: "店铺装修", href: "/merchant/design", icon: <HiPaintBrush className="w-6 h-6" /> },
-    { name: "优惠券", href: "/merchant/coupons", icon: <HiTicket className="w-6 h-6" /> },
-    { name: "评价管理", href: "/merchant/reviews", icon: <HiChatBubbleLeftRight className="w-6 h-6" /> },
-    { name: "钱包", href: "/merchant/wallet", icon: <HiWallet className="w-6 h-6" /> },
-    { name: "核销", href: "/merchant/redeem", icon: <HiQrCode className="w-6 h-6" /> },
-    { name: "设置", href: "/merchant/settings", icon: <HiCog6Tooth className="w-6 h-6" /> },
+    { name: t('dashboard'), href: "/merchant/dashboard", icon: <HiSquares2X2 className="w-6 h-6" /> },
+    { name: t('orders'), href: "/merchant/orders", icon: <HiClipboardDocumentList className="w-6 h-6" /> },
+    { name: t('products'), href: "/merchant/products", icon: <HiShoppingBag className="w-6 h-6" /> },
+    { name: t('design'), href: "/merchant/design", icon: <HiPaintBrush className="w-6 h-6" /> },
+    { name: t('coupons'), href: "/merchant/coupons", icon: <HiTicket className="w-6 h-6" /> },
+    { name: t('reviews'), href: "/merchant/reviews", icon: <HiChatBubbleLeftRight className="w-6 h-6" /> },
+    { name: t('wallet'), href: "/merchant/wallet", icon: <HiWallet className="w-6 h-6" /> },
+    { name: t('staff'), href: "/merchant/staff", icon: <HiUserGroup className="w-6 h-6" /> },
+    { name: t('redeem'), href: "/merchant/redeem", icon: <HiQrCode className="w-6 h-6" /> },
+    { name: t('settings'), href: "/merchant/settings", icon: <HiCog6Tooth className="w-6 h-6" /> },
   ];
 
   return (
@@ -46,11 +49,11 @@ export default function MerchantSidebar() {
       }`}
     >
       <div className="h-16 flex items-center justify-between px-4 border-b border-base-200">
-        {isExpanded && <span className="font-bold text-xl truncate text-secondary">商家中心</span>}
-        <button 
-          onClick={toggleSidebar} 
+        {isExpanded && <span className="font-bold text-xl truncate text-secondary">{t('merchantCenter')}</span>}
+        <button
+          onClick={toggleSidebar}
           className="btn btn-square btn-ghost btn-sm"
-          title={isExpanded ? "收起菜单" : "展开菜单"}
+          title={isExpanded ? t('collapse') : t('expand')}
         >
            {isExpanded ? <HiChevronLeft className="w-5 h-5" /> : <HiChevronRight className="w-5 h-5" />}
         </button>
@@ -87,13 +90,13 @@ export default function MerchantSidebar() {
             className={`flex items-center p-3 rounded-xl hover:bg-error/10 text-base-content/70 hover:text-error transition-all ${
               isExpanded ? "justify-start gap-3" : "justify-center"
             }`}
-             title="返回主站"
+             title={t('backToHome')}
          >
             <HiArrowLeftStartOnRectangle className="w-6 h-6 shrink-0" />
             <span className={`whitespace-nowrap transition-opacity duration-300 ${
                isExpanded ? "opacity-100" : "opacity-0 w-0 overflow-hidden"
             }`}>
-               返回主站
+               {t('backToHome')}
             </span>
          </Link>
       </div>
