@@ -16,14 +16,14 @@ export const multiLangNameSchema = z.object({
  * 记账类型验证
  */
 export const accountingTypeSchema = z.enum(['income', 'expense'], {
-  errorMap: () => ({ message: 'Type must be either income or expense' }),
+  message: 'Type must be either income or expense',
 });
 
 /**
  * 记账来源验证
  */
 export const accountingSourceSchema = z.enum(['manual', 'platform_order', 'platform_fee'], {
-  errorMap: () => ({ message: 'Invalid source type' }),
+  message: 'Invalid source type',
 });
 
 /**
