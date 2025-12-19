@@ -140,7 +140,6 @@ const StatsDashboard = ({ merchant }: { merchant: Merchant }) => {
 
 // 主页面
 export default function DashboardPage() {
-  const t = useTranslations('merchantDashboard');
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<User | null>(null);
   const [merchant, setMerchant] = useState<Merchant | null>(null);

@@ -126,7 +126,7 @@ export function TopCouponsChart({ merchantId, limit = 5 }: TopCouponsChartProps)
               <XAxis type="number" />
               <YAxis dataKey="name" type="category" width={100} />
               <Tooltip
-                formatter={(value: any, name: string, props: any) => {
+                formatter={(value: any, name: string | undefined, props: any) => {
                   if (name === 'sales') return [`฿${value}`, t('salesAmount')];
                   if (name === 'quantity') return [value, t('soldQuantity')];
                   return value;
