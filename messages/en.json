@@ -323,6 +323,36 @@
       "todaySales": "Today's Sales",
       "todayRedemptions": "Today's Redemptions",
       "ordersCount": "{count} orders"
+    },
+    "revenue": {
+      "title": "Revenue Summary",
+      "today": "Today's Revenue",
+      "todayDesc": "Today's sales",
+      "week": "This Week's Revenue",
+      "weekDesc": "Sales from the last 7 days",
+      "month": "This Month's Revenue",
+      "monthDesc": "Month-to-date sales",
+      "total": "Total Revenue",
+      "totalDesc": "All-time cumulative sales"
+    },
+    "charts": {
+      "salesTrend": "Sales Trend",
+      "last7Days": "Sales trend for the last 7 days",
+      "salesAmount": "Sales Amount",
+      "ordersCount": "Number of Orders",
+      "topCoupons": "Top Coupons",
+      "topSellingCoupons": "Top 5 best-selling coupons",
+      "soldQuantity": "Quantity Sold",
+      "orderStatus": "Order Status",
+      "totalOrders": "Total Orders",
+      "percentage": "Percentage",
+      "noData": "No data available",
+      "status": {
+        "pending": "Pending",
+        "completed": "Completed",
+        "cancelled": "Cancelled",
+        "refunded": "Refunded"
+      }
     }
   },
   "merchantOnboarding": {

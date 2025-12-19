@@ -323,6 +323,36 @@
       "todaySales": "ยอดขายวันนี้",
       "todayRedemptions": "การแลกวันนี้",
       "ordersCount": "{count} คำสั่งซื้อ"
+    },
+    "revenue": {
+      "title": "สรุปรายได้",
+      "today": "รายได้วันนี้",
+      "todayDesc": "ยอดขายวันนี้",
+      "week": "รายได้สัปดาห์นี้",
+      "weekDesc": "ยอดขาย 7 วันที่ผ่านมา",
+      "month": "รายได้เดือนนี้",
+      "monthDesc": "ยอดขายสะสมของเดือนนี้",
+      "total": "รายได้ทั้งหมด",
+      "totalDesc": "ยอดขายสะสมทั้งหมด"
+    },
+    "charts": {
+      "salesTrend": "แนวโน้มยอดขาย",
+      "last7Days": "แนวโน้มยอดขาย 7 วันที่ผ่านมา",
+      "salesAmount": "ยอดขาย",
+      "ordersCount": "จำนวนคำสั่งซื้อ",
+      "topCoupons": "คูปองยอดนิยม",
+      "topSellingCoupons": "คูปอง 5 อันดับแรกที่ขายดีที่สุด",
+      "soldQuantity": "จำนวนที่ขาย",
+      "orderStatus": "สถานะคำสั่งซื้อ",
+      "totalOrders": "คำสั่งซื้อทั้งหมด",
+      "percentage": "เปอร์เซ็นต์",
+      "noData": "ไม่มีข้อมูล",
+      "status": {
+        "pending": "รอดำเนินการ",
+        "completed": "เสร็จสมบูรณ์",
+        "cancelled": "ยกเลิก",
+        "refunded": "คืนเงิน"
+      }
     }
   },
   "merchantOnboarding": {

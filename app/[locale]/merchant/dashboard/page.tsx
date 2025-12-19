@@ -5,6 +5,10 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
 import { useTranslations } from 'next-intl';
+import { SalesTrendChart } from './components/SalesTrendChart';
+import { TopCouponsChart } from './components/TopCouponsChart';
+import { OrderStatusChart } from './components/OrderStatusChart';
+import { RevenueSummaryCard } from './components/RevenueSummaryCard';
 
 type Merchant = {
   merchant_id: string;
@@ -105,23 +109,30 @@ const StatsDashboard = ({ merchant }: { merchant: Merchant }) => {
   const t = useTranslations('merchantDashboard.stats');
 
   return (
-    <div className="w-full">
-      <h1 className="text-3xl font-bold mb-4">{t('title')}</h1>
+    <div className="w-full space-y-6 p-4 md:p-6">
+      {/* 页面标题 */}
+      <div>
+        <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>
+        <p className="text-base-content/70">{merchant.shop_name}</p>
+      </div>
+
+      {/* 试用提示 */}
       {merchant.status === 'pending' && (
-         <div className="alert alert-warning mb-4">
-            <span>{t('trialNotice')}</span>
-         </div>
+        <div className="alert alert-warning">
+          <span>{t('trialNotice')}</span>
+        </div>
       )}
 
-      <div className="stats shadow w-full">
-        <div className="stat">
-          <div className="stat-title">{t('todaySales')}</div>
-          <div className="stat-value">฿ 0</div>
-        </div>
-        <div className="stat">
-          <div className="stat-title">{t('todayRedemptions')}</div>
-          <div className="stat-value">{t('ordersCount', { count: 0 })}</div>
-        </div>
+      {/* 收入汇总卡片 */}
+      <RevenueSummaryCard merchantId={merchant.merchant_id} />
+
+      {/* 销售趋势图表 */}
+      <SalesTrendChart merchantId={merchant.merchant_id} days={7} />
+
+      {/* 图表网格：热门优惠券 & 订单状态 */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TopCouponsChart merchantId={merchant.merchant_id} limit={5} />
+        <OrderStatusChart merchantId={merchant.merchant_id} />
       </div>
     </div>
   );

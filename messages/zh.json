@@ -323,6 +323,36 @@
       "todaySales": "今日销售额",
       "todayRedemptions": "今日核销",
       "ordersCount": "{count} 单"
+    },
+    "revenue": {
+      "title": "收入汇总",
+      "today": "今日收入",
+      "todayDesc": "今天的销售额",
+      "week": "本周收入",
+      "weekDesc": "最近7天的销售额",
+      "month": "本月收入",
+      "monthDesc": "当月累计销售额",
+      "total": "总收入",
+      "totalDesc": "全部累计销售额"
+    },
+    "charts": {
+      "salesTrend": "销售趋势",
+      "last7Days": "最近7天销售趋势",
+      "salesAmount": "销售额",
+      "ordersCount": "订单数",
+      "topCoupons": "热门优惠券",
+      "topSellingCoupons": "销售额排名前5的优惠券",
+      "soldQuantity": "销售数量",
+      "orderStatus": "订单状态",
+      "totalOrders": "总订单数",
+      "percentage": "占比",
+      "noData": "暂无数据",
+      "status": {
+        "pending": "待处理",
+        "completed": "已完成",
+        "cancelled": "已取消",
+        "refunded": "已退款"
+      }
     }
   },
   "merchantOnboarding": {
