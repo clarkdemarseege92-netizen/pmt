@@ -1,4 +1,4 @@
-// 文件: /app/[locale]/merchant/onboarding/page.tsx
+// File: /app/[locale]/merchant/onboarding/page.tsx
 "use client";
 
 import { useState } from "react";
@@ -31,7 +31,7 @@ export default function OnboardingPage() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error(t('errors.notLoggedIn'));
 
-      // 1. 插入商家记录，并立即获取返回数据（我们需要 merchant_id）
+      // 1. Insert merchant record and get merchant_id
       const { data: newMerchant, error: insertError } = await supabase
         .from("merchants")
         .insert({
@@ -46,7 +46,7 @@ export default function OnboardingPage() {
 
       if (insertError) throw insertError;
 
-      // 2. 写入"赠送体验金"的流水记录
+      // 2. Create bonus transaction record
       const { error: transError } = await supabase.from("merchant_transactions").insert({
         merchant_id: newMerchant.merchant_id,
         type: 'bonus',
@@ -56,19 +56,19 @@ export default function OnboardingPage() {
       });
 
       if (transError) {
-        console.error("赠送金流水写入失败:", transError);
+        console.error("Failed to create bonus transaction:", transError);
       }
 
-      // 3. 调用 RPC 升级用户角色
+      // 3. Upgrade user role to merchant via RPC
       const { error: rpcError } = await supabase.rpc('set_role_to_merchant', {
         user_uuid: user.id
       });
 
       if (rpcError) {
-         console.error("角色升级失败:", rpcError);
+         console.error("Failed to upgrade user role:", rpcError);
       }
 
-      // 4. 成功！跳转
+      // 4. Success! Redirect to dashboard
       router.push("/merchant/dashboard");
 
     } catch (err: unknown) {

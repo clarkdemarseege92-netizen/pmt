@@ -176,7 +176,11 @@ export default function ProductsPage() {
     if (!merchantCategoryId) return null;
 
     const category = merchantCategories.find(c => c.category_id === merchantCategoryId);
-    return category ? `${category.icon || '📦'} ${category.name}` : null;
+    if (!category) return null;
+
+    // category.name 是 MultiLangName 对象，需要提取对应语言的值
+    const categoryName = getLocalizedValue(category.name, locale as 'th' | 'zh' | 'en');
+    return `${category.icon || '📦'} ${categoryName}`;
   };
 
   // 8. 批量操作：选择/取消选择商品

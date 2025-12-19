@@ -1,32 +1,28 @@
 // app/[locale]/merchant/quick-entry/components/CategoryFilter.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { HiCog6Tooth } from 'react-icons/hi2';
 import { Link } from '@/i18n/routing';
-import { getMerchantCategories } from '@/app/actions/merchant-categories/merchant-categories';
 import type { MerchantCategory } from '@/app/actions/merchant-categories/merchant-categories';
 import { getLocalizedValue } from '@/lib/i18nUtils';
 import type { MultiLangName } from '@/app/types/accounting';
 
 type CategoryFilterProps = {
-  merchantId: string;
+  categories: MerchantCategory[];
   selectedCategoryId: string | null | undefined;
   onCategoryChange: (categoryId: string | null | undefined) => void;
   uncategorizedCount?: number;
 };
 
 export function CategoryFilter({
-  merchantId,
+  categories,
   selectedCategoryId,
   onCategoryChange,
   uncategorizedCount = 0
 }: CategoryFilterProps) {
   const t = useTranslations('quickEntry');
   const locale = useLocale();
-  const [categories, setCategories] = useState<MerchantCategory[]>([]);
-  const [loading, setLoading] = useState(true);
 
   // Helper function to get category name (supports both string and MultiLangName)
   const getCategoryName = (name: string | MultiLangName): string => {
@@ -35,31 +31,6 @@ export function CategoryFilter({
     }
     return getLocalizedValue(name, locale as 'th' | 'zh' | 'en'); // New JSONB format
   };
-
-  useEffect(() => {
-    const loadCategories = async () => {
-      setLoading(true);
-      const result = await getMerchantCategories(merchantId);
-
-      if (result.success) {
-        setCategories(result.data);
-      } else {
-        console.error('Failed to load categories:', result.error);
-      }
-
-      setLoading(false);
-    };
-
-    loadCategories();
-  }, [merchantId]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center py-4">
-        <span className="loading loading-spinner loading-sm"></span>
-      </div>
-    );
-  }
 
   // 如果没有分类，不显示筛选器
   if (categories.length === 0) {

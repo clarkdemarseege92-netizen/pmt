@@ -28,18 +28,18 @@ export async function POST(request: Request) {
     const { amount }: RechargeRequestBody = await request.json();
 
     if (!amount || amount <= 0) {
-        return NextResponse.json({ success: false, message: '充值金额无效' }, { status: 400 });
+        return NextResponse.json({ success: false, message: 'Invalid top-up amount' }, { status: 400 });
     }
-    
+
     if (!PLATFORM_PROMPTPAY_ID) {
-        return NextResponse.json({ success: false, message: '平台收款ID未配置' }, { status: 500 });
+        return NextResponse.json({ success: false, message: 'Platform payment ID not configured' }, { status: 500 });
     }
 
     const supabase = await createSupabaseServerClient();
     const { data: { user } } = await supabase.auth.getUser();
 
     if (!user) {
-        return NextResponse.json({ success: false, message: '请先登录' }, { status: 401 });
+        return NextResponse.json({ success: false, message: 'Please login first' }, { status: 401 });
     }
 
     try {
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
             
         if (merchantError || !merchantData) {
             console.error('Merchant ID Fetch Error:', merchantError);
-            return NextResponse.json({ success: false, message: '无法找到关联的商户ID。' }, { status: 403 });
+            return NextResponse.json({ success: false, message: 'Unable to find associated merchant ID' }, { status: 403 });
         }
         
         const merchantId = merchantData.merchant_id;
@@ -60,12 +60,12 @@ export async function POST(request: Request) {
 
         // 2. 构造插入数据结构
         const transactionData: MerchantTransactionInsert = {
-            merchant_id: merchantId, 
-            type: 'top_up', 
+            merchant_id: merchantId,
+            type: 'top_up',
             amount: amount,
             status: 'pending', // 初始状态为 pending，等待支付验证
-            related_order_id: topUpId, 
-            description: `充值请求 (Ref: ${topUpId.slice(0, 8)})`,
+            related_order_id: topUpId,
+            description: `Top-up request (Ref: ${topUpId.slice(0, 8)})`,
         };
 
         // 3. 【核心修复】插入充值记录到 merchant_transactions 表
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
         if (transactionError) {
             console.error('Transaction Creation Error:', transactionError);
-            return NextResponse.json({ success: false, message: '充值订单创建失败' }, { status: 500 });
+            return NextResponse.json({ success: false, message: 'Failed to create top-up transaction' }, { status: 500 });
         }
 
         // 4. 生成 PromptPay 二维码 Payload (使用平台ID收款)
@@ -93,6 +93,6 @@ export async function POST(request: Request) {
 
     } catch (e) {
         console.error('Recharge API Error:', e);
-        return NextResponse.json({ success: false, message: '内部服务器错误' }, { status: 500 });
+        return NextResponse.json({ success: false, message: 'Internal server error' }, { status: 500 });
     }
 }

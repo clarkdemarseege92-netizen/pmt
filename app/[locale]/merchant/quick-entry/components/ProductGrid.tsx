@@ -7,7 +7,8 @@ import type { CashOrderItem } from '@/app/types/accounting';
 import { getProductsForQuickEntry, getCouponsForQuickEntry } from '@/app/actions/products/get-products';
 import type { Product, Coupon } from '@/app/actions/products/get-products';
 import { CategoryFilter } from './CategoryFilter';
-import { getUncategorizedProductsCount } from '@/app/actions/merchant-categories/merchant-categories';
+import { getUncategorizedProductsCount, getMerchantCategories } from '@/app/actions/merchant-categories/merchant-categories';
+import type { MerchantCategory } from '@/app/actions/merchant-categories/merchant-categories';
 
 type ProductGridProps = {
   merchantId: string;
@@ -19,6 +20,7 @@ export function ProductGrid({ merchantId, onAddItem }: ProductGridProps) {
   const locale = useLocale();
   const [products, setProducts] = useState<Product[]>([]);
   const [coupons, setCoupons] = useState<Coupon[]>([]);
+  const [categories, setCategories] = useState<MerchantCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null | undefined>(undefined);
@@ -42,10 +44,11 @@ export function ProductGrid({ merchantId, onAddItem }: ProductGridProps) {
       setError(null);
 
       try {
-        // 并行获取产品和优惠券（产品支持分类筛选）
-        const [productsResult, couponsResult] = await Promise.all([
+        // 并行获取产品、优惠券和商户分类（产品支持分类筛选）
+        const [productsResult, couponsResult, categoriesResult] = await Promise.all([
           getProductsForQuickEntry(merchantId, selectedCategoryId),
-          getCouponsForQuickEntry(merchantId)
+          getCouponsForQuickEntry(merchantId),
+          getMerchantCategories(merchantId)
         ]);
 
         if (productsResult.success) {
@@ -59,8 +62,14 @@ export function ProductGrid({ merchantId, onAddItem }: ProductGridProps) {
         } else {
           console.error('Failed to load coupons:', couponsResult.error);
         }
+
+        if (categoriesResult.success) {
+          setCategories(categoriesResult.data);
+        } else {
+          console.error('Failed to load categories:', categoriesResult.error);
+        }
       } catch (err) {
-        console.error('Error loading products/coupons:', err);
+        console.error('Error loading data:', err);
         setError(err instanceof Error ? err.message : 'Unknown error');
       } finally {
         setLoading(false);
@@ -127,7 +136,7 @@ export function ProductGrid({ merchantId, onAddItem }: ProductGridProps) {
       <>
         {/* 分类筛选器 */}
         <CategoryFilter
-          merchantId={merchantId}
+          categories={categories}
           selectedCategoryId={selectedCategoryId}
           onCategoryChange={setSelectedCategoryId}
           uncategorizedCount={uncategorizedCount}
@@ -145,7 +154,7 @@ export function ProductGrid({ merchantId, onAddItem }: ProductGridProps) {
     <div className="space-y-4">
       {/* 分类筛选器 */}
       <CategoryFilter
-        merchantId={merchantId}
+        categories={categories}
         selectedCategoryId={selectedCategoryId}
         onCategoryChange={setSelectedCategoryId}
         uncategorizedCount={uncategorizedCount}
