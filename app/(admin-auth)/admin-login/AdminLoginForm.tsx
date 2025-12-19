@@ -32,10 +32,13 @@ export default function AdminLoginForm() {
     setLoading(true);
 
     try {
+      // 获取默认语言（通常是 'zh'）
+      const defaultLocale = 'zh';
+
       const { error: authError } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback?next=/admin`,
+          redirectTo: `${window.location.origin}/auth/callback?next=/${defaultLocale}/admin`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',

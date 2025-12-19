@@ -71,7 +71,12 @@ export async function GET(request: Request) {
       console.log("AUTH CALLBACK: 交换 code 成功！用户ID:", data.user.id);
 
       // 【修改 2】如果是管理员登录流程，验证管理员权限
-      if (nextUrl === '/admin' || nextUrl.startsWith('/admin/')) {
+      // 支持 /admin 和 /{locale}/admin 路径格式
+      const isAdminPath = nextUrl === '/admin' ||
+                         nextUrl.startsWith('/admin/') ||
+                         nextUrl.match(/^\/[a-z]{2}\/admin/) !== null;
+
+      if (isAdminPath) {
         console.log("AUTH CALLBACK: 检测到管理员登录流程，验证权限...");
         console.log("AUTH CALLBACK: 用户 ID:", data.user.id);
         console.log("AUTH CALLBACK: 用户邮箱:", data.user.email);

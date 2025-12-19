@@ -17,7 +17,10 @@ import {
   HiPaintBrush,
   HiArrowLeftStartOnRectangle,
   HiClipboardDocumentList,
-  HiUserGroup
+  HiUserGroup,
+  HiCalculator,
+  HiBoltSlash,
+  HiTag
 } from "react-icons/hi2";
 
 export default function MerchantSidebar() {
@@ -31,9 +34,12 @@ export default function MerchantSidebar() {
     { name: t('dashboard'), href: "/merchant/dashboard", icon: <HiSquares2X2 className="w-6 h-6" /> },
     { name: t('orders'), href: "/merchant/orders", icon: <HiClipboardDocumentList className="w-6 h-6" /> },
     { name: t('products'), href: "/merchant/products", icon: <HiShoppingBag className="w-6 h-6" /> },
+    { name: t('productCategories'), href: "/merchant/product-categories", icon: <HiTag className="w-6 h-6" /> },
     { name: t('design'), href: "/merchant/design", icon: <HiPaintBrush className="w-6 h-6" /> },
     { name: t('coupons'), href: "/merchant/coupons", icon: <HiTicket className="w-6 h-6" /> },
     { name: t('reviews'), href: "/merchant/reviews", icon: <HiChatBubbleLeftRight className="w-6 h-6" /> },
+    { name: t('accounting'), href: "/merchant/accounting", icon: <HiCalculator className="w-6 h-6" /> },
+    { name: t('quickEntry'), href: "/merchant/quick-entry", icon: <HiBoltSlash className="w-6 h-6" /> },
     { name: t('wallet'), href: "/merchant/wallet", icon: <HiWallet className="w-6 h-6" /> },
     { name: t('staff'), href: "/merchant/staff", icon: <HiUserGroup className="w-6 h-6" /> },
     { name: t('redeem'), href: "/merchant/redeem", icon: <HiQrCode className="w-6 h-6" /> },

@@ -6,38 +6,30 @@ import Image from 'next/image';
 import { HiTag, HiShoppingBag, HiMinus, HiPlus } from "react-icons/hi2";
 import { ExtendedMerchantCustomization } from '@/app/types/merchantDesign';
 import FavoriteButton from './FavoriteButton'; // 引入收藏按钮
-
-
-type MultiLangName = {
-  th: string;
-  en: string;
-  [key: string]: string;
-};
+import { useTranslations, useLocale } from 'next-intl';
+import { getLocalizedValue } from '@/lib/i18nUtils';
+import type { MultiLangName } from '@/app/types/accounting';
 
 type ProductDetail = {
   product_id: string;
   name: MultiLangName;
   original_price: number;
   image_urls: string[];
-  stock_quantity?: number;
   sales_count?: number;
   description?: MultiLangName;
 };
 
-const getLangName = (name: MultiLangName | null | undefined, lang = 'th') => {
-  if (!name) return "N/A";
-  return name[lang] || name['en'] || "N/A";
-};
-
-export default function ProductCard({ 
-  product, 
-  config, 
-  themeColor 
-}: { 
-  product: ProductDetail; 
-  config: ExtendedMerchantCustomization; 
+export default function ProductCard({
+  product,
+  config,
+  themeColor
+}: {
+  product: ProductDetail;
+  config: ExtendedMerchantCustomization;
   themeColor: string;
 }) {
+  const t = useTranslations('productCard');
+  const locale = useLocale();
   const { addItem, updateQuantity, cart } = useCart();
   const cartItem = cart.items.find(item => item.product_id === product.product_id);
   const quantity = cartItem?.quantity || 0;
@@ -94,11 +86,11 @@ export default function ProductCard({
 
       <figure className={`bg-gray-100 relative ${isGridCols2 ? 'aspect-square w-full' : 'w-28 h-28 shrink-0'}`}>
         {product.image_urls?.[0] ? (
-          <Image 
-            src={product.image_urls[0]} 
-            alt={getLangName(product.name)} 
-            fill 
-            className="object-cover" 
+          <Image
+            src={product.image_urls[0]}
+            alt={getLocalizedValue(product.name, locale as 'th' | 'zh' | 'en')}
+            fill
+            className="object-cover"
             sizes={isGridCols2 ? "(max-width: 768px) 50vw, 25vw" : "112px"}
           />
         ) : (
@@ -107,10 +99,10 @@ export default function ProductCard({
           </div>
         )}
       </figure>
-      
+
       <div className="card-body p-3 flex flex-col justify-between">
         <h3 className={`font-bold ${isGridCols2 ? 'text-sm' : 'text-base'} line-clamp-2`}>
-          {getLangName(product.name)}
+          {getLocalizedValue(product.name, locale as 'th' | 'zh' | 'en')}
         </h3>
         
         {/* 价格显示 */}
@@ -129,19 +121,14 @@ export default function ProductCard({
         {/* 商品描述 */}
         {product.description && (
           <p className="text-xs text-base-content/60 mt-1 line-clamp-2">
-            {getLangName(product.description)}
+            {getLocalizedValue(product.description, locale as 'th' | 'zh' | 'en')}
           </p>
         )}
 
         {/* 辅助信息 */}
-        {(config.display_config?.show_stock || config.display_config?.show_sales_count) && (
+        {config.display_config?.show_sales_count && (
           <div className={`flex gap-3 text-xs text-base-content/60 ${isGridCols2 ? 'mt-1' : ''}`}>
-            {config.display_config.show_stock && (
-              <span>库存: {product.stock_quantity !== undefined ? product.stock_quantity : 'N/A'}</span>
-            )}
-            {config.display_config.show_sales_count && (
-              <span>已售: {product.sales_count !== undefined ? product.sales_count : 'N/A'}</span>
-            )}
+            <span>{t('sold')}: {product.sales_count !== undefined ? product.sales_count : 0}</span>
           </div>
         )}
 
@@ -175,18 +162,18 @@ export default function ProductCard({
             </button>
           </div>
         ) : (
-          <button 
+          <button
             onClick={handleAddToCart}
-            className={`btn btn-sm text-white border-0 mt-2 ${isGridCols2 ? 'w-full' : 'w-auto self-end'}`} 
-            style={{ 
+            className={`btn btn-sm text-white border-0 mt-2 ${isGridCols2 ? 'w-full' : 'w-auto self-end'}`}
+            style={{
               backgroundColor: themeColor,
-              borderRadius: getButtonRadius() 
+              borderRadius: getButtonRadius()
             }}
           >
             {isGridCols2 ? (
               <>
                 <HiShoppingBag className="w-4 h-4 mr-1" />
-                加入购物车
+                {t('addToCart')}
               </>
             ) : (
               <HiShoppingBag className="w-5 h-5"/>

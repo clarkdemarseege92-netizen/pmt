@@ -4,9 +4,11 @@
 import { useRouter } from "next/navigation";
 import { HiArrowLeft, HiHome } from "react-icons/hi2";
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 
 export default function BackButton() {
   const router = useRouter();
+  const t = useTranslations('backButton');
   const [canGoBack, setCanGoBack] = useState(false);
 
   useEffect(() => {
@@ -29,11 +31,11 @@ export default function BackButton() {
   };
 
   return (
-    <button 
+    <button
       className="btn btn-circle btn-ghost border border-base-300 mr-2 bg-base-100 text-base-content/70 hover:border-primary hover:text-primary transition-colors"
       onClick={handleBack}
-      aria-label={canGoBack ? "返回上一页" : "返回首页"}
-      title={canGoBack ? "返回" : "回首页"}
+      aria-label={canGoBack ? t('backToPrevious') : t('backToHome')}
+      title={canGoBack ? t('back') : t('home')}
     >
       {canGoBack ? (
         <HiArrowLeft className="w-5 h-5" />

@@ -2,6 +2,7 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import { redirect } from "next/navigation";
 import AdminLoginForm from "./AdminLoginForm";
+import { routing } from "@/i18n/routing";
 
 export default async function AdminLoginPage() {
   const supabase = await createSupabaseServerClient();
@@ -17,12 +18,15 @@ export default async function AdminLoginPage() {
       .eq('id', user.id)
       .single();
 
+    // 获取默认语言
+    const defaultLocale = routing.defaultLocale;
+
     // 如果已经是管理员，直接跳转到管理后台
     if (profile?.role === 'admin') {
-      redirect('/admin');
+      redirect(`/${defaultLocale}/admin`);
     } else {
       // 如果不是管理员，跳转到首页
-      redirect('/');
+      redirect(`/${defaultLocale}`);
     }
   }
 

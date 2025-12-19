@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { createPortal } from 'react-dom';
 import { HiXMark } from 'react-icons/hi2';
 import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 interface UploadSlipModalProps {
   orderId: string;
@@ -14,6 +15,7 @@ interface UploadSlipModalProps {
 }
 
 export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose }: UploadSlipModalProps) {
+  const t = useTranslations('uploadSlip');
   const [uploadingSlip, setUploadingSlip] = useState(false);
   const [selectedSlipFile, setSelectedSlipFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -25,12 +27,12 @@ export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose 
     if (file) {
       // 验证文件类型
       if (!file.type.startsWith('image/')) {
-        setError('请上传图片文件');
+        setError(t('errors.invalidFileType'));
         return;
       }
       // 验证文件大小（最大 5MB）
       if (file.size > 5 * 1024 * 1024) {
-        setError('图片大小不能超过 5MB');
+        setError(t('errors.fileTooLarge'));
         return;
       }
       setSelectedSlipFile(file);
@@ -38,10 +40,10 @@ export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose 
     }
   };
 
-  // 上传并验证付款凭证
+  // 上传并验证付款凭证。
   const handleUploadSlip = async () => {
     if (!selectedSlipFile) {
-      setError('请先选择付款凭证图片');
+      setError(t('errors.noFileSelected'));
       return;
     }
 
@@ -71,7 +73,7 @@ export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose 
         console.log('📥 验证结果:', result);
 
         if (!response.ok || !result.success) {
-          setError(result.message || '付款凭证验证失败');
+          setError(result.message || t('errors.verificationFailed'));
           setUploadingSlip(false);
           return;
         }
@@ -91,13 +93,13 @@ export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose 
       };
 
       reader.onerror = () => {
-        setError('读取图片失败，请重试');
+        setError(t('errors.readFileFailed'));
         setUploadingSlip(false);
       };
 
     } catch (error) {
       console.error('❌ 上传付款凭证异常:', error);
-      setError('上传失败，请稍后重试');
+      setError(t('errors.uploadFailed'));
       setUploadingSlip(false);
     }
   };
@@ -132,24 +134,24 @@ export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose 
         </button>
 
         <div className="text-center pt-2">
-          <h3 className="font-bold text-2xl text-primary mb-3">上传付款凭证</h3>
+          <h3 className="font-bold text-2xl text-primary mb-3">{t('title')}</h3>
           <p className="text-sm text-base-content/70 mb-2">
-            请上传您的 PromptPay 转账截图
+            {t('description')}
           </p>
           <p className="text-xs text-warning mb-6">
-            ⏰ 订单将在 30 分钟后自动取消
+            ⏰ {t('autoCancel')}
           </p>
 
           {/* 订单信息 */}
           <div className="bg-base-100 p-4 rounded-lg mb-6 text-left">
             <p className="text-sm mb-2">
-              <span className="font-semibold">订单金额:</span>{' '}
+              <span className="font-semibold">{t('orderAmount')}:</span>{' '}
               <span className="text-lg font-bold text-error">
                 ฿{orderAmount.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </span>
             </p>
             <p className="text-xs text-base-content/60 truncate">
-              <span className="font-semibold">订单号:</span> {orderId.slice(0, 20)}...
+              <span className="font-semibold">{t('orderId')}:</span> {orderId.slice(0, 20)}...
             </p>
           </div>
 
@@ -172,7 +174,7 @@ export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose 
                       clipRule="evenodd"
                     />
                   </svg>
-                  <p className="text-sm font-medium text-success">已选择文件</p>
+                  <p className="text-sm font-medium text-success">{t('fileSelected')}</p>
                   <p className="text-xs text-base-content/60 mt-1 truncate max-w-[200px]">
                     {selectedSlipFile.name}
                   </p>
@@ -187,9 +189,9 @@ export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose 
                       d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
                     />
                   </svg>
-                  <p className="text-sm font-medium text-base-content/70">点击选择图片</p>
-                  <p className="text-xs text-base-content/50 mt-1">或拖放图片到此处</p>
-                  <p className="text-xs text-base-content/40 mt-2">支持 JPG, PNG（最大 5MB）</p>
+                  <p className="text-sm font-medium text-base-content/70">{t('clickToSelect')}</p>
+                  <p className="text-xs text-base-content/50 mt-1">{t('orDragDrop')}</p>
+                  <p className="text-xs text-base-content/40 mt-2">{t('supportedFormats')}</p>
                 </div>
               )}
               <input
@@ -217,7 +219,7 @@ export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose 
               onClick={handleClose}
               disabled={uploadingSlip}
             >
-              取消
+              {t('cancel')}
             </button>
             <button
               className="btn btn-primary flex-1 text-white"
@@ -227,10 +229,10 @@ export default function UploadSlipModal({ orderId, orderAmount, isOpen, onClose 
               {uploadingSlip ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
-                  验证中...
+                  {t('verifying')}
                 </>
               ) : (
-                '提交验证'
+                t('submit')
               )}
             </button>
           </div>

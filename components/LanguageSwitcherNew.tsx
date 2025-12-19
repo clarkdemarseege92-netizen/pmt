@@ -53,7 +53,7 @@ export default function LanguageSwitcher() {
       </label>
       <ul
         tabIndex={0}
-        className="dropdown-content z-[100] menu p-2 shadow-lg bg-base-100 rounded-box w-52 mt-2"
+        className="dropdown-content z-100 menu p-2 shadow-lg bg-base-100 rounded-box w-52 mt-2"
       >
         {Object.entries(localeLabels).map(([code, {name, flag}]) => (
           <li key={code}>

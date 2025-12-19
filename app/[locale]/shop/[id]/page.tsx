@@ -2,32 +2,26 @@
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { HiMapPin, HiPhone, HiBuildingStorefront, HiTag, HiClock, HiCheckCircle } from "react-icons/hi2";
-import { FaFacebook, FaLine, FaInstagram, FaTiktok } from "react-icons/fa";
+import { HiBuildingStorefront, HiCheckCircle } from "react-icons/hi2";
 import { getMerchantCustomization } from "@/app/actions/merchantDesign";
 import { type ExtendedMerchantCustomization } from "@/app/types/merchantDesign";
 import { CartProvider } from "@/context/CartContext";
-import ProductCard from '@/components/ProductCard';
 import CartFooter from '@/components/CartFooter';
 import BackButton from "@/components/BackButton";
 import FavoriteButton from "@/components/FavoriteButton";
 import { recordBrowsingHistory } from "@/lib/recordBrowsingHistory";
 import { getTranslations } from 'next-intl/server';
 import { setRequestLocale } from 'next-intl/server';
+import ProductGrid from './components/ProductGrid';
+import ShopInfoModal from './components/ShopInfoModal';
+import type { MultiLangName } from '@/app/types/accounting';
 
 // --- 类型定义 ---
-type MultiLangName = {
-  th: string;
-  en: string;
-  [key: string]: string;
-};
-
 type ProductDetail = {
   product_id: string;
   name: MultiLangName;
   original_price: number;
   image_urls: string[];
-  stock_quantity?: number;
   sales_count?: number;
   description?: MultiLangName;
 };
@@ -48,11 +42,23 @@ type MerchantDetail = {
   };
 };
 
+// 商户商品分类
+type MerchantCategory = {
+  category_id: string;
+  merchant_id: string;
+  name: MultiLangName;
+  icon: string | null;
+  sort_order: number;
+  is_active: boolean;
+  product_count?: number;
+};
+
 // 组合数据结构
 interface ShopData {
   merchant: MerchantDetail;
   customization: ExtendedMerchantCustomization;
   products: ProductDetail[];
+  categories: MerchantCategory[];
   coupons: Array<unknown>;
 }
 
@@ -60,19 +66,17 @@ interface ShopData {
 // --- 店铺内容组件 ---
 async function ShopContent({
   merchantId,
-  shopData,
-  locale
+  shopData
 }: {
   merchantId: string;
   shopData: ShopData;
   locale: string;
 }) {
   const t = await getTranslations('shop');
-  const { merchant, customization: config, products } = shopData;
+  const { merchant, customization: config, products, categories } = shopData;
 
   // 动态样式变量
   const themeColor = config.theme_primary_color || '#3b82f6';
-  const displayGridCols = config.display_config?.grid_cols === 1 ? 'grid-cols-1' : 'grid-cols-2';
 
   // 动态样式注入
   const shopStyles = {
@@ -92,15 +96,15 @@ async function ShopContent({
       <main className="min-h-screen pb-32" style={shopStyles}>
 
         {/* 悬浮返回按钮 */}
-        <div className="fixed top-4 left-4 z-50">
+        <div className="fixed bottom-30 left-4 z-50">
           <BackButton />
         </div>
 
-        <div className="max-w-md mx-auto relative z-10">
+        <div className="max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-7xl mx-auto relative z-10">
           {/* 1. 店铺头部信息 (封面图, Logo, 名称) */}
           <div className="relative bg-white shadow-xl">
-            {/* 封面图 */}
-            <div className="h-40 w-full bg-gray-300 relative overflow-hidden">
+            {/* 封面图 - 响应式高度 */}
+            <div className="h-40 sm:h-48 md:h-56 lg:h-64 w-full bg-gray-300 relative overflow-hidden">
               {config.cover_image_url ? (
                 <Image src={config.cover_image_url} alt="Cover Image" fill className="object-cover" priority />
               ) : (
@@ -110,11 +114,11 @@ async function ShopContent({
               )}
             </div>
 
-            {/* Logo 和信息 */}
-            <div className="p-4 -mt-12 relative z-20">
+            {/* Logo 和信息 - 响应式布局 */}
+            <div className="p-4 md:p-6 lg:p-8 -mt-12 md:-mt-16 relative z-20">
               <div className="flex justify-between items-end">
-                {/* Logo */}
-                <div className="w-24 h-24 rounded-full border-4 border-white bg-white shadow-lg overflow-hidden relative shrink-0">
+                {/* Logo - 响应式大小 */}
+                <div className="w-24 h-24 md:w-32 md:h-32 lg:w-40 lg:h-40 rounded-full border-4 border-white bg-white shadow-lg overflow-hidden relative shrink-0">
                   {merchant.logo_url ? (
                     <Image src={merchant.logo_url} alt="Shop Logo" fill className="object-cover" />
                   ) : (
@@ -124,144 +128,41 @@ async function ShopContent({
                   )}
                 </div>
 
-                {/* 关注/收藏按钮 */}
-                <FavoriteButton
-                  itemId={merchant.merchant_id}
-                  itemType="merchant"
-                  variant="button"
-                  themeColor={themeColor}
-                  className="rounded-[--theme-button-radius]"
-                />
+                {/* 关注/收藏按钮 和 信息按钮 */}
+                <div className="flex items-center gap-2">
+                  <ShopInfoModal
+                    merchant={merchant}
+                    announcementText={config.announcement_text || undefined}
+                    themeColor={themeColor}
+                  />
+                  <FavoriteButton
+                    itemId={merchant.merchant_id}
+                    itemType="merchant"
+                    variant="button"
+                    themeColor={themeColor}
+                    className="rounded-[--theme-button-radius]"
+                  />
+                </div>
               </div>
 
-              {/* 名称和描述 */}
-              <h1 className="text-2xl font-bold mt-2 text-base-content">{merchant.shop_name}</h1>
-              <p className="text-sm text-base-content/60 mt-1">{merchant.description || t('welcomeMessage')}</p>
+              {/* 名称和描述 - 响应式文字 */}
+              <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold mt-2 text-base-content">{merchant.shop_name}</h1>
+              <p className="text-sm md:text-base text-base-content/60 mt-1">{merchant.description || t('welcomeMessage')}</p>
 
-              {/* 评分和公告 */}
-              <div className="flex items-center gap-3 mt-3 text-sm text-success">
+              {/* 评分和公告 - 响应式 */}
+              <div className="flex items-center gap-3 mt-3 text-sm md:text-base text-success">
                 <HiCheckCircle className="w-5 h-5" /> {t('verifiedMerchant')}
               </div>
             </div>
-
-            {/* 联系方式 (固定信息卡片) */}
-            <div className="bg-white p-4 border-t border-base-200 mt-4">
-              <div className="flex justify-between items-center gap-4 text-sm">
-                {/* 地址 */}
-                <div className="flex items-center gap-2 cursor-pointer hover:opacity-70 transition-opacity">
-                  <HiMapPin className="w-5 h-5 text-secondary" />
-                  {merchant.google_maps_link ? (
-                    <a href={merchant.google_maps_link} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                      {t('addressNavigation')}
-                    </a>
-                  ) : (
-                    <span>{merchant.address || t('noAddress')}</span>
-                  )}
-                </div>
-                {/* 电话 */}
-                {merchant.contact_phone && (
-                  <a href={`tel:${merchant.contact_phone}`} className="flex items-center gap-2 cursor-pointer hover:opacity-70 transition-opacity">
-                    <HiPhone className="w-5 h-5 text-primary" />
-                    <span>{t('phone')}</span>
-                  </a>
-                )}
-              </div>
-            </div>
-
-            {/* 社交媒体链接 */}
-            {merchant.social_links && (
-              <div className="bg-white p-4 border-t border-base-200">
-                <div className="flex justify-center gap-4">
-                  {merchant.social_links.facebook && (
-                    <a
-                      href={merchant.social_links.facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-circle btn-outline btn-sm hover:bg-blue-50 hover:border-blue-300 transition-colors"
-                      title="Facebook"
-                    >
-                      <FaFacebook className="w-4 h-4 text-blue-600" />
-                    </a>
-                  )}
-                  {merchant.social_links.line && (
-                    <a
-                      href={merchant.social_links.line.startsWith('http') ? merchant.social_links.line : `https://line.me/ti/p/~${merchant.social_links.line}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-circle btn-outline btn-sm hover:bg-green-50 hover:border-green-300 transition-colors"
-                      title="Line"
-                    >
-                      <FaLine className="w-4 h-4 text-green-600" />
-                    </a>
-                  )}
-                  {merchant.social_links.instagram && (
-                    <a
-                      href={merchant.social_links.instagram}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-circle btn-outline btn-sm hover:bg-pink-50 hover:border-pink-300 transition-colors"
-                      title="Instagram"
-                    >
-                      <FaInstagram className="w-4 h-4 text-pink-600" />
-                    </a>
-                  )}
-                  {merchant.social_links.tiktok && (
-                    <a
-                      href={merchant.social_links.tiktok}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-circle btn-outline btn-sm hover:bg-gray-50 hover:border-gray-300 transition-colors"
-                      title="TikTok"
-                    >
-                      <FaTiktok className="w-4 h-4 text-black" />
-                    </a>
-                  )}
-                </div>
-                {Object.values(merchant.social_links).some(link => link) && (
-                  <p className="text-center text-xs text-base-content/60 mt-2">
-                    {t('followUs')}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {/* 店铺公告栏 */}
-            {config.announcement_text && (
-              <div
-                className="p-3 bg-warning/20 text-warning-content text-sm flex items-center gap-2 border-l-4 border-warning"
-                style={{ borderLeftColor: themeColor }}
-              >
-                <HiClock className="w-4 h-4 shrink-0" />
-                <span>{config.announcement_text}</span>
-              </div>
-            )}
           </div>
 
-          {/* 2. 商品/点单区 */}
-          <div className="p-4 mt-4">
-            <h2 className="text-xl font-bold mb-4 text-base-content">{t('allProducts', { count: products.length })}</h2>
-
-            {products.length === 0 ? (
-              <div className="text-center p-10 bg-base-100 rounded-xl shadow-md text-base-content/50">
-                <HiTag className="w-8 h-8 mx-auto mb-2" />
-                <p>{t('noProducts')}</p>
-              </div>
-            ) : (
-              <div className={`grid gap-4 ${displayGridCols}`}>
-
-{products.map(product => (
-  <div key={product.product_id}>
-      <ProductCard
-        key={product.product_id}
-        product={product}
-        config={config}
-        themeColor={themeColor}
-      />
-  </div>
-))}
-              </div>
-            )}
-          </div>
+          {/* 2. 商户分类导航 + 商品展示区 (使用客户端组件实现筛选) */}
+          <ProductGrid
+            products={products}
+            categories={categories}
+            config={config}
+            themeColor={themeColor}
+          />
         </div>
 
         {/* 3. 底部购物车栏 */}
@@ -289,7 +190,7 @@ export default async function ShopPage({
     .select(`
       merchant_id, shop_name, logo_url, address, google_maps_link, contact_phone, description,social_links,
       products (
-        product_id, name, original_price, image_urls, description
+        product_id, name, original_price, image_urls, description, merchant_category_id
       )
     `)
     .eq('merchant_id', merchantId)
@@ -298,6 +199,14 @@ export default async function ShopPage({
   if (error || !merchantData) {
     notFound();
   }
+
+  // 2. 查询商户商品分类
+  const { data: categories } = await supabase
+    .from('merchant_product_categories')
+    .select('category_id, merchant_id, name, icon, sort_order, is_active')
+    .eq('merchant_id', merchantId)
+    .eq('is_active', true)
+    .order('sort_order', { ascending: true });
 
   // 记录浏览历史
   await recordBrowsingHistory('merchant', merchantId);
@@ -352,6 +261,7 @@ export default async function ShopPage({
     },
     customization: customization,
     products: (merchantData.products || []) as ProductDetail[],
+    categories: (categories || []) as MerchantCategory[],
     coupons: [],
   };
 

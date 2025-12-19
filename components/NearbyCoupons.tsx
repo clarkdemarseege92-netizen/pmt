@@ -192,7 +192,8 @@ export default function NearbyCoupons() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      {/* 手机2列、平板2列、桌面3列、超大屏4列 */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
         {coupons.map((coupon) => (
           <Link
             key={coupon.coupon_id}

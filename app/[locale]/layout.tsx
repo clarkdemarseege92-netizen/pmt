@@ -6,6 +6,17 @@ import {getMessages, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
 import Navbar from '@/components/Navbar';
+import { Geist, Geist_Mono } from "next/font/google";
+
+const geistSans = Geist({
+  variable: "--font-geist-sans",
+  subsets: ["latin"],
+});
+
+const geistMono = Geist_Mono({
+  variable: "--font-geist-mono",
+  subsets: ["latin"],
+});
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({locale}));
@@ -23,7 +34,7 @@ export default async function LocaleLayout({
   console.log('🌐 LOCALE LAYOUT: Current locale =', locale);
 
   // 确保locale有效
-  if (!routing.locales.includes(locale as any)) {
+  if (!routing.locales.includes(locale as 'th' | 'zh' | 'en')) {
     notFound();
   }
 
@@ -34,9 +45,13 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <NextIntlClientProvider locale={locale} messages={messages}>
-      <Navbar />
-      {children}
-    </NextIntlClientProvider>
+    <html lang={locale} suppressHydrationWarning data-theme="light">
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          <Navbar />
+          {children}
+        </NextIntlClientProvider>
+      </body>
+    </html>
   );
 }

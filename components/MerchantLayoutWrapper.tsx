@@ -15,7 +15,9 @@ import {
   HiTicket,
   HiChatBubbleLeftRight,
   HiPaintBrush,
-  HiWallet
+  HiWallet,
+  HiCalculator,
+  HiPlus
 } from "react-icons/hi2";
 
 export default function MerchantLayoutWrapper({
@@ -56,9 +58,10 @@ export default function MerchantLayoutWrapper({
   ].includes(pathname);
 
   const isSettingsActive = [
-    '/merchant/settings', 
-    '/merchant/design', 
-    '/merchant/wallet'
+    '/merchant/settings',
+    '/merchant/design',
+    '/merchant/wallet',
+    '/merchant/accounting'
   ].includes(pathname);
 
   // --- 商家已入驻：显示完整布局 ---
@@ -74,8 +77,8 @@ export default function MerchantLayoutWrapper({
         </div>
 
         {/* 3. 移动端底部导航 (分组下拉菜单版) */}
-        <div className="md:hidden btm-nav btm-nav-sm border-t border-base-200 bg-base-100 z-50 flex flex-row justify-evenly p-2">
-          
+        <div className="md:hidden btm-nav btm-nav-sm border-t border-base-200 bg-base-100 z-50 flex flex-row justify-evenly p-2 fixed bottom-0 left-0 right-0">
+
           {/* A. 概览组 (下拉菜单) */}
           <div className={`dropdown dropdown-top ${isOverviewActive ? 'text-secondary' : 'text-base-content/60'}`}>
             <div
@@ -103,7 +106,15 @@ export default function MerchantLayoutWrapper({
             <span className="btm-nav-label text-xs">{t('orders')}</span>
           </Link>
 
-          {/* C. 核销 (直达) */}
+          {/* C. 快捷记账 FAB (悬浮圆形按钮) */}
+          <Link
+            href="/merchant/quick-entry"
+            className={`btn btn-circle btn-primary btn-lg shadow-lg -mt-8 ${pathname === '/merchant/quick-entry' ? 'btn-secondary' : ''}`}
+          >
+            <HiPlus className="w-8 h-8" />
+          </Link>
+
+          {/* D. 核销 (直达) */}
           <Link
             href="/merchant/redeem"
             className={`text-base-content/60 active:text-secondary active:bg-base-200 ${pathname === '/merchant/redeem' ? 'active text-secondary' : ''}`}
@@ -112,7 +123,7 @@ export default function MerchantLayoutWrapper({
             <span className="btm-nav-label text-xs">{t('redeem')}</span>
           </Link>
 
-          {/* D. 设置组 (下拉菜单) */}
+          {/* E. 设置组 (下拉菜单) */}
           <div className={`dropdown dropdown-top dropdown-end ${isSettingsActive ? 'text-secondary' : 'text-base-content/60'}`}>
             <div
               tabIndex={0}
@@ -123,6 +134,7 @@ export default function MerchantLayoutWrapper({
               <span className="btm-nav-label text-xs">{t('settings')}</span>
             </div>
             <ul tabIndex={0} className="dropdown-content z-1 menu p-2 shadow-lg bg-base-100 rounded-box w-48 mb-2 border border-base-200 text-base-content">
+              <li><Link href="/merchant/accounting" onClick={closeDropdown}><HiCalculator className="w-4 h-4"/> {t('accounting')}</Link></li>
               <li><Link href="/merchant/design" onClick={closeDropdown}><HiPaintBrush className="w-4 h-4"/> {t('design')}</Link></li>
               <li><Link href="/merchant/wallet" onClick={closeDropdown}><HiWallet className="w-4 h-4"/> {t('wallet')}</Link></li>
               <li><Link href="/merchant/settings" onClick={closeDropdown}><HiCog6Tooth className="w-4 h-4"/> {t('accountSettings')}</Link></li>

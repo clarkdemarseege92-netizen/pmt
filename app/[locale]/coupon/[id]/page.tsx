@@ -112,7 +112,7 @@ export default async function CouponDetailPage({
   return (
     <main className="min-h-screen bg-base-200 pb-24">
       {/* 悬浮返回按钮 */}
-      <div className="fixed top-4 left-4 z-50">
+      <div className="fixed bottom-30 left-4 z-50">
         <BackButton />
       </div>
 

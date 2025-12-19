@@ -16,6 +16,18 @@ export async function middleware(request: NextRequest) {
     search: request.nextUrl.search,
   });
 
+  // 【重要】排除特定路径，让它们直接访问而不经过 i18n 重定向
+  const skipPaths = [
+    '/auth/callback',      // OAuth 回调
+    '/admin-login',        // 管理员登录页
+    '/api/',               // API 路由（虽然 matcher 已排除，但保险起见）
+  ];
+
+  if (skipPaths.some(path => pathname.startsWith(path))) {
+    console.log('⚡ MIDDLEWARE: Skipping path:', pathname);
+    return NextResponse.next();
+  }
+
   // 【新增】处理根路径的语言检测
   if (pathname === '/') {
     // 从 Accept-Language 头获取浏览器首选语言

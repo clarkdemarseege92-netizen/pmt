@@ -6,23 +6,20 @@ import { createPortal } from "react-dom";
 import { useCart } from "@/context/CartContext";
 import BuyButton from "./BuyButton";
 import Image from "next/image";
-import { 
-  HiChevronUp, 
-  HiXMark, 
-  HiMinus, 
-  HiPlus, 
-  HiTrash, 
-  HiShoppingBag 
+import {
+  HiChevronUp,
+  HiXMark,
+  HiMinus,
+  HiPlus,
+  HiTrash,
+  HiShoppingBag
 } from "react-icons/hi2";
-import { MultiLangName } from '@/types/cart';
-
-// 辅助函数：获取多语言名称
-const getLangName = (name: MultiLangName | undefined, lang = 'th') => {
-  if (!name) return "N/A";
-  return name[lang] || name['en'] || "N/A";
-};
+import { useTranslations, useLocale } from 'next-intl';
+import { getLocalizedValue } from '@/lib/i18nUtils';
 
 export default function CartFooter() {
+  const t = useTranslations('cart');
+  const locale = useLocale();
   const { cart, updateQuantity, clearCart } = useCart();
   const [isOpen, setIsOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
@@ -67,23 +64,25 @@ export default function CartFooter() {
         <div className="sticky top-0 bg-base-100 z-10 px-4 py-3 border-b border-base-200 flex justify-between items-center shadow-xs">
           <h3 className="font-bold text-lg flex items-center gap-2">
             <HiShoppingBag className="text-primary" />
-            已选商品 
-            <span className="text-sm font-normal text-base-content/60">({totalItems} 件)</span>
+            {t('selectedItems')}
+            <span className="text-sm font-normal text-base-content/60">
+              ({t('itemCount', { count: totalItems })})
+            </span>
           </h3>
           <div className="flex gap-2">
-            <button 
-              className="btn btn-ghost btn-sm text-error" 
-              onClick={() => { 
-                if(confirm('确定清空购物车吗？')) { 
-                  clearCart(); 
-                  setIsOpen(false); 
-                } 
+            <button
+              className="btn btn-ghost btn-sm text-error"
+              onClick={() => {
+                if(confirm(t('clearConfirm'))) {
+                  clearCart();
+                  setIsOpen(false);
+                }
               }}
             >
-              <HiTrash className="w-4 h-4" /> 清空
+              <HiTrash className="w-4 h-4" /> {t('clear')}
             </button>
-            <button 
-              className="btn btn-circle btn-ghost btn-sm bg-base-200" 
+            <button
+              className="btn btn-circle btn-ghost btn-sm bg-base-200"
               onClick={() => setIsOpen(false)}
             >
               <HiXMark className="w-5 h-5" />
@@ -98,28 +97,34 @@ export default function CartFooter() {
               {/* 商品图 */}
               <div className="relative w-16 h-16 rounded-lg overflow-hidden border border-base-200 shrink-0">
                 {item.image_urls?.[0] ? (
-                  <Image 
-                    src={item.image_urls[0]} 
-                    alt={getLangName(item.name)} 
-                    fill 
-                    className="object-cover" 
-                    unoptimized 
+                  <Image
+                    src={item.image_urls[0]}
+                    alt={getLocalizedValue<string>(item.name, locale as 'th' | 'zh' | 'en')}
+                    fill
+                    className="object-cover"
+                    unoptimized
                   />
                 ) : (
-                  <div className="w-full h-full bg-base-200 grid place-items-center text-xs">No Img</div>
+                  <div className="w-full h-full bg-base-200 grid place-items-center text-xs">
+                    {t('noImage')}
+                  </div>
                 )}
               </div>
 
               {/* 信息与操作 */}
               <div className="flex-1 flex flex-col justify-between py-0.5">
                 <div className="flex justify-between items-start gap-2">
-                  <div className="font-bold text-sm line-clamp-1">{getLangName(item.name)}</div>
-                  <div className="font-bold text-base-content">฿{item.original_price * item.quantity}</div>
+                  <div className="font-bold text-sm line-clamp-1">
+                    {getLocalizedValue<string>(item.name, locale as 'th' | 'zh' | 'en')}
+                  </div>
+                  <div className="font-bold text-base-content">
+                    ฿{item.original_price * item.quantity}
+                  </div>
                 </div>
-                
+
                 <div className="flex justify-between items-center mt-1">
                   <div className="text-xs text-base-content/50">
-                    单价: ฿{item.original_price}
+                    {t('unitPrice')}: ฿{item.original_price}
                   </div>
                   
                   {/* 数量控制器 */}
@@ -146,7 +151,7 @@ export default function CartFooter() {
         
         {/* 底部提示 */}
         <div className="p-2 bg-base-200/50 text-center text-xs text-base-content/50">
-          向下滑动或点击关闭按钮返回
+          {t('closeHint')}
         </div>
       </div>
       
@@ -165,12 +170,14 @@ export default function CartFooter() {
           
           <div className="flex items-center justify-between gap-4">
             {/* 左侧：点击展开详情 */}
-            <div 
+            <div
               className="flex-1 cursor-pointer group select-none"
               onClick={() => setIsOpen(true)}
             >
               <div className="flex items-center gap-2 mb-1 text-base-content/80 group-hover:text-primary transition-colors">
-                <div className="text-sm font-medium">已选 {totalItems} 件</div>
+                <div className="text-sm font-medium">
+                  {t('selected')} {totalItems} {t('items')}
+                </div>
                 <HiChevronUp className={`w-4 h-4 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
               </div>
               <div className="font-extrabold text-2xl text-primary flex items-baseline gap-1">
@@ -178,7 +185,7 @@ export default function CartFooter() {
                 {totalPrice.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
               </div>
             </div>
-            
+
             {/* 右侧：结算按钮 */}
             <div className="flex-none w-36">
               <BuyButton
@@ -186,7 +193,7 @@ export default function CartFooter() {
                 merchantPromptPayId={merchantId}
                 quantity={totalQuantity}
                 showQuantitySelector={false}
-                buttonText="去结算"
+                buttonText={t('checkout')}
                 stockQuantity={999}
               />
             </div>

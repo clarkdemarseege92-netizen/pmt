@@ -1,6 +1,7 @@
 // types/cart.ts
 export interface MultiLangName {
   th: string;
+  zh: string;
   en: string;
   [key: string]: string;
 }

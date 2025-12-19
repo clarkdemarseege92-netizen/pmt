@@ -2,9 +2,11 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
+import { useTranslations } from 'next-intl';
 import { HiArrowUpTray, HiOutlineDocumentCheck, HiOutlineReceiptPercent } from 'react-icons/hi2';
 // 导入 react-qr-code
-import QRCode from 'react-qr-code'; 
+import QRCode from 'react-qr-code';
 
 interface PaymentUploadFormProps {
     orderId: string;
@@ -13,6 +15,7 @@ interface PaymentUploadFormProps {
 }
 
 export default function PaymentUploadForm({ orderId, promptpayPayload, paymentAmount }: PaymentUploadFormProps) {
+    const t = useTranslations('paymentUpload');
     const [file, setFile] = useState<File | null>(null);
     const [loading, setLoading] = useState(false);
     const [status, setStatus] = useState<'initial' | 'processing' | 'success' | 'error'>('initial');
@@ -29,13 +32,13 @@ export default function PaymentUploadForm({ orderId, promptpayPayload, paymentAm
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         if (!file) {
-            setMessage('请上传支付凭证截图。');
+            setMessage(t('uploadSlipPrompt'));
             return;
         }
 
         setLoading(true);
         setStatus('processing');
-        setMessage('正在提交凭证并进行 AI 验证...');
+        setMessage(t('verifyingMessage'));
 
         try {
             // 1. 使用标准的 FormData 结构
@@ -47,24 +50,26 @@ export default function PaymentUploadForm({ orderId, promptpayPayload, paymentAm
             const response = await fetch('/api/verify-payment', {
                 method: 'POST',
                 // 重要：不要设置 Content-Type header，让浏览器自动处理 FormData 的边界
-                body: formData, 
+                body: formData,
             });
 
             const result = await response.json();
 
             if (response.ok && result.success) {
                 setStatus('success');
-                setMessage('支付验证成功！您的核销码已发放。');
+                setMessage(t('verificationSuccess'));
                 setRedemptionCode(result.redemptionCode);
             } else {
                 setStatus('error');
-                setMessage(`验证失败: ${result.message || '请检查凭证是否清晰或是否已付款。'}`);
+                setMessage(t('verificationFailedMessage', {
+                    message: result.message || t('verificationFailedDefault')
+                }));
             }
 
         } catch (error) {
             console.error('Verification Error:', error);
             setStatus('error');
-            setMessage('网络或服务器连接错误。');
+            setMessage(t('networkError'));
         } finally {
             setLoading(false);
         }
@@ -89,10 +94,10 @@ export default function PaymentUploadForm({ orderId, promptpayPayload, paymentAm
                     <div className="alert alert-success mt-4">
                         <HiOutlineDocumentCheck className="w-6 h-6"/>
                         <div>
-                            <h3 className="font-bold">验证成功!</h3>
+                            <h3 className="font-bold">{t('verificationSuccess')}</h3>
                             <p>{message}</p>
-                            <p className="font-mono text-lg mt-1">核销码: **{redemptionCode}**</p>
-                            <a href="/my/orders" className="link link-primary text-sm mt-2 block">前往我的订单查看</a>
+                            <p className="font-mono text-lg mt-1">{t('redemptionCode', { code: redemptionCode })}</p>
+                            <Link href="/my/orders" className="link link-primary text-sm mt-2 block">{t('goToOrders')}</Link>
                         </div>
                     </div>
                 );
@@ -101,7 +106,7 @@ export default function PaymentUploadForm({ orderId, promptpayPayload, paymentAm
                     <div className="alert alert-error mt-4">
                         <HiOutlineDocumentCheck className="w-6 h-6"/>
                         <div>
-                            <h3 className="font-bold">验证失败</h3>
+                            <h3 className="font-bold">{t('verificationFailed')}</h3>
                             <p>{message}</p>
                         </div>
                     </div>
@@ -122,27 +127,27 @@ export default function PaymentUploadForm({ orderId, promptpayPayload, paymentAm
     return (
         <div className="bg-base-100 p-6 rounded-box shadow-xl max-w-xl mx-auto">
             <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                <HiOutlineReceiptPercent className="w-6 h-6"/> 步骤 2: PromptPay 付款与凭证上传
+                <HiOutlineReceiptPercent className="w-6 h-6"/> {t('title')}
             </h2>
             <div className="flex flex-col items-center space-y-4">
-                
+
                 {/* 1. 二维码显示区域 */}
                 {promptpayPayload && renderQrCode()}
 
                 <p className="text-xl font-bold text-primary">
-                    请支付: ฿{paymentAmount.toFixed(2)}
+                    {t('pleasePayAmount', { amount: paymentAmount.toFixed(2) })}
                 </p>
                 <p className="text-sm text-center text-base-content/70">
-                    订单 ID: {orderId.slice(0, 8)}...
+                    {t('orderId', { id: `${orderId.slice(0, 8)}...` })}
                 </p>
 
-                <div className="divider">上传支付凭证</div>
+                <div className="divider">{t('uploadReceipt')}</div>
 
                 {/* 2. 上传表单 */}
                 <form onSubmit={handleSubmit} className="w-full space-y-4">
                     <div className="form-control">
                         <label className="label">
-                            <span className="label-text">上传您的转账截图 (Slip)</span>
+                            <span className="label-text">{t('uploadSlipLabel')}</span>
                         </label>
                         <input
                             type="file"
@@ -153,18 +158,18 @@ export default function PaymentUploadForm({ orderId, promptpayPayload, paymentAm
                         />
                          <label className="label">
                             <span className="label-text-alt text-error">
-                                * 必须清晰显示收款账户 ID 和金额，否则验证将失败。
+                                {t('uploadSlipHint')}
                             </span>
                         </label>
                     </div>
 
-                    <button 
-                        type="submit" 
-                        className="btn btn-primary w-full" 
+                    <button
+                        type="submit"
+                        className="btn btn-primary w-full"
                         disabled={loading || !file || status === 'success'}
                     >
-                        <HiArrowUpTray className="w-5 h-5"/> 
-                        {loading ? '验证中...' : '确认付款并上传凭证'}
+                        <HiArrowUpTray className="w-5 h-5"/>
+                        {loading ? t('verifying') : t('confirmUpload')}
                     </button>
                 </form>
 

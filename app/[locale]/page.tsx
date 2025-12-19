@@ -104,16 +104,19 @@ export default async function Home({
       {/* Sprint 2 - Categories Menu (一级分类菜单)  */}
       <div className="w-full max-w-6xl p-4">
         <h2 className="text-2xl font-bold mb-4">{t('categories')}</h2>
-        <ul className="menu menu-horizontal bg-base-100 rounded-box shadow-lg overflow-x-auto">
-          {categories && categories.map((category: Category) => (
-            <li key={category.category_id}>
-              {/* Sprint 2 - 链接到搜索页  */}
-              <Link href={`/search?category=${category.category_id}`}>
-                {getLocalizedValue(category.name, locale as 'th' | 'zh' | 'en')}
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {/* 水平居中容器 */}
+        <div className="flex justify-center">
+          <ul className="menu menu-horizontal bg-base-100 rounded-box shadow-lg overflow-x-auto">
+            {categories && categories.map((category: Category) => (
+              <li key={category.category_id}>
+                {/* Sprint 2 - 链接到搜索页  */}
+                <Link href={`/search?category=${category.category_id}`}>
+                  {getLocalizedValue(category.name, locale as 'th' | 'zh' | 'en')}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
       {/* 附近优惠券板块 */}
@@ -124,7 +127,8 @@ export default async function Home({
       {/* Sprint 2 - Coupons Grid (优惠券卡片网格)  */}
       <div className="w-full max-w-6xl p-4">
         <h2 className="text-2xl font-bold mb-4">{t('featuredDeals')}</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* 手机2列、平板3列、桌面4列 */}
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
 
           {coupons && coupons.map((coupon: Coupon) => (
             <div key={coupon.coupon_id} className="card bg-base-100 shadow-xl transition-transform hover:scale-105">
