@@ -216,12 +216,21 @@ export async function createMerchantCategory(input: CreateMerchantCategoryInput)
   try {
     const supabase = await createSupabaseServerClient();
 
-    // 验证分类名称长度
-    if (!input.name || input.name.trim().length === 0) {
+    // 验证分类名称 - MultiLangName 至少要有一个非空语言字段
+    if (!input.name) {
       return { success: false, error: 'Category name is required', data: null };
     }
-    if (input.name.length > 50) {
-      return { success: false, error: 'Category name must be 50 characters or less', data: null };
+
+    const hasValidName = Object.values(input.name).some(val => val && val.trim().length > 0);
+    if (!hasValidName) {
+      return { success: false, error: 'Category name must have at least one language field', data: null };
+    }
+
+    // 验证每个语言字段的长度
+    for (const [lang, value] of Object.entries(input.name)) {
+      if (value && value.length > 50) {
+        return { success: false, error: `Category name (${lang}) must be 50 characters or less`, data: null };
+      }
     }
 
     // 如果未提供 sort_order，获取当前最大值并 +1
@@ -244,7 +253,7 @@ export async function createMerchantCategory(input: CreateMerchantCategoryInput)
       .from('merchant_product_categories')
       .insert({
         merchant_id: input.merchant_id,
-        name: input.name.trim(),
+        name: input.name,
         icon: input.icon || null,
         sort_order: sortOrder,
       })
@@ -282,19 +291,24 @@ export async function updateMerchantCategory(input: UpdateMerchantCategoryInput)
   try {
     const supabase = await createSupabaseServerClient();
 
-    // 验证分类名称（如果提供）
+    // 验证分类名称（如果提供）- MultiLangName 至少要有一个非空语言字段
     if (input.name !== undefined) {
-      if (input.name.trim().length === 0) {
-        return { success: false, error: 'Category name cannot be empty', data: null };
+      const hasValidName = Object.values(input.name).some(val => val && val.trim().length > 0);
+      if (!hasValidName) {
+        return { success: false, error: 'Category name must have at least one language field', data: null };
       }
-      if (input.name.length > 50) {
-        return { success: false, error: 'Category name must be 50 characters or less', data: null };
+
+      // 验证每个语言字段的长度
+      for (const [lang, value] of Object.entries(input.name)) {
+        if (value && value.length > 50) {
+          return { success: false, error: `Category name (${lang}) must be 50 characters or less`, data: null };
+        }
       }
     }
 
     // 构建更新对象
     const updateData: Record<string, any> = {};
-    if (input.name !== undefined) updateData.name = input.name.trim();
+    if (input.name !== undefined) updateData.name = input.name;
     if (input.icon !== undefined) updateData.icon = input.icon || null;
     if (input.sort_order !== undefined) updateData.sort_order = input.sort_order;
     if (input.is_active !== undefined) updateData.is_active = input.is_active;
