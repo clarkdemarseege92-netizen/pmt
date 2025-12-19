@@ -30,9 +30,11 @@ export type AccountingSource = 'manual' | 'platform_order' | 'platform_fee' | 'c
 export interface AccountCategory {
   category_id: string;
   merchant_id: string;
-  name: MultiLangName;
+  name?: MultiLangName | null;
+  custom_name?: string | null;
   type: AccountingType;
   is_system: boolean;
+  is_active: boolean;
   icon?: string;
   sort_order: number;
   created_at: string;
