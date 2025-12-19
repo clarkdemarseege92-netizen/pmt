@@ -211,7 +211,6 @@ export async function addToDictionary(
         name_translations: input.name_translations,
         description_translations: input.description_translations || null,
         category: input.category,
-        status: 'active',
         usage_count: 0
       })
       .select()

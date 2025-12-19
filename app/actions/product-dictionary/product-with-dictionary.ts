@@ -68,8 +68,7 @@ export async function createProductWithDictionary(
             en: params.name.en,
             zh: params.name.zh || ''
           },
-          category: 'product',
-          status: 'active'
+          category: 'product'
         });
 
         if (addResult.success) {
@@ -84,8 +83,7 @@ export async function createProductWithDictionary(
             en: params.name.en,
             zh: params.name.zh || ''
           },
-          category: 'product',
-          status: 'active'
+          category: 'product'
         });
 
         if (addResult.success) {
@@ -168,8 +166,7 @@ export async function updateProductWithDictionary(
             en: name.en,
             zh: name.zh || ''
           },
-          category: 'product',
-          status: 'active'
+          category: 'product'
         });
 
         if (addResult.success) {
@@ -184,8 +181,7 @@ export async function updateProductWithDictionary(
             en: name.en,
             zh: name.zh || ''
           },
-          category: 'product',
-          status: 'active'
+          category: 'product'
         });
 
         if (addResult.success) {
