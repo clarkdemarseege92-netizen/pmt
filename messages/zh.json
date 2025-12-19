@@ -939,41 +939,45 @@
     "analytics": {
       "title": "财务分析",
       "noMerchant": "未找到商户信息",
+      "noData": "暂无数据",
       "startDate": "开始日期",
       "endDate": "结束日期",
       "trendChart": {
         "title": "收支趋势",
+        "description": "查看每日收入和支出趋势",
         "interval": "时间粒度",
         "day": "日",
         "week": "周",
         "month": "月",
         "income": "收入",
         "expense": "支出",
-        "profit": "利润"
+        "net": "净利润"
       },
       "topCategories": {
         "incomeTitle": "Top收入类目",
         "expenseTitle": "Top支出类目",
-        "noData": "暂无数据"
+        "incomeDescription": "按总金额排名前10的收入类目",
+        "expenseDescription": "按总金额排名前10的支出类目",
+        "income": "收入",
+        "expense": "支出",
+        "amount": "金额",
+        "uncategorized": "未分类"
       },
       "sourceSummary": {
-        "title": "来源汇总",
-        "manual": "手动记账",
+        "title": "交易来源汇总",
+        "description": "按来源分布的交易情况",
         "platformOrder": "平台订单",
-        "platformFee": "平台服务费",
         "cashOrder": "现金订单",
-        "total": "总计",
-        "count": "笔数",
-        "avgAmount": "平均金额"
+        "manualEntry": "手动记账",
+        "other": "其他"
       },
       "periodComparison": {
         "title": "时间段对比",
-        "currentPeriod": "本期",
-        "previousPeriod": "上期",
-        "change": "变化",
-        "incomeChange": "收入变化",
-        "expenseChange": "支出变化",
-        "profitChange": "利润变化"
+        "description": "对比当前时段与上一时段",
+        "income": "收入",
+        "expense": "支出",
+        "net": "净利润",
+        "transactions": "交易笔数"
       }
     }
   },

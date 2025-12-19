@@ -954,41 +954,45 @@
     "analytics": {
       "title": "Financial Analytics",
       "noMerchant": "Merchant information not found",
+      "noData": "No data available",
       "startDate": "Start Date",
       "endDate": "End Date",
       "trendChart": {
         "title": "Revenue & Expense Trend",
+        "description": "View daily income and expense trends",
         "interval": "Time Interval",
         "day": "Day",
         "week": "Week",
         "month": "Month",
         "income": "Income",
         "expense": "Expense",
-        "profit": "Profit"
+        "net": "Net Profit"
       },
       "topCategories": {
         "incomeTitle": "Top Income Categories",
         "expenseTitle": "Top Expense Categories",
-        "noData": "No data available"
+        "incomeDescription": "Top 10 income categories by total amount",
+        "expenseDescription": "Top 10 expense categories by total amount",
+        "income": "Income",
+        "expense": "Expense",
+        "amount": "Amount",
+        "uncategorized": "Uncategorized"
       },
       "sourceSummary": {
-        "title": "Source Summary",
-        "manual": "Manual Entry",
+        "title": "Transaction Source Summary",
+        "description": "Distribution of transactions by source",
         "platformOrder": "Platform Orders",
-        "platformFee": "Platform Fees",
         "cashOrder": "Cash Orders",
-        "total": "Total",
-        "count": "Count",
-        "avgAmount": "Avg Amount"
+        "manualEntry": "Manual Entry",
+        "other": "Other"
       },
       "periodComparison": {
         "title": "Period Comparison",
-        "currentPeriod": "Current Period",
-        "previousPeriod": "Previous Period",
-        "change": "Change",
-        "incomeChange": "Income Change",
-        "expenseChange": "Expense Change",
-        "profitChange": "Profit Change"
+        "description": "Compare current period with previous period",
+        "income": "Income",
+        "expense": "Expense",
+        "net": "Net Profit",
+        "transactions": "Transactions"
       }
     }
   },

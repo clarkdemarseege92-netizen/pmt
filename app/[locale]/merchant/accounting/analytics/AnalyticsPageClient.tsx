@@ -4,11 +4,10 @@
 import { useEffect, useState } from 'react';
 import { useTranslations } from 'next-intl';
 import { supabase } from '@/lib/supabaseClient';
-// TODO: 这些组件文件需要创建
-// import { TrendChart } from './components/TrendChart';
-// import { TopCategoriesChart } from './components/TopCategoriesChart';
-// import { SourceSummaryChart } from './components/SourceSummaryChart';
-// import { PeriodComparisonCard } from './components/PeriodComparisonCard';
+import { TrendChart } from './components/TrendChart';
+import { TopCategoriesChart } from './components/TopCategoriesChart';
+import { SourceSummaryChart } from './components/SourceSummaryChart';
+import { PeriodComparisonCard } from './components/PeriodComparisonCard';
 import Link from 'next/link';
 import { HiArrowLeft } from 'react-icons/hi2';
 
@@ -111,43 +110,21 @@ export function AnalyticsPageClient() {
         </div>
       </div>
 
-      {/* TODO: 图表组件待创建 */}
-      <div className="card bg-base-100 shadow-md">
-        <div className="card-body">
-          <div className="alert alert-info">
-            <div>
-              <h3 className="font-bold">📊 高级分析功能开发中</h3>
-              <div className="text-sm mt-2">
-                <p>以下功能即将上线：</p>
-                <ul className="list-disc list-inside mt-2 space-y-1">
-                  <li>时间段对比分析</li>
-                  <li>收支趋势图表</li>
-                  <li>热门类目统计</li>
-                  <li>来源汇总分析</li>
-                </ul>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 时间段对比 - 待实现
+      {/* Period Comparison */}
       <PeriodComparisonCard
         merchantId={merchant.merchant_id}
         currentStart={dateRange.start}
         currentEnd={dateRange.end}
       />
-      */}
 
-      {/* 趋势图表 - 待实现
+      {/* Trend Chart */}
       <TrendChart
         merchantId={merchant.merchant_id}
         startDate={dateRange.start}
         endDate={dateRange.end}
       />
-      */}
 
-      {/* Top类目图表 - 待实现
+      {/* Top Categories Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <TopCategoriesChart
           merchantId={merchant.merchant_id}
@@ -162,15 +139,13 @@ export function AnalyticsPageClient() {
           type="expense"
         />
       </div>
-      */}
 
-      {/* 来源汇总图表 - 待实现
+      {/* Source Summary Chart */}
       <SourceSummaryChart
         merchantId={merchant.merchant_id}
         startDate={dateRange.start}
         endDate={dateRange.end}
       />
-      */}
     </div>
   );
 }
