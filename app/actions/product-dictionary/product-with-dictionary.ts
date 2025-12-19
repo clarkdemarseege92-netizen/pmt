@@ -1,7 +1,7 @@
 // app/actions/product-dictionary/product-with-dictionary.ts
 'use server';
 
-import { supabase } from '@/lib/supabaseClient';
+import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import { searchDictionary, addToDictionary, updateDictionaryUsage } from './dictionary';
 import type { MultilingualProductName } from '@/app/[locale]/merchant/products/components/ProductDictionaryInput';
 
@@ -37,6 +37,9 @@ export async function createProductWithDictionary(
   params: CreateProductWithDictionaryParams
 ): Promise<ActionResponse<{ product_id: string }>> {
   try {
+    // Create Supabase server client
+    const supabase = await createSupabaseServerClient();
+
     // 1. 验证必填字段
     if (!params.name.th.trim()) {
       return { success: false, error: '泰语商品名称不能为空' };
@@ -138,6 +141,9 @@ export async function updateProductWithDictionary(
   auto_add_to_dictionary: boolean = true
 ): Promise<ActionResponse> {
   try {
+    // Create Supabase server client
+    const supabase = await createSupabaseServerClient();
+
     // 1. 验证必填字段
     if (name && !name.th.trim()) {
       return { success: false, error: '泰语商品名称不能为空' };

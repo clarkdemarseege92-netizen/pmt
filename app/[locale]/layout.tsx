@@ -6,6 +6,7 @@ import {getMessages, setRequestLocale} from 'next-intl/server';
 import {notFound} from 'next/navigation';
 import {routing} from '@/i18n/routing';
 import Navbar from '@/components/Navbar';
+import ConditionalFooter from '@/components/ConditionalFooter';
 import { Geist, Geist_Mono } from "next/font/google";
 
 const geistSans = Geist({
@@ -46,10 +47,13 @@ export default async function LocaleLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning data-theme="light">
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
         <NextIntlClientProvider locale={locale} messages={messages}>
           <Navbar />
-          {children}
+          <main className="grow">
+            {children}
+          </main>
+          <ConditionalFooter />
         </NextIntlClientProvider>
       </body>
     </html>

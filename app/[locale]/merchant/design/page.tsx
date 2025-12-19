@@ -17,6 +17,7 @@ import {
   HiCheck,
   HiArrowTopRightOnSquare
 } from "react-icons/hi2";
+import ShopShareSection from './components/ShopShareSection';
 
 interface ApiResponse {
   success: boolean;
@@ -399,6 +400,9 @@ export default function MerchantDesignPage() {
               </div>
             </div>
           </div>
+
+          {/* 店铺分享 */}
+          {merchantId && <ShopShareSection merchantId={merchantId} />}
         </div>
 
         {/* 右侧预览区域 */}

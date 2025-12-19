@@ -1,9 +1,9 @@
 // app/[locale]/merchant/product-categories/components/CategoryList.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { HiPencil, HiTrash, HiEye, HiEyeSlash } from 'react-icons/hi2';
+import { HiPencil, HiTrash, HiEye, HiEyeSlash, HiChevronUp, HiChevronDown } from 'react-icons/hi2';
 import { batchUpdateCategoryOrder, disableMerchantCategory, enableMerchantCategory } from '@/app/actions/merchant-categories/merchant-categories';
 import type { CategoryStats } from '@/app/actions/merchant-categories/merchant-categories';
 import { getLocalizedValue } from '@/lib/i18nUtils';
@@ -20,9 +20,14 @@ type CategoryListProps = {
 export function CategoryList({ categories, onEdit, onDelete, onReorder, merchantId }: CategoryListProps) {
   const t = useTranslations('productCategories');
   const locale = useLocale();
-  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
-  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [isReordering, setIsReordering] = useState(false);
+  // 本地分类列表状态，用于乐观更新
+  const [localCategories, setLocalCategories] = useState<CategoryStats[]>(categories);
+
+  // 当父组件传入的 categories 变化时，更新本地状态
+  useEffect(() => {
+    setLocalCategories(categories);
+  }, [categories]);
 
   // Helper function to get category name (supports both string and MultiLangName)
   const getCategoryName = (name: string | MultiLangName): string => {
@@ -32,60 +37,68 @@ export function CategoryList({ categories, onEdit, onDelete, onReorder, merchant
     return getLocalizedValue(name, locale as 'th' | 'zh' | 'en'); // New JSONB format
   };
 
-  const handleDragStart = (index: number) => {
-    setDraggedIndex(index);
-  };
+  // 向上移动分类（乐观更新版本）
+  const handleMoveUp = async (index: number) => {
+    if (index === 0 || isReordering) return; // 已经在最上面，无法上移
 
-  const handleDragOver = (e: React.DragEvent, index: number) => {
-    e.preventDefault();
-    if (draggedIndex !== null && draggedIndex !== index) {
-      setDragOverIndex(index);
-    }
-  };
+    // 立即更新本地UI（乐观更新）
+    const reorderedCategories = [...localCategories];
+    [reorderedCategories[index - 1], reorderedCategories[index]] =
+    [reorderedCategories[index], reorderedCategories[index - 1]];
 
-  const handleDragLeave = () => {
-    setDragOverIndex(null);
-  };
+    // 立即更新UI，无需等待
+    setLocalCategories(reorderedCategories);
 
-  const handleDrop = async (e: React.DragEvent, dropIndex: number) => {
-    e.preventDefault();
-    setDragOverIndex(null);
-
-    if (draggedIndex === null || draggedIndex === dropIndex) {
-      setDraggedIndex(null);
-      return;
-    }
-
+    // 短暂锁定按钮，防止快速连击
     setIsReordering(true);
+    setTimeout(() => setIsReordering(false), 150);
 
-    // 重新计算排序
-    const reorderedCategories = [...categories];
-    const [draggedItem] = reorderedCategories.splice(draggedIndex, 1);
-    reorderedCategories.splice(dropIndex, 0, draggedItem);
-
-    // 生成新的排序数据
-    const newOrders = reorderedCategories.map((cat, index) => ({
+    // 后台异步保存到数据库（不阻塞UI）
+    const newOrders = reorderedCategories.map((cat, idx) => ({
       category_id: cat.category_id,
-      sort_order: index
+      sort_order: idx
     }));
 
-    // 批量更新排序
-    const result = await batchUpdateCategoryOrder(merchantId, newOrders);
-
-    if (result.success) {
-      onReorder();
-    } else {
-      console.error('Failed to update category order:', result.error);
-      alert(t('reorderError'));
-    }
-
-    setDraggedIndex(null);
-    setIsReordering(false);
+    batchUpdateCategoryOrder(merchantId, newOrders).then(result => {
+      if (!result.success) {
+        // 如果保存失败，恢复原来的顺序
+        console.error('Failed to update category order:', result.error);
+        setLocalCategories(categories);
+        alert(t('reorderError'));
+      }
+    });
   };
 
-  const handleDragEnd = () => {
-    setDraggedIndex(null);
-    setDragOverIndex(null);
+  // 向下移动分类（乐观更新版本）
+  const handleMoveDown = async (index: number) => {
+    if (index === localCategories.length - 1 || isReordering) return; // 已经在最下面，无法下移
+
+    // 立即更新本地UI（乐观更新）
+    const reorderedCategories = [...localCategories];
+    [reorderedCategories[index], reorderedCategories[index + 1]] =
+    [reorderedCategories[index + 1], reorderedCategories[index]];
+
+    // 立即更新UI，无需等待
+    setLocalCategories(reorderedCategories);
+
+    // 短暂锁定按钮，防止快速连击
+    setIsReordering(true);
+    setTimeout(() => setIsReordering(false), 150);
+
+    // 后台异步保存到数据库（不阻塞UI）
+    const newOrders = reorderedCategories.map((cat, idx) => ({
+      category_id: cat.category_id,
+      sort_order: idx
+    }));
+
+    batchUpdateCategoryOrder(merchantId, newOrders).then(result => {
+      if (!result.success) {
+        // 如果保存失败，恢复原来的顺序
+        console.error('Failed to update category order:', result.error);
+        setLocalCategories(categories);
+        alert(t('reorderError'));
+      }
+    });
   };
 
   const handleToggleActive = async (category: CategoryStats) => {
@@ -100,54 +113,54 @@ export function CategoryList({ categories, onEdit, onDelete, onReorder, merchant
     }
   };
 
-  if (categories.length === 0) {
+  if (localCategories.length === 0) {
     return null;
   }
 
   return (
     <div className="space-y-3">
-      {categories.map((category, index) => {
-        const isDragging = draggedIndex === index;
-        const isDragOver = dragOverIndex === index;
+      {localCategories.map((category, index) => {
+        const isFirst = index === 0;
+        const isLast = index === localCategories.length - 1;
 
         return (
           <div
             key={category.category_id}
-            draggable={!isReordering}
-            onDragStart={() => handleDragStart(index)}
-            onDragOver={(e) => handleDragOver(e, index)}
-            onDragLeave={handleDragLeave}
-            onDrop={(e) => handleDrop(e, index)}
-            onDragEnd={handleDragEnd}
             className={`
               card bg-base-100 shadow-md
-              ${isDragging ? 'opacity-50 cursor-grabbing' : 'cursor-grab'}
-              ${isDragOver ? 'border-2 border-primary' : ''}
               ${!category.is_active ? 'opacity-60' : ''}
               transition-all duration-200
             `}
           >
             <div className="card-body p-4">
               <div className="flex items-center justify-between gap-4">
-                {/* 左侧：拖拽手柄 + 分类信息 */}
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  {/* 拖拽手柄 */}
-                  <div className="cursor-grab active:cursor-grabbing text-base-content/40 hover:text-base-content/60">
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-6 w-6"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M4 8h16M4 16h16"
-                      />
-                    </svg>
-                  </div>
+                {/* 左侧：排序按钮 + 分类信息 */}
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  {/* 排序按钮（上下箭头） */}
+                  {categories.length > 1 && (
+                    <div className="flex flex-col gap-0.5">
+                      <button
+                        className={`btn btn-ghost btn-xs p-0 h-5 min-h-0 ${
+                          isFirst || isReordering ? 'opacity-30 cursor-not-allowed' : 'hover:text-primary'
+                        }`}
+                        onClick={() => handleMoveUp(index)}
+                        disabled={isFirst || isReordering}
+                        title={t('moveUp')}
+                      >
+                        <HiChevronUp className="w-5 h-5" />
+                      </button>
+                      <button
+                        className={`btn btn-ghost btn-xs p-0 h-5 min-h-0 ${
+                          isLast || isReordering ? 'opacity-30 cursor-not-allowed' : 'hover:text-primary'
+                        }`}
+                        onClick={() => handleMoveDown(index)}
+                        disabled={isLast || isReordering}
+                        title={t('moveDown')}
+                      >
+                        <HiChevronDown className="w-5 h-5" />
+                      </button>
+                    </div>
+                  )}
 
                   {/* 图标 */}
                   <div className="text-3xl">{category.icon || '📦'}</div>
@@ -209,8 +222,8 @@ export function CategoryList({ categories, onEdit, onDelete, onReorder, merchant
         );
       })}
 
-      {/* 拖拽提示 */}
-      {categories.length > 1 && (
+      {/* 排序提示 */}
+      {localCategories.length > 1 && (
         <div className="alert alert-info">
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -225,7 +238,7 @@ export function CategoryList({ categories, onEdit, onDelete, onReorder, merchant
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             ></path>
           </svg>
-          <span>{t('dragHint')}</span>
+          <span>{t('arrowHint')}</span>
         </div>
       )}
     </div>

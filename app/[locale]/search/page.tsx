@@ -23,6 +23,11 @@ type Category = {
   parent_id: ParentCategory | null;
 };
 
+type SubCategory = {
+  category_id: string;
+  name: MultiLangName;
+};
+
 type Coupon = {
   coupon_id: string;
   name: MultiLangName;
@@ -36,7 +41,7 @@ export default async function SearchPage({
   searchParams,
 }: {
   params: Promise<{locale: string}>;
-  searchParams: Promise<{ category?: string; q?: string }>;
+  searchParams: Promise<{ category?: string; subcategory?: string; q?: string }>;
 }) {
   const {locale} = await params;
   const resolvedSearchParams = await searchParams;
@@ -48,9 +53,11 @@ export default async function SearchPage({
 
   const supabase = await createSupabaseServerClient();
   const categoryId = resolvedSearchParams.category;
+  const subcategoryId = resolvedSearchParams.subcategory;
 
   let coupons: Coupon[] | null = [];
   let currentCategory: Category | null = null;
+  let subCategories: SubCategory[] = [];
 
   const breadcrumbs = [{ name: t('breadcrumbs.home'), href: "/" }];
 
@@ -79,10 +86,35 @@ export default async function SearchPage({
       breadcrumbs.push({ name: getLocalizedValue(category.name, locale as 'th' | 'zh' | 'en'), href: "#" });
     }
 
+    // 获取该分类的所有子分类（用于导航显示）
+    const { data: subCategoriesData } = await supabase
+      .from('categories')
+      .select('category_id, name')
+      .eq('parent_id', categoryId);
+
+    if (subCategoriesData && subCategoriesData.length > 0) {
+      subCategories = subCategoriesData as SubCategory[];
+    }
+
+    // 构建分类ID列表：根据是否选择子分类来决定查询范围
+    let categoryIds: string[] = [];
+
+    if (subcategoryId) {
+      // 如果选择了子分类，只查询该子分类
+      categoryIds = [subcategoryId];
+    } else {
+      // 如果没有选择子分类，查询父分类和所有子分类
+      categoryIds = [categoryId];
+      if (subCategories.length > 0) {
+        categoryIds.push(...subCategories.map(sub => sub.category_id));
+      }
+    }
+
+    // 查询属于这些分类的优惠券
     const { data: couponData, error: couponError } = await supabase
       .from('coupons')
-      .select('*, coupon_categories!inner(category_id)')
-      .eq('coupon_categories.category_id', categoryId)
+      .select('coupon_id, name, image_urls, selling_price, original_value, category_id')
+      .in('category_id', categoryIds)
       .limit(12);
 
     if (couponError) console.error("Error fetching coupons for category:", couponError.message);
@@ -131,6 +163,32 @@ export default async function SearchPage({
             <option>{t('sort.popular')}</option>
           </select>
         </div>
+
+        {/* 子分类导航 - 仅当有子分类时显示 */}
+        {categoryId && subCategories.length > 0 && (
+          <div className="mb-6">
+            <div className="flex flex-wrap gap-2">
+              {/* "全部" 按钮 */}
+              <Link
+                href={`/search?category=${categoryId}`}
+                className={`btn btn-sm ${!subcategoryId ? 'btn-primary' : 'btn-outline'}`}
+              >
+                {t('subcategories.all')}
+              </Link>
+
+              {/* 子分类按钮 */}
+              {subCategories.map((subCat) => (
+                <Link
+                  key={subCat.category_id}
+                  href={`/search?category=${categoryId}&subcategory=${subCat.category_id}`}
+                  className={`btn btn-sm ${subcategoryId === subCat.category_id ? 'btn-primary' : 'btn-outline'}`}
+                >
+                  {getLocalizedValue(subCat.name, locale as 'th' | 'zh' | 'en')}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {coupons && coupons.length > 0 ? (

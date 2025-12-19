@@ -89,6 +89,10 @@
       "priceHighLow": "Price (High - Low)",
       "popular": "Most Popular"
     },
+    "subcategories": {
+      "all": "All",
+      "filterBy": "Filter by subcategory"
+    },
     "viewDetails": "View Details",
     "noResults": "No matching items found"
   },
@@ -769,7 +773,35 @@
     "followButton": "Follow",
     "previewStock": "Stock",
     "previewSold": "Sold",
-    "previewDisclaimer": "This is a preview. Actual product data will be shown on the store page."
+    "previewDisclaimer": "This is a preview. Actual product data will be shown on the store page.",
+    "share": {
+      "title": "Share Store",
+      "description": "Share your store via link or QR code to reach more customers",
+      "shopLink": "Store Link",
+      "copy": "Copy",
+      "copied": "Copied",
+      "copyFailed": "Copy failed, please copy manually",
+      "qrCode": "Store QR Code",
+      "downloadQR": "Download QR Code",
+      "qrHint": "Download and print the QR code, place it in your store for easy customer ordering",
+      "shareToSocial": "Share to Social Media",
+      "socialHint": "Click icons to quickly share your store to social platforms",
+      "shareText": "Welcome to my store!",
+      "friendlyUrl": "Friendly URL",
+      "noSlugMessage": "You haven't set up a custom store link yet. Set one now for easier sharing!",
+      "setupSlug": "Setup Custom Link",
+      "editSlug": "Edit Custom Link",
+      "customSlug": "Custom Link",
+      "slugHint": "Only letters (a-z), numbers (0-9), and hyphens (-) allowed. 3-50 characters.",
+      "slugRequired": "Custom link cannot be empty",
+      "slugAvailable": "This link is available!",
+      "slugTaken": "This link is already taken. Try: {suggestion}",
+      "confirmClear": "Are you sure you want to remove the custom link? Your store will only be accessible via the original ID link.",
+      "edit": "Edit",
+      "remove": "Remove",
+      "cancel": "Cancel",
+      "save": "Save"
+    }
   },
   "merchantReviews": {
     "title": "Review Management",
@@ -1098,7 +1130,9 @@
     "disable": "Disable",
     "edit": "Edit",
     "deleteButton": "Delete",
-    "dragHint": "Drag category cards to reorder",
+    "moveUp": "Move Up",
+    "moveDown": "Move Down",
+    "arrowHint": "Use arrow buttons to adjust category order",
     "reorderError": "Failed to update order",
     "toggleError": "Failed to toggle status",
     "form": {
@@ -1174,5 +1208,40 @@
     "verificationFailedMessage": "Verification failed: {message}",
     "verificationFailedDefault": "Please check if the receipt is clear or if payment was made.",
     "networkError": "Network or server connection error."
+  },
+  "footer": {
+    "about": {
+      "title": "About PMT",
+      "description": "PMT is your trusted coupon platform, connecting merchants and customers with the best deals in town.",
+      "tagline": "Discover savings, support local businesses"
+    },
+    "quickLinks": {
+      "title": "Quick Links",
+      "home": "Home",
+      "categories": "Categories",
+      "merchants": "For Merchants",
+      "support": "Support"
+    },
+    "legal": {
+      "title": "Legal",
+      "privacy": "Privacy Policy",
+      "terms": "Terms of Service",
+      "cookies": "Cookie Policy"
+    },
+    "contact": {
+      "title": "Contact Us",
+      "email": "Email",
+      "phone": "Phone",
+      "address": "Address"
+    },
+    "social": {
+      "title": "Follow Us",
+      "facebook": "Facebook",
+      "line": "LINE",
+      "instagram": "Instagram",
+      "twitter": "Twitter"
+    },
+    "copyright": "© {year} PMT Coupon Platform. All rights reserved.",
+    "madeWith": "Made with ❤️ in Thailand"
   }
 }

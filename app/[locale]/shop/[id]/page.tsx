@@ -15,6 +15,7 @@ import { setRequestLocale } from 'next-intl/server';
 import ProductGrid from './components/ProductGrid';
 import ShopInfoModal from './components/ShopInfoModal';
 import type { MultiLangName } from '@/app/types/accounting';
+import { getMerchantBySlug } from '@/app/actions/merchant-slug';
 
 // --- 类型定义 ---
 type ProductDetail = {
@@ -177,12 +178,26 @@ export default async function ShopPage({
 }: {
   params: Promise<{ locale: string; id: string }>
 }) {
-  const { locale, id: merchantId } = await params;
+  const { locale, id } = await params;
 
   // 设置 locale
   setRequestLocale(locale);
 
   const supabase = await createSupabaseServerClient();
+
+  // 判断 id 是否为 UUID（如果不是，则作为 slug 处理）
+  const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
+  let merchantId = id;
+
+  // 如果是 slug，先获取 merchantId
+  if (!isUUID) {
+    const slugResult = await getMerchantBySlug(id);
+    if (!slugResult.success || !slugResult.merchantId) {
+      notFound();
+    }
+    merchantId = slugResult.merchantId;
+  }
 
   // 1. 查询商户信息
   const { data: merchantData, error } = await supabase

@@ -89,6 +89,10 @@
       "priceHighLow": "价格 (高到低)",
       "popular": "最热销"
     },
+    "subcategories": {
+      "all": "全部",
+      "filterBy": "按子分类筛选"
+    },
     "viewDetails": "查看详情",
     "noResults": "未找到匹配结果"
   },
@@ -769,7 +773,35 @@
     "followButton": "关注",
     "previewStock": "库存",
     "previewSold": "已售",
-    "previewDisclaimer": "此为预览效果，实际商品数据以店铺页面为准。"
+    "previewDisclaimer": "此为预览效果，实际商品数据以店铺页面为准。",
+    "share": {
+      "title": "店铺分享",
+      "description": "通过链接或二维码分享您的店铺，让更多顾客找到您",
+      "shopLink": "店铺链接",
+      "copy": "复制",
+      "copied": "已复制",
+      "copyFailed": "复制失败，请手动复制",
+      "qrCode": "店铺二维码",
+      "downloadQR": "下载二维码",
+      "qrHint": "下载二维码并打印，放置在店内方便顾客扫码点餐",
+      "shareToSocial": "分享到社交媒体",
+      "socialHint": "点击图标快速分享店铺到社交平台",
+      "shareText": "欢迎光临我的店铺！",
+      "friendlyUrl": "友好链接",
+      "noSlugMessage": "您还没有设置自定义店铺链接。现在设置一个，让分享更容易！",
+      "setupSlug": "设置自定义链接",
+      "editSlug": "编辑自定义链接",
+      "customSlug": "自定义链接",
+      "slugHint": "仅支持字母（a-z）、数字（0-9）和连字符（-）。长度为3-50个字符。",
+      "slugRequired": "自定义链接不能为空",
+      "slugAvailable": "此链接可用！",
+      "slugTaken": "此链接已被使用。试试：{suggestion}",
+      "confirmClear": "确定要删除自定义链接吗？您的店铺将只能通过原始ID链接访问。",
+      "edit": "编辑",
+      "remove": "移除",
+      "cancel": "取消",
+      "save": "保存"
+    }
   },
   "merchantReviews": {
     "title": "评价管理",
@@ -1098,7 +1130,9 @@
     "disable": "禁用",
     "edit": "编辑",
     "deleteButton": "删除",
-    "dragHint": "拖拽分类卡片可调整排序",
+    "moveUp": "上移",
+    "moveDown": "下移",
+    "arrowHint": "使用箭头按钮调整分类顺序",
     "reorderError": "排序更新失败",
     "toggleError": "状态切换失败",
     "form": {
@@ -1174,5 +1208,40 @@
     "verificationFailedMessage": "验证失败: {message}",
     "verificationFailedDefault": "请检查凭证是否清晰或是否已付款。",
     "networkError": "网络或服务器连接错误。"
+  },
+  "footer": {
+    "about": {
+      "title": "关于我们",
+      "description": "PMT是您值得信赖的优惠券平台，连接商家与顾客，提供最优质的本地优惠。",
+      "tagline": "发现优惠，支持本地商家"
+    },
+    "quickLinks": {
+      "title": "快速链接",
+      "home": "首页",
+      "categories": "分类",
+      "merchants": "商家入驻",
+      "support": "帮助支持"
+    },
+    "legal": {
+      "title": "法律条款",
+      "privacy": "隐私政策",
+      "terms": "服务条款",
+      "cookies": "Cookie政策"
+    },
+    "contact": {
+      "title": "联系我们",
+      "email": "电子邮件",
+      "phone": "电话",
+      "address": "地址"
+    },
+    "social": {
+      "title": "关注我们",
+      "facebook": "Facebook",
+      "line": "LINE",
+      "instagram": "Instagram",
+      "twitter": "Twitter"
+    },
+    "copyright": "© {year} PMT 优惠平台。保留所有权利。",
+    "madeWith": "用❤️在泰国制作"
   }
 }

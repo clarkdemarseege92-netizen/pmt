@@ -96,7 +96,7 @@ export default async function Home({
           <div className="max-w-md">
             <h1 className="mb-5 text-5xl font-bold">{t('hero.title')}</h1>
             <p className="mb-5">{t('hero.subtitle')}</p>
-            <input type="text" placeholder={t('hero.searchPlaceholder')} className="input input-bordered w-full" />
+            <input type="text" placeholder={t('hero.searchPlaceholder')} className="input input-bordered w-full text-black" />
           </div>
         </div>
       </div>
