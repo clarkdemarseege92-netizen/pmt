@@ -110,11 +110,10 @@ export async function createCategoryWithDictionary(
     }
 
     // 步骤3: 创建商户分类
-    // 注意：当前版本使用泰语名称（单语言）
-    // Phase 4 数据迁移后，这里将改为使用 JSONB 格式的多语言名称
+    // 使用完整的多语言名称对象
     const categoryInput: CreateMerchantCategoryInput = {
       merchant_id: input.merchant_id,
-      name: input.name.th, // 当前版本使用泰语
+      name: input.name, // MultiLangName 对象包含 th, zh, en
       icon: input.icon,
       sort_order: input.sort_order
     };
@@ -194,8 +193,8 @@ export async function updateCategoryWithDictionary(
         }
       }
 
-      // 更新输入的名称（当前版本使用泰语）
-      input.name = updateName.th;
+      // 更新输入的名称为完整的多语言对象
+      input.name = updateName;
     }
 
     // 更新商户分类
