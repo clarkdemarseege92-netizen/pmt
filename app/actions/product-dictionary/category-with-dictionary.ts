@@ -110,10 +110,14 @@ export async function createCategoryWithDictionary(
     }
 
     // 步骤3: 创建商户分类
-    // 使用完整的多语言名称对象
+    // 使用完整的多语言名称对象，确保所有字段都存在
     const categoryInput: CreateMerchantCategoryInput = {
       merchant_id: input.merchant_id,
-      name: input.name, // MultiLangName 对象包含 th, zh, en
+      name: {
+        th: input.name.th,
+        en: input.name.en,
+        zh: input.name.zh || '' // 如果没有中文，使用空字符串
+      },
       icon: input.icon,
       sort_order: input.sort_order
     };
@@ -193,8 +197,12 @@ export async function updateCategoryWithDictionary(
         }
       }
 
-      // 更新输入的名称为完整的多语言对象
-      input.name = updateName;
+      // 更新输入的名称为完整的多语言对象，确保所有字段都存在
+      input.name = {
+        th: updateName.th,
+        en: updateName.en,
+        zh: updateName.zh || '' // 如果没有中文，使用空字符串
+      };
     }
 
     // 更新商户分类
