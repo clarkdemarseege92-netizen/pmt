@@ -19,15 +19,15 @@ import {
   updateCategory,
   deleteCategory,
   toggleCategoryStatus,
-  type AccountingCategory,
 } from '@/app/actions/accounting/categories';
+import type { AccountCategory } from '@/app/types/accounting';
 
 type Merchant = {
   merchant_id: string;
   shop_name: string;
 };
 
-type CategoryWithStats = AccountingCategory & {
+type CategoryWithStats = AccountCategory & {
   usage_count?: number;
   total_amount?: number;
 };
