@@ -236,7 +236,7 @@ async function runAutoRenew(now: Date) {
     .select(`
       id, merchant_id, plan_id, current_period_start, current_period_end, cancel_at_period_end,
       subscription_plans!inner(id, name, price),
-      merchants!inner(merchant_id, shop_name, owner_id, balance)
+      merchants!inner(merchant_id, shop_name, owner_id)
     `)
     .eq('status', 'active')
     .eq('cancel_at_period_end', false)
@@ -250,9 +250,20 @@ async function runAutoRenew(now: Date) {
 
   for (const sub of expiringSubscriptions || []) {
     const plan = sub.subscription_plans as unknown as { id: string; name: string; price: number } | null;
-    const merchant = sub.merchants as unknown as { merchant_id: string; shop_name: string; owner_id: string; balance: number } | null;
+    const merchant = sub.merchants as unknown as { merchant_id: string; shop_name: string; owner_id: string } | null;
     const planPrice = plan?.price || 0;
-    const merchantBalance = merchant?.balance || 0;
+
+    // 从交易记录获取当前余额
+    const { data: lastTransaction } = await supabaseAdmin
+      .from('merchant_transactions')
+      .select('balance_after')
+      .eq('merchant_id', sub.merchant_id)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    const merchantBalance = lastTransaction?.balance_after || 0;
 
     if (merchantBalance < planPrice) {
       // 余额不足，标记为逾期
@@ -261,21 +272,39 @@ async function runAutoRenew(now: Date) {
         updated_at: now.toISOString()
       }).eq('id', sub.id);
       results.failed_insufficient_balance++;
+
+      // 发送余额不足通知
+      if (merchant?.owner_id) {
+        await supabaseAdmin.from('notifications').insert({
+          user_id: merchant.owner_id,
+          type: 'renewal_failed',
+          title: {
+            en: 'Subscription Renewal Failed',
+            th: 'ต่ออายุสมาชิกล้มเหลว',
+            zh: '订阅续费失败'
+          },
+          message: {
+            en: `Insufficient balance to renew subscription. Please top up ฿${planPrice} to continue.`,
+            th: `ยอดเงินไม่เพียงพอสำหรับต่ออายุ กรุณาเติมเงิน ฿${planPrice} เพื่อดำเนินการต่อ`,
+            zh: `余额不足，无法续费订阅。请充值 ฿${planPrice} 以继续使用。`
+          },
+          data: { subscription_id: sub.id, merchant_id: sub.merchant_id, required_amount: planPrice },
+          read: false
+        });
+      }
     } else {
       // 执行续费
       try {
-        // 扣款
-        await supabaseAdmin.from('merchants').update({
-          balance: merchantBalance - planPrice
-        }).eq('merchant_id', sub.merchant_id);
+        const newBalance = merchantBalance - planPrice;
 
-        // 创建交易记录
+        // 创建交易记录（扣款）
         const { data: transaction } = await supabaseAdmin
           .from('merchant_transactions')
           .insert({
             merchant_id: sub.merchant_id,
             type: 'withdrawal',
             amount: planPrice,
+            balance_after: newBalance,
             description: `Subscription renewal: ${plan?.name || 'Plan'}`,
             status: 'completed'
           })
@@ -306,6 +335,26 @@ async function runAutoRenew(now: Date) {
           payment_method: 'wallet',
           merchant_transaction_id: transaction?.id
         });
+
+        // 发送续费成功通知
+        if (merchant?.owner_id) {
+          await supabaseAdmin.from('notifications').insert({
+            user_id: merchant.owner_id,
+            type: 'subscription_renewed',
+            title: {
+              en: 'Subscription Renewed',
+              th: 'ต่ออายุสมาชิกสำเร็จ',
+              zh: '订阅续费成功'
+            },
+            message: {
+              en: `Your subscription has been renewed. ฿${planPrice} was deducted. Remaining balance: ฿${newBalance.toFixed(2)}`,
+              th: `ต่ออายุสมาชิกสำเร็จ หักเงิน ฿${planPrice} ยอดเงินคงเหลือ: ฿${newBalance.toFixed(2)}`,
+              zh: `订阅续费成功。已扣除 ฿${planPrice}，剩余余额：฿${newBalance.toFixed(2)}`
+            },
+            data: { subscription_id: sub.id, merchant_id: sub.merchant_id, amount: planPrice, remaining_balance: newBalance },
+            read: false
+          });
+        }
 
         results.renewed++;
       } catch (error) {
