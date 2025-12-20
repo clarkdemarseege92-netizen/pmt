@@ -10,9 +10,6 @@ import type { MerchantCategory } from '@/app/actions/merchant-categories/merchan
 import { batchAssignProductCategory } from '@/app/actions/products/batch-category-operations';
 import { ProductFormModalWithDictionary } from './components/ProductFormModalWithDictionary';
 import { getLocalizedValue } from '@/lib/i18nUtils';
-import { checkProductLimit } from '@/app/actions/subscriptions';
-import { UsageLimitIndicator } from '@/components/subscription';
-import { useRouter } from 'next/navigation';
 
 // 定义分类类型
 type Category = {
@@ -47,13 +44,9 @@ const getCategoryName = (name: string | { th?: string; en?: string; [key: string
 export default function ProductsPage() {
   const t = useTranslations('merchantProducts');
   const locale = useLocale();
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [products, setProducts] = useState<Product[]>([]);
   const [merchantId, setMerchantId] = useState<string | null>(null);
-
-  // 订阅限制状态
-  const [productLimit, setProductLimit] = useState({ current_count: 0, limit_count: 0, can_create: true });
 
   // 分类状态（行业分类）
   const [categories, setCategories] = useState<Category[]>([]);
@@ -88,7 +81,6 @@ export default function ProductsPage() {
           setMerchantId(merchant.merchant_id);
           fetchProducts(merchant.merchant_id);
           fetchMerchantCategories(merchant.merchant_id);
-          fetchProductLimit(merchant.merchant_id);
         }
       }
     };
@@ -126,18 +118,6 @@ export default function ProductsPage() {
     }
   };
 
-  // 1.7 获取产品数量限制
-  const fetchProductLimit = async (mId: string) => {
-    try {
-      const result = await checkProductLimit(mId);
-      if (result.success && result.data) {
-        setProductLimit(result.data);
-      }
-    } catch (error) {
-      console.error('Error fetching product limit:', error);
-    }
-  };
-
   // 2. 获取商品列表
   const fetchProducts = async (mId: string) => {
     setLoading(true);
@@ -154,14 +134,6 @@ export default function ProductsPage() {
 
   // 3. 打开模态框
   const openModal = (product?: Product) => {
-    // 如果是新增产品，检查是否达到上限
-    if (!product && !productLimit.can_create) {
-      if (confirm(t('limitReached.confirmUpgrade'))) {
-        router.push(`/${locale}/merchant/subscription`);
-      }
-      return;
-    }
-
     if (product) {
       setEditingProduct(product);
     } else {
@@ -280,19 +252,6 @@ export default function ProductsPage() {
           </button>
         </div>
       </div>
-
-      {/* 产品使用量指示器 */}
-      {productLimit.limit_count > 0 && (
-        <div className="mb-6">
-          <UsageLimitIndicator
-            currentCount={productLimit.current_count}
-            limitCount={productLimit.limit_count}
-            type="product"
-            showUpgrade={true}
-            onUpgradeClick={() => router.push(`/${locale}/merchant/subscription`)}
-          />
-        </div>
-      )}
 
       {/* 商品列表表格 */}
       <div className="overflow-x-auto bg-base-100 rounded-lg shadow">

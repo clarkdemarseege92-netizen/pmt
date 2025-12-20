@@ -1,12 +1,9 @@
 // 文件: /components/MerchantSidebar.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link, usePathname } from "@/i18n/routing";
-import { useTranslations, useLocale } from 'next-intl';
-import { supabase } from "@/lib/supabaseClient";
-import { getCurrentSubscription } from '@/app/actions/subscriptions';
-import type { SubscriptionWithPlan } from '@/app/types/subscription';
+import { useTranslations } from 'next-intl';
 import {
   HiSquares2X2,
   HiShoppingBag,
@@ -23,45 +20,15 @@ import {
   HiUserGroup,
   HiCalculator,
   HiBoltSlash,
-  HiTag,
-  HiCrown,
-  HiClock
+  HiTag
 } from "react-icons/hi2";
 
 export default function MerchantSidebar() {
   const t = useTranslations('merchantNav');
-  const tSub = useTranslations('subscription');
-  const locale = useLocale();
   const [isExpanded, setIsExpanded] = useState(true);
   const pathname = usePathname();
-  const [subscription, setSubscription] = useState<SubscriptionWithPlan | null>(null);
-  const [merchantId, setMerchantId] = useState<string | null>(null);
 
   const toggleSidebar = () => setIsExpanded(!isExpanded);
-
-  // 获取订阅信息
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { data: merchant } = await supabase
-        .from("merchants")
-        .select("merchant_id")
-        .eq("owner_id", user.id)
-        .single();
-
-      if (merchant) {
-        setMerchantId(merchant.merchant_id);
-        const result = await getCurrentSubscription(merchant.merchant_id);
-        if (result.success && result.data) {
-          setSubscription(result.data);
-        }
-      }
-    };
-
-    fetchSubscription();
-  }, []);
 
   const navItems = [
     { name: t('dashboard'), href: "/merchant/dashboard", icon: <HiSquares2X2 className="w-6 h-6" /> },
@@ -97,41 +64,6 @@ export default function MerchantSidebar() {
            {isExpanded ? <HiChevronLeft className="w-5 h-5" /> : <HiChevronRight className="w-5 h-5" />}
         </button>
       </div>
-
-      {/* 订阅状态徽章 */}
-      {subscription && (
-        <div className={`p-3 border-b border-base-200 ${!isExpanded && 'px-2'}`}>
-          <Link
-            href="/merchant/subscription"
-            className={`flex items-center gap-2 p-2 rounded-lg transition-colors ${
-              subscription.status === 'trial'
-                ? 'bg-blue-50 hover:bg-blue-100 text-blue-700'
-                : subscription.status === 'active'
-                ? 'bg-green-50 hover:bg-green-100 text-green-700'
-                : subscription.status === 'locked'
-                ? 'bg-red-50 hover:bg-red-100 text-red-700'
-                : 'bg-yellow-50 hover:bg-yellow-100 text-yellow-700'
-            }`}
-            title={!isExpanded ? tSub(`subscriptionStatus.${subscription.status}`) : ''}
-          >
-            {subscription.status === 'trial' ? (
-              <HiClock className="w-5 h-5 shrink-0" />
-            ) : (
-              <HiCrown className="w-5 h-5 shrink-0" />
-            )}
-            {isExpanded && (
-              <div className="flex-1 min-w-0">
-                <div className="text-xs font-semibold truncate">
-                  {subscription.plan.display_name[locale as 'en' | 'th' | 'zh'] || subscription.plan.display_name.en}
-                </div>
-                <div className="text-xs opacity-75">
-                  {tSub(`subscriptionStatus.${subscription.status}`)}
-                </div>
-              </div>
-            )}
-          </Link>
-        </div>
-      )}
 
       <nav className="flex-1 py-4 flex flex-col gap-2 px-2 overflow-y-auto">
         {navItems.map((item) => {

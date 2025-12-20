@@ -416,6 +416,9 @@
       "selectProduct": "กรุณาเลือกสินค้าอย่างน้อย 1 รายการ",
       "saveFailed": "บันทึกล้มเหลว",
       "unknownError": "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"
+    },
+    "limitReached": {
+      "confirmUpgrade": "คุณถึงขีดจำกัดประเภทคูปองแล้ว ต้องการอัพเกรดแผนของคุณหรือไม่?"
     }
   },
   "merchantNav": {
@@ -523,6 +526,9 @@
       "confirm": "ยืนยัน",
       "success": "อัปเดตสินค้า {count} รายการสำเร็จ",
       "error": "การตั้งค่าหมวดหมู่แบบกลุ่มล้มเหลว"
+    },
+    "limitReached": {
+      "confirmUpgrade": "คุณถึงขีดจำกัดจำนวนสินค้าแล้ว ต้องการอัพเกรดแผนของคุณหรือไม่?"
     }
   },
   "merchantOrders": {
@@ -1243,5 +1249,118 @@
     },
     "copyright": "© {year} KUMMAK แพลตฟอร์มคูปอง สงวนลิขสิทธิ์",
     "madeWith": "สร้างด้วย ❤️ ในประเทศไทย"
+  },
+  "subscriptionPage": {
+    "title": "จัดการการสมัครสมาชิก",
+    "subtitle": "จัดการแผนและการเรียกเก็บเงินของคุณ",
+    "tabs": {
+      "overview": "ภาพรวม",
+      "plans": "แผน",
+      "invoices": "ใบแจ้งหนี้"
+    },
+    "noSubscription": "ไม่มีการสมัครสมาชิกที่ใช้งานอยู่",
+    "noSubscriptionDesc": "เลือกแผนเพื่อปลดล็อคฟีเจอร์ทั้งหมดและพัฒนาธุรกิจของคุณ",
+    "viewPlans": "ดูแผน",
+    "walletBalance": "ยอดเงินในกระเป๋า",
+    "topUp": "เติมเงิน",
+    "cancelSubscription": "ยกเลิกการสมัครสมาชิก",
+    "reactivateSubscription": "เปิดใช้งานการสมัครสมาชิกใหม่",
+    "choosePlan": "เลือกแผนของคุณ",
+    "choosePlanDesc": "เลือกแผนที่เหมาะกับความต้องการธุรกิจของคุณ ทุกแผนรวมฟีเจอร์หลัก",
+    "invoiceHistory": "ประวัติใบแจ้งหนี้",
+    "processing": "กำลังดำเนินการ...",
+    "confirmSubscribe": "สมัครแผน {plan} ในราคา ฿{price}/เดือน?",
+    "confirmCancel": "คุณแน่ใจหรือไม่ที่จะยกเลิกการสมัครสมาชิก? คุณจะสูญเสียการเข้าถึงเมื่อสิ้นสุดรอบการเรียกเก็บเงินปัจจุบัน",
+    "confirmReactivate": "เปิดใช้งานการสมัครสมาชิกใหม่? จะหักเงินจากกระเป๋าของคุณ",
+    "subscribeSuccess": "สมัครสมาชิกสำเร็จ! ขอบคุณ",
+    "subscribeFailed": "สมัครสมาชิกล้มเหลว",
+    "cancelSuccess": "ยกเลิกการสมัครสมาชิกแล้ว ยังสามารถใช้งานได้จนสิ้นสุดรอบ",
+    "cancelFailed": "ยกเลิกการสมัครสมาชิกล้มเหลว",
+    "reactivateSuccess": "เปิดใช้งานการสมัครสมาชิกใหม่สำเร็จ!",
+    "reactivateFailed": "เปิดใช้งานการสมัครสมาชิกใหม่ล้มเหลว",
+    "insufficientBalance": "ยอดเงินในกระเป๋าไม่เพียงพอ ต้องการเติมเงินหรือไม่?"
+  },
+  "subscription": {
+    "mostPopular": "ยอดนิยมสูงสุด",
+    "currentPlan": "แผนปัจจุบัน",
+    "month": "เดือน",
+    "productLimit": "{count} สินค้า",
+    "couponTypeLimit": "{count} ประเภทคูปอง",
+    "features": "คุณสมบัติ",
+    "selectPlan": "เลือกแผน",
+    "loadingPlans": "กำลังโหลดแผน...",
+    "errorLoadingPlans": "เกิดข้อผิดพลาดในการโหลดแผน",
+    "trialExpired": "ช่วงทดลองใช้หมดอายุ",
+    "trialExpiredMessage": "ช่วงทดลองใช้ของคุณสิ้นสุดแล้ว กรุณาสมัครสมาชิกเพื่อใช้บริการต่อ",
+    "upgradeNow": "อัพเกรดตอนนี้",
+    "trialPeriod": "ช่วงทดลองใช้",
+    "trialEndingSoon": "ช่วงทดลองใช้ของคุณกำลังจะสิ้นสุด!",
+    "trialTimeRemaining": "เวลาที่เหลือในช่วงทดลองใช้",
+    "days": "วัน",
+    "hours": "ชั่วโมง",
+    "minutes": "นาที",
+    "seconds": "วินาที",
+    "productUsage": "การใช้งานสินค้า",
+    "couponTypeUsage": "การใช้งานประเภทคูปอง",
+    "productLimitReached": "ถึงขีดจำกัดสินค้า",
+    "couponLimitReached": "ถึงขีดจำกัดประเภทคูปอง",
+    "productNearLimit": "ใกล้ถึงขีดจำกัดสินค้า",
+    "couponNearLimit": "ใกล้ถึงขีดจำกัดประเภทคูปอง",
+    "usageNormal": "การใช้งานปกติ",
+    "upgradeForMore": "อัพเกรดเพื่อเพิ่มเติม",
+    "viewUpgradeOptions": "ดูตัวเลือกการอัพเกรด",
+    "maybeLater": "ไว้ทีหลัง",
+    "loadingInvoices": "กำลังโหลดใบแจ้งหนี้...",
+    "errorLoadingInvoices": "เกิดข้อผิดพลาดในการโหลดใบแจ้งหนี้",
+    "noInvoices": "ยังไม่มีใบแจ้งหนี้",
+    "invoice": "ใบแจ้งหนี้",
+    "billingPeriod": "ช่วงเวลาเรียกเก็บเงิน",
+    "paidAt": "ชำระเมื่อ",
+    "failureReason": "สาเหตุที่ล้มเหลว",
+    "fromWallet": "จากกระเป๋าเงิน",
+    "downloadReceipt": "ดาวน์โหลดใบเสร็จ",
+    "currentPeriodStart": "เริ่มช่วงปัจจุบัน",
+    "currentPeriodEnd": "สิ้นสุดช่วงปัจจุบัน",
+    "cancelAtPeriodEnd": "จะยกเลิกเมื่อสิ้นสุดช่วง",
+    "dataRetentionUntil": "เก็บข้อมูลถึง",
+    "changePlan": "เปลี่ยนแผน",
+    "manageSubscription": "จัดการการสมัครสมาชิก",
+    "subscriptionStatus": {
+      "trial": "ช่วงทดลองใช้",
+      "active": "ใช้งานอยู่",
+      "past_due": "ค้างชำระ",
+      "canceled": "ยกเลิกแล้ว",
+      "locked": "บัญชีถูกล็อค"
+    },
+    "invoiceStatus": {
+      "pending": "รอดำเนินการ",
+      "paid": "ชำระแล้ว",
+      "failed": "ล้มเหลว",
+      "refunded": "คืนเงินแล้ว"
+    },
+    "feature": {
+      "pos_system": "ระบบ POS",
+      "basic_accounting": "บัญชีพื้นฐาน",
+      "advanced_accounting": "บัญชีขั้นสูง",
+      "advanced_dashboard": "แดชบอร์ดขั้นสูง",
+      "product_management": "การจัดการสินค้า",
+      "coupon_management": "การจัดการคูปอง",
+      "order_management": "การจัดการคำสั่งซื้อ",
+      "review_management": "การจัดการรีวิว",
+      "shop_design": "ออกแบบร้านค้า",
+      "data_export": "ส่งออกข้อมูล",
+      "expo_app": "แอปมือถือ (Expo)",
+      "push_notifications": "การแจ้งเตือนแบบพุช",
+      "employee_management": "การจัดการพนักงาน",
+      "api_access": "การเข้าถึง API",
+      "marketing_tools": "เครื่องมือการตลาด"
+    },
+    "upgradePrompt": {
+      "banner": "ปลดล็อคฟีเจอร์พรีเมียม",
+      "unlockFeature": "ปลดล็อค {feature} ด้วยแผนแบบชำระเงิน",
+      "modalTitle": "ฟีเจอร์ถูกล็อค",
+      "featureLocked": "{feature} ไม่พร้อมใช้งานในแผน {plan} ของคุณ",
+      "inlineTitle": "อัพเกรดเพื่อปลดล็อคฟีเจอร์นี้"
+    }
   }
 }

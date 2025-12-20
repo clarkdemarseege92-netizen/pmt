@@ -416,6 +416,9 @@
       "selectProduct": "请至少选择一个商品作为套餐内容",
       "saveFailed": "保存失败",
       "unknownError": "未知错误"
+    },
+    "limitReached": {
+      "confirmUpgrade": "您已达到优惠券种类上限。是否要升级您的方案？"
     }
   },
   "merchantNav": {
@@ -523,6 +526,9 @@
       "confirm": "确认设置",
       "success": "已成功更新 {count} 件商品的分类",
       "error": "批量设置分类失败"
+    },
+    "limitReached": {
+      "confirmUpgrade": "您已达到产品数量上限。是否要升级您的方案？"
     }
   },
   "merchantOrders": {
@@ -1243,5 +1249,118 @@
     },
     "copyright": "© {year} KUMMAK 优惠平台。保留所有权利。",
     "madeWith": "用❤️在泰国制作"
+  },
+  "subscriptionPage": {
+    "title": "订阅管理",
+    "subtitle": "管理您的订阅方案和账单",
+    "tabs": {
+      "overview": "概览",
+      "plans": "方案",
+      "invoices": "账单"
+    },
+    "noSubscription": "暂无活跃订阅",
+    "noSubscriptionDesc": "选择一个方案，解锁所有功能，发展您的业务。",
+    "viewPlans": "查看方案",
+    "walletBalance": "钱包余额",
+    "topUp": "充值",
+    "cancelSubscription": "取消订阅",
+    "reactivateSubscription": "重新激活订阅",
+    "choosePlan": "选择您的方案",
+    "choosePlanDesc": "选择最适合您业务需求的方案。所有方案都包含核心功能。",
+    "invoiceHistory": "账单历史",
+    "processing": "处理中...",
+    "confirmSubscribe": "订阅 {plan} 方案，每月 ฿{price}？",
+    "confirmCancel": "您确定要取消订阅吗？您将在当前计费周期结束后失去访问权限。",
+    "confirmReactivate": "重新激活订阅？将从您的钱包扣款。",
+    "subscribeSuccess": "订阅成功！谢谢。",
+    "subscribeFailed": "订阅失败",
+    "cancelSuccess": "订阅已取消。可继续使用至周期结束。",
+    "cancelFailed": "取消订阅失败",
+    "reactivateSuccess": "订阅重新激活成功！",
+    "reactivateFailed": "重新激活订阅失败",
+    "insufficientBalance": "钱包余额不足。是否要充值？"
+  },
+  "subscription": {
+    "mostPopular": "最受欢迎",
+    "currentPlan": "当前方案",
+    "month": "月",
+    "productLimit": "{count} 个产品",
+    "couponTypeLimit": "{count} 种优惠券",
+    "features": "功能特性",
+    "selectPlan": "选择方案",
+    "loadingPlans": "加载方案中...",
+    "errorLoadingPlans": "加载方案出错",
+    "trialExpired": "试用期已结束",
+    "trialExpiredMessage": "您的试用期已结束，请订阅以继续使用我们的服务。",
+    "upgradeNow": "立即升级",
+    "trialPeriod": "试用期",
+    "trialEndingSoon": "您的试用期即将结束！",
+    "trialTimeRemaining": "试用期剩余时间",
+    "days": "天",
+    "hours": "时",
+    "minutes": "分",
+    "seconds": "秒",
+    "productUsage": "产品使用情况",
+    "couponTypeUsage": "优惠券种类使用情况",
+    "productLimitReached": "已达产品上限",
+    "couponLimitReached": "已达优惠券种类上限",
+    "productNearLimit": "接近产品上限",
+    "couponNearLimit": "接近优惠券种类上限",
+    "usageNormal": "正常使用",
+    "upgradeForMore": "升级以获取更多",
+    "viewUpgradeOptions": "查看升级选项",
+    "maybeLater": "稍后再说",
+    "loadingInvoices": "加载账单中...",
+    "errorLoadingInvoices": "加载账单出错",
+    "noInvoices": "暂无账单",
+    "invoice": "账单",
+    "billingPeriod": "账单周期",
+    "paidAt": "支付时间",
+    "failureReason": "失败原因",
+    "fromWallet": "从钱包支付",
+    "downloadReceipt": "下载收据",
+    "currentPeriodStart": "当前周期开始",
+    "currentPeriodEnd": "当前周期结束",
+    "cancelAtPeriodEnd": "将在周期结束时取消",
+    "dataRetentionUntil": "数据保留至",
+    "changePlan": "更换方案",
+    "manageSubscription": "管理订阅",
+    "subscriptionStatus": {
+      "trial": "试用期",
+      "active": "活跃",
+      "past_due": "逾期未付",
+      "canceled": "已取消",
+      "locked": "账户已锁定"
+    },
+    "invoiceStatus": {
+      "pending": "待处理",
+      "paid": "已支付",
+      "failed": "失败",
+      "refunded": "已退款"
+    },
+    "feature": {
+      "pos_system": "POS 系统",
+      "basic_accounting": "基础会计",
+      "advanced_accounting": "高级会计",
+      "advanced_dashboard": "高级仪表板",
+      "product_management": "产品管理",
+      "coupon_management": "优惠券管理",
+      "order_management": "订单管理",
+      "review_management": "评论管理",
+      "shop_design": "店铺设计",
+      "data_export": "数据导出",
+      "expo_app": "移动应用 (Expo)",
+      "push_notifications": "推送通知",
+      "employee_management": "员工管理",
+      "api_access": "API 访问",
+      "marketing_tools": "营销工具"
+    },
+    "upgradePrompt": {
+      "banner": "解锁高级功能",
+      "unlockFeature": "通过付费方案解锁 {feature}",
+      "modalTitle": "功能已锁定",
+      "featureLocked": "{feature} 在您的 {plan} 方案中不可用",
+      "inlineTitle": "升级以解锁此功能"
+    }
   }
 }

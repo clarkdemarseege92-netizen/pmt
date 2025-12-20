@@ -416,6 +416,9 @@
       "selectProduct": "Please select at least one product for the package",
       "saveFailed": "Save failed",
       "unknownError": "Unknown error"
+    },
+    "limitReached": {
+      "confirmUpgrade": "You have reached your coupon type limit. Would you like to upgrade your plan?"
     }
   },
   "merchantNav": {
@@ -523,6 +526,9 @@
       "confirm": "Confirm",
       "success": "Successfully updated {count} products",
       "error": "Failed to batch set category"
+    },
+    "limitReached": {
+      "confirmUpgrade": "You have reached your product limit. Would you like to upgrade your plan?"
     }
   },
   "merchantOrders": {
@@ -1243,5 +1249,118 @@
     },
     "copyright": "© {year} KUMMAK Coupon Platform. All rights reserved.",
     "madeWith": "Made with ❤️ in Thailand"
+  },
+  "subscriptionPage": {
+    "title": "Subscription Management",
+    "subtitle": "Manage your subscription plan and billing",
+    "tabs": {
+      "overview": "Overview",
+      "plans": "Plans",
+      "invoices": "Invoices"
+    },
+    "noSubscription": "No Active Subscription",
+    "noSubscriptionDesc": "Choose a plan to unlock all features and grow your business.",
+    "viewPlans": "View Plans",
+    "walletBalance": "Wallet Balance",
+    "topUp": "Top Up",
+    "cancelSubscription": "Cancel Subscription",
+    "reactivateSubscription": "Reactivate Subscription",
+    "choosePlan": "Choose Your Plan",
+    "choosePlanDesc": "Select the plan that best fits your business needs. All plans include core features.",
+    "invoiceHistory": "Invoice History",
+    "processing": "Processing...",
+    "confirmSubscribe": "Subscribe to {plan} for ฿{price}/month?",
+    "confirmCancel": "Are you sure you want to cancel your subscription? You will lose access at the end of your current billing period.",
+    "confirmReactivate": "Reactivate your subscription? Payment will be processed from your wallet.",
+    "subscribeSuccess": "Successfully subscribed! Thank you.",
+    "subscribeFailed": "Failed to subscribe",
+    "cancelSuccess": "Subscription cancelled. Access continues until period end.",
+    "cancelFailed": "Failed to cancel subscription",
+    "reactivateSuccess": "Subscription reactivated successfully!",
+    "reactivateFailed": "Failed to reactivate subscription",
+    "insufficientBalance": "Insufficient wallet balance. Would you like to top up?"
+  },
+  "subscription": {
+    "mostPopular": "Most Popular",
+    "currentPlan": "Current Plan",
+    "month": "month",
+    "productLimit": "{count} products",
+    "couponTypeLimit": "{count} coupon types",
+    "features": "Features",
+    "selectPlan": "Select Plan",
+    "loadingPlans": "Loading plans...",
+    "errorLoadingPlans": "Error loading plans",
+    "trialExpired": "Trial Period Expired",
+    "trialExpiredMessage": "Your trial period has ended. Please subscribe to continue using our services.",
+    "upgradeNow": "Upgrade Now",
+    "trialPeriod": "Trial Period",
+    "trialEndingSoon": "Your trial is ending soon!",
+    "trialTimeRemaining": "Time remaining in trial",
+    "days": "Days",
+    "hours": "Hours",
+    "minutes": "Min",
+    "seconds": "Sec",
+    "productUsage": "Product Usage",
+    "couponTypeUsage": "Coupon Type Usage",
+    "productLimitReached": "Product limit reached",
+    "couponLimitReached": "Coupon type limit reached",
+    "productNearLimit": "Approaching product limit",
+    "couponNearLimit": "Approaching coupon type limit",
+    "usageNormal": "Normal usage",
+    "upgradeForMore": "Upgrade for More",
+    "viewUpgradeOptions": "View Upgrade Options",
+    "maybeLater": "Maybe Later",
+    "loadingInvoices": "Loading invoices...",
+    "errorLoadingInvoices": "Error loading invoices",
+    "noInvoices": "No invoices yet",
+    "invoice": "Invoice",
+    "billingPeriod": "Billing Period",
+    "paidAt": "Paid At",
+    "failureReason": "Failure Reason",
+    "fromWallet": "From Wallet",
+    "downloadReceipt": "Download Receipt",
+    "currentPeriodStart": "Current Period Start",
+    "currentPeriodEnd": "Current Period End",
+    "cancelAtPeriodEnd": "Will cancel at period end",
+    "dataRetentionUntil": "Data retention until",
+    "changePlan": "Change Plan",
+    "manageSubscription": "Manage Subscription",
+    "subscriptionStatus": {
+      "trial": "Trial Period",
+      "active": "Active",
+      "past_due": "Payment Overdue",
+      "canceled": "Canceled",
+      "locked": "Account Locked"
+    },
+    "invoiceStatus": {
+      "pending": "Pending",
+      "paid": "Paid",
+      "failed": "Failed",
+      "refunded": "Refunded"
+    },
+    "feature": {
+      "pos_system": "POS System",
+      "basic_accounting": "Basic Accounting",
+      "advanced_accounting": "Advanced Accounting",
+      "advanced_dashboard": "Advanced Dashboard",
+      "product_management": "Product Management",
+      "coupon_management": "Coupon Management",
+      "order_management": "Order Management",
+      "review_management": "Review Management",
+      "shop_design": "Shop Design",
+      "data_export": "Data Export",
+      "expo_app": "Mobile App (Expo)",
+      "push_notifications": "Push Notifications",
+      "employee_management": "Employee Management",
+      "api_access": "API Access",
+      "marketing_tools": "Marketing Tools"
+    },
+    "upgradePrompt": {
+      "banner": "Unlock premium features",
+      "unlockFeature": "Unlock {feature} with a paid plan",
+      "modalTitle": "Feature Locked",
+      "featureLocked": "{feature} is not available on your {plan} plan",
+      "inlineTitle": "Upgrade to unlock this feature"
+    }
   }
 }

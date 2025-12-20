@@ -5,10 +5,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabaseClient";
 import Image from "next/image";
 import { HiPlus, HiPencil, HiTrash, HiPhoto } from "react-icons/hi2";
-import { useTranslations, useLocale } from 'next-intl';
-import { checkCouponTypeLimit } from '@/app/actions/subscriptions';
-import { UsageLimitIndicator } from '@/components/subscription';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 
 // ----- 类型定义 -----
 
@@ -60,17 +57,12 @@ const convertImageToWebP = async (file: File): Promise<Blob> => {
 
 export default function CouponsPage() {
   const t = useTranslations('merchantCoupons');
-  const locale = useLocale();
-  const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [merchantId, setMerchantId] = useState<string | null>(null);
 
   const [coupons, setCoupons] = useState<Coupon[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
-
-  // 订阅限制状态
-  const [couponLimit, setCouponLimit] = useState({ current_count: 0, limit_count: 0, can_create: true });
 
   // 模态框与表单
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -110,8 +102,7 @@ export default function CouponsPage() {
         // 并行加载
         await Promise.all([
           fetchCoupons(merchant.merchant_id),
-          fetchProducts(merchant.merchant_id),
-          fetchCouponLimit(merchant.merchant_id)
+          fetchProducts(merchant.merchant_id)
         ]);
       }
       setLoading(false);
@@ -138,28 +129,8 @@ export default function CouponsPage() {
     if (!error) setProducts(data as unknown as Product[]);
   };
 
-  // 4. 获取优惠券数量限制
-  const fetchCouponLimit = async (mId: string) => {
-    try {
-      const result = await checkCouponTypeLimit(mId);
-      if (result.success && result.data) {
-        setCouponLimit(result.data);
-      }
-    } catch (error) {
-      console.error('Error fetching coupon limit:', error);
-    }
-  };
-
   // --- 逻辑：打开模态框 (新增/编辑) ---
   const openModal = async (coupon?: Coupon) => {
-    // 如果是新增优惠券，检查是否达到上限
-    if (!coupon && !couponLimit.can_create) {
-      if (confirm(t('limitReached.confirmUpgrade'))) {
-        router.push(`/${locale}/merchant/subscription`);
-      }
-      return;
-    }
-
     if (coupon) {
       // 编辑模式
       setEditingId(coupon.coupon_id);
@@ -341,19 +312,6 @@ export default function CouponsPage() {
           <HiPlus className="w-5 h-5" /> {t('createButton')}
         </button>
       </div>
-
-      {/* 优惠券券种使用量指示器 */}
-      {couponLimit.limit_count > 0 && (
-        <div className="mb-6">
-          <UsageLimitIndicator
-            currentCount={couponLimit.current_count}
-            limitCount={couponLimit.limit_count}
-            type="coupon"
-            showUpgrade={true}
-            onUpgradeClick={() => router.push(`/${locale}/merchant/subscription`)}
-          />
-        </div>
-      )}
 
       {/* 优惠券列表 */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

@@ -4,15 +4,11 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { User } from '@supabase/supabase-js';
-import { useTranslations, useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useTranslations } from 'next-intl';
 import { SalesTrendChart } from './components/SalesTrendChart';
 import { TopCouponsChart } from './components/TopCouponsChart';
 import { OrderStatusChart } from './components/OrderStatusChart';
 import { RevenueSummaryCard } from './components/RevenueSummaryCard';
-import { getCurrentSubscription } from '@/app/actions/subscriptions';
-import { SubscriptionStatusCard } from '@/components/subscription';
-import type { SubscriptionWithPlan } from '@/app/types/subscription';
 
 type Merchant = {
   merchant_id: string;
@@ -111,19 +107,6 @@ const OnboardingForm = ({ user }: { user: User }) => {
 // 仪表板统计组件
 const StatsDashboard = ({ merchant }: { merchant: Merchant }) => {
   const t = useTranslations('merchantDashboard.stats');
-  const locale = useLocale();
-  const router = useRouter();
-  const [subscription, setSubscription] = useState<SubscriptionWithPlan | null>(null);
-
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      const result = await getCurrentSubscription(merchant.merchant_id);
-      if (result.success && result.data) {
-        setSubscription(result.data);
-      }
-    };
-    fetchSubscription();
-  }, [merchant.merchant_id]);
 
   return (
     <div className="w-full space-y-6 p-4 md:p-6">
@@ -138,15 +121,6 @@ const StatsDashboard = ({ merchant }: { merchant: Merchant }) => {
         <div className="alert alert-warning">
           <span>{t('trialNotice')}</span>
         </div>
-      )}
-
-      {/* 订阅状态卡片 */}
-      {subscription && (
-        <SubscriptionStatusCard
-          subscription={subscription}
-          onUpgradeClick={() => router.push(`/${locale}/merchant/subscription`)}
-          onManageClick={() => router.push(`/${locale}/merchant/subscription`)}
-        />
       )}
 
       {/* 收入汇总卡片 */}

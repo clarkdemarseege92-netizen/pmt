@@ -1,0 +1,301 @@
+// 文件: /app/[locale]/merchant/subscription/page.tsx
+"use client";
+
+import { useEffect, useState } from 'react';
+import { supabase } from '@/lib/supabaseClient';
+import { useTranslations, useLocale } from 'next-intl';
+import { useRouter } from 'next/navigation';
+import {
+  getCurrentSubscription,
+  getSubscriptionPlans,
+  subscribeToPlan,
+  cancelSubscription,
+  reactivateSubscription
+} from '@/app/actions/subscriptions';
+import {
+  SubscriptionStatusCard,
+  SubscriptionPlansGrid,
+  InvoiceList
+} from '@/components/subscription';
+import type { SubscriptionWithPlan, SubscriptionPlan } from '@/app/types/subscription';
+import { Crown, CreditCard, FileText, Settings, Loader2 } from 'lucide-react';
+
+type TabType = 'overview' | 'plans' | 'invoices';
+
+export default function SubscriptionPage() {
+  const t = useTranslations('subscriptionPage');
+  const tSub = useTranslations('subscription');
+  const locale = useLocale();
+  const router = useRouter();
+
+  const [loading, setLoading] = useState(true);
+  const [merchantId, setMerchantId] = useState<string | null>(null);
+  const [subscription, setSubscription] = useState<SubscriptionWithPlan | null>(null);
+  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+
+  // 初始化
+  useEffect(() => {
+    const init = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        router.push(`/${locale}/auth/login`);
+        return;
+      }
+
+      const { data: merchant } = await supabase
+        .from("merchants")
+        .select("merchant_id, balance")
+        .eq("owner_id", user.id)
+        .single();
+
+      if (merchant) {
+        setMerchantId(merchant.merchant_id);
+        setWalletBalance(merchant.balance || 0);
+        await fetchSubscription(merchant.merchant_id);
+      }
+      setLoading(false);
+    };
+    init();
+  }, [locale, router]);
+
+  const fetchSubscription = async (mId: string) => {
+    const result = await getCurrentSubscription(mId);
+    if (result.success) {
+      setSubscription(result.data);
+    }
+  };
+
+  const handleSubscribe = async (plan: SubscriptionPlan) => {
+    if (!merchantId) return;
+
+    // 检查余额
+    if (walletBalance < plan.price) {
+      if (confirm(t('insufficientBalance'))) {
+        router.push(`/${locale}/merchant/wallet`);
+      }
+      return;
+    }
+
+    if (!confirm(t('confirmSubscribe', { plan: plan.display_name[locale as 'en' | 'th' | 'zh'] || plan.display_name.en, price: plan.price }))) {
+      return;
+    }
+
+    setIsProcessing(true);
+    try {
+      const result = await subscribeToPlan(merchantId, plan.id);
+      if (result.success) {
+        alert(t('subscribeSuccess'));
+        await fetchSubscription(merchantId);
+        setActiveTab('overview');
+      } else {
+        alert(t('subscribeFailed') + ': ' + result.error);
+      }
+    } catch (error) {
+      alert(t('subscribeFailed'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleCancel = async () => {
+    if (!merchantId) return;
+
+    if (!confirm(t('confirmCancel'))) return;
+
+    setIsProcessing(true);
+    try {
+      const result = await cancelSubscription(merchantId);
+      if (result.success) {
+        alert(t('cancelSuccess'));
+        await fetchSubscription(merchantId);
+      } else {
+        alert(t('cancelFailed') + ': ' + result.error);
+      }
+    } catch (error) {
+      alert(t('cancelFailed'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  const handleReactivate = async () => {
+    if (!merchantId || !subscription) return;
+
+    if (walletBalance < subscription.plan.price) {
+      if (confirm(t('insufficientBalance'))) {
+        router.push(`/${locale}/merchant/wallet`);
+      }
+      return;
+    }
+
+    if (!confirm(t('confirmReactivate'))) return;
+
+    setIsProcessing(true);
+    try {
+      const result = await reactivateSubscription(merchantId, subscription.plan_id);
+      if (result.success) {
+        alert(t('reactivateSuccess'));
+        await fetchSubscription(merchantId);
+      } else {
+        alert(t('reactivateFailed') + ': ' + result.error);
+      }
+    } catch (error) {
+      alert(t('reactivateFailed'));
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center py-20">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-6xl mx-auto p-4 md:p-6">
+      {/* 页面标题 */}
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold flex items-center gap-3">
+          <Crown className="w-8 h-8 text-yellow-500" />
+          {t('title')}
+        </h1>
+        <p className="text-base-content/70 mt-1">{t('subtitle')}</p>
+      </div>
+
+      {/* 标签页 */}
+      <div className="tabs tabs-boxed mb-6 bg-base-200 p-1">
+        <button
+          className={`tab gap-2 ${activeTab === 'overview' ? 'tab-active bg-primary text-primary-content' : ''}`}
+          onClick={() => setActiveTab('overview')}
+        >
+          <Settings className="w-4 h-4" />
+          {t('tabs.overview')}
+        </button>
+        <button
+          className={`tab gap-2 ${activeTab === 'plans' ? 'tab-active bg-primary text-primary-content' : ''}`}
+          onClick={() => setActiveTab('plans')}
+        >
+          <Crown className="w-4 h-4" />
+          {t('tabs.plans')}
+        </button>
+        <button
+          className={`tab gap-2 ${activeTab === 'invoices' ? 'tab-active bg-primary text-primary-content' : ''}`}
+          onClick={() => setActiveTab('invoices')}
+        >
+          <FileText className="w-4 h-4" />
+          {t('tabs.invoices')}
+        </button>
+      </div>
+
+      {/* 标签页内容 */}
+      {activeTab === 'overview' && (
+        <div className="space-y-6">
+          {/* 当前订阅状态 */}
+          {subscription ? (
+            <SubscriptionStatusCard
+              subscription={subscription}
+              onUpgradeClick={() => setActiveTab('plans')}
+              onManageClick={() => {}}
+            />
+          ) : (
+            <div className="bg-base-100 rounded-lg border-2 border-dashed border-base-300 p-8 text-center">
+              <Crown className="w-16 h-16 text-base-300 mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-2">{t('noSubscription')}</h3>
+              <p className="text-base-content/70 mb-4">{t('noSubscriptionDesc')}</p>
+              <button
+                className="btn btn-primary"
+                onClick={() => setActiveTab('plans')}
+              >
+                {t('viewPlans')}
+              </button>
+            </div>
+          )}
+
+          {/* 钱包余额 */}
+          <div className="bg-base-100 rounded-lg border border-base-200 p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <CreditCard className="w-6 h-6 text-green-600" />
+                <div>
+                  <h3 className="font-semibold">{t('walletBalance')}</h3>
+                  <p className="text-2xl font-bold text-green-600">฿{walletBalance.toFixed(2)}</p>
+                </div>
+              </div>
+              <button
+                className="btn btn-outline btn-sm"
+                onClick={() => router.push(`/${locale}/merchant/wallet`)}
+              >
+                {t('topUp')}
+              </button>
+            </div>
+          </div>
+
+          {/* 操作按钮 */}
+          {subscription && (
+            <div className="flex gap-3">
+              {subscription.status === 'active' && !subscription.cancel_at_period_end && (
+                <button
+                  className="btn btn-outline btn-error"
+                  onClick={handleCancel}
+                  disabled={isProcessing}
+                >
+                  {isProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {t('cancelSubscription')}
+                </button>
+              )}
+
+              {(subscription.status === 'locked' || subscription.status === 'canceled') && (
+                <button
+                  className="btn btn-primary"
+                  onClick={handleReactivate}
+                  disabled={isProcessing}
+                >
+                  {isProcessing && <Loader2 className="w-4 h-4 animate-spin" />}
+                  {t('reactivateSubscription')}
+                </button>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {activeTab === 'plans' && (
+        <div className="space-y-6">
+          <div className="bg-base-100 rounded-lg border border-base-200 p-6">
+            <h2 className="text-xl font-bold mb-4">{t('choosePlan')}</h2>
+            <p className="text-base-content/70 mb-6">{t('choosePlanDesc')}</p>
+            <SubscriptionPlansGrid
+              currentPlanId={subscription?.plan_id}
+              onSelectPlan={handleSubscribe}
+              excludeTrial={true}
+            />
+          </div>
+        </div>
+      )}
+
+      {activeTab === 'invoices' && merchantId && (
+        <div className="space-y-6">
+          <div className="bg-base-100 rounded-lg border border-base-200 p-6">
+            <h2 className="text-xl font-bold mb-4">{t('invoiceHistory')}</h2>
+            <InvoiceList merchantId={merchantId} limit={20} />
+          </div>
+        </div>
+      )}
+
+      {/* 处理中遮罩 */}
+      {isProcessing && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 flex items-center gap-3">
+            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            <span>{t('processing')}</span>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
