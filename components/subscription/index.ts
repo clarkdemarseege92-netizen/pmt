@@ -8,3 +8,4 @@ export { UsageLimitIndicator } from './UsageLimitIndicator';
 export { UpgradePrompt } from './UpgradePrompt';
 export { InvoiceList } from './InvoiceList';
 export { SubscriptionStatusCard } from './SubscriptionStatusCard';
+export { NotificationsList } from './NotificationsList';

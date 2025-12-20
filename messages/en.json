@@ -1361,6 +1361,7 @@
       "modalTitle": "Feature Locked",
       "featureLocked": "{feature} is not available on your {plan} plan",
       "inlineTitle": "Upgrade to unlock this feature"
-    }
+    },
+    "noNotifications": "No notifications"
   }
 }

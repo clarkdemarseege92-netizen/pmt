@@ -20,3 +20,6 @@ export * from './check-permissions';
 
 // 账单管理
 export * from './invoices';
+
+// 通知管理
+export * from './notifications';

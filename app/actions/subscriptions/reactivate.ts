@@ -55,13 +55,30 @@ export async function reactivateSubscription(
 
     // 4. 检查余额（如果方案价格 > 0）
     if (plan.price > 0) {
-      const { data: balance } = await supabase
+      // 尝试使用RPC函数，如果不存在则回退到查询
+      let balance = 0;
+      const { data: rpcBalance, error: rpcError } = await supabase
         .rpc('get_merchant_balance', { p_merchant_id: merchantId });
 
-      if (!balance || balance < plan.price) {
+      if (rpcError) {
+        // RPC函数不存在，从交易记录获取余额
+        const { data: lastTx } = await supabase
+          .from('merchant_transactions')
+          .select('balance_after')
+          .eq('merchant_id', merchantId)
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+        balance = lastTx?.balance_after || 0;
+      } else {
+        balance = rpcBalance || 0;
+      }
+
+      if (balance < plan.price) {
         return {
           success: false,
-          error: `Insufficient balance. Required: ฿${plan.price}, Available: ฿${balance || 0}`
+          error: `Insufficient balance. Required: ฿${plan.price}, Available: ฿${balance}`
         };
       }
     }

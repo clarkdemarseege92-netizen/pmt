@@ -1361,6 +1361,7 @@
       "modalTitle": "ฟีเจอร์ถูกล็อค",
       "featureLocked": "{feature} ไม่พร้อมใช้งานในแผน {plan} ของคุณ",
       "inlineTitle": "อัพเกรดเพื่อปลดล็อคฟีเจอร์นี้"
-    }
+    },
+    "noNotifications": "ไม่มีการแจ้งเตือน"
   }
 }

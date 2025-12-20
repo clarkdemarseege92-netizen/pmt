@@ -1361,6 +1361,7 @@
       "modalTitle": "功能已锁定",
       "featureLocked": "{feature} 在您的 {plan} 方案中不可用",
       "inlineTitle": "升级以解锁此功能"
-    }
+    },
+    "noNotifications": "暂无通知"
   }
 }

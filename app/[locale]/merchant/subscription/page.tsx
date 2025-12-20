@@ -46,13 +46,24 @@ export default function SubscriptionPage() {
 
       const { data: merchant } = await supabase
         .from("merchants")
-        .select("merchant_id, balance")
+        .select("merchant_id")
         .eq("owner_id", user.id)
         .single();
 
       if (merchant) {
         setMerchantId(merchant.merchant_id);
-        setWalletBalance(merchant.balance || 0);
+
+        // 从交易记录获取钱包余额
+        const { data: lastTransaction } = await supabase
+          .from('merchant_transactions')
+          .select('balance_after')
+          .eq('merchant_id', merchant.merchant_id)
+          .eq('status', 'completed')
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .single();
+
+        setWalletBalance(lastTransaction?.balance_after || 0);
         await fetchSubscription(merchant.merchant_id);
       }
       setLoading(false);

@@ -147,11 +147,26 @@ export async function paySubscriptionInvoice(
       };
     }
 
-    // 3. 检查钱包余额
-    const { data: balance } = await supabase
+    // 3. 检查钱包余额（尝试RPC，失败则回退到查询）
+    let balance = 0;
+    const { data: rpcBalance, error: rpcError } = await supabase
       .rpc('get_merchant_balance', { p_merchant_id: invoice.merchant_id });
 
-    if (!balance || balance < invoice.amount) {
+    if (rpcError) {
+      const { data: lastTx } = await supabase
+        .from('merchant_transactions')
+        .select('balance_after')
+        .eq('merchant_id', invoice.merchant_id)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      balance = lastTx?.balance_after || 0;
+    } else {
+      balance = rpcBalance || 0;
+    }
+
+    if (balance < invoice.amount) {
       // 更新账单为失败状态
       await supabase
         .from('subscription_invoices')
