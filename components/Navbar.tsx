@@ -169,7 +169,7 @@ export default function Navbar() {
       {/* 左侧：Logo */}
       <div className="flex-1">
         <Link href="/" className="btn btn-ghost text-xl font-bold text-primary">
-          PMT
+          KUMMAK
         </Link>
       </div>
 

@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "PMT - Coupon Platform",
+  title: "KUMMAK - Coupon Platform",
   description: "Your trusted coupon platform",
 };
 

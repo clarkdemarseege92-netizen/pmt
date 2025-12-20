@@ -180,11 +180,11 @@ export default function ShopShareSection({ merchantId }: ShopShareSectionProps) 
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // PMT 标题
+    // KUMMAK 标题
     ctx.fillStyle = '#ffffff';
     ctx.font = 'bold 48px sans-serif';
     ctx.textAlign = 'center';
-    ctx.fillText('PMT', canvas.width / 2, 70);
+    ctx.fillText('KUMMAK', canvas.width / 2, 70);
 
     // 副标题
     ctx.font = '28px sans-serif';
@@ -250,7 +250,7 @@ export default function ShopShareSection({ merchantId }: ShopShareSectionProps) 
         const downloadUrl = URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = downloadUrl;
-        link.download = `pmt-shop-${slug || 'qrcode'}.png`;
+        link.download = `kummak-shop-${slug || 'qrcode'}.png`;
         link.click();
         URL.revokeObjectURL(downloadUrl);
       });

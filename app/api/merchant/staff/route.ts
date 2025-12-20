@@ -64,7 +64,7 @@ export async function POST(request: Request) {
       .single();
 
     if (userError || !targetUser) {
-      return NextResponse.json({ success: false, message: '未找到该手机号注册的用户，请确认对方已注册 PMT。' }, { status: 404 });
+      return NextResponse.json({ success: false, message: '未找到该手机号注册的用户，请确认对方已注册 KUMMAK。' }, { status: 404 });
     }
 
     if (targetUser.id === user.id) {

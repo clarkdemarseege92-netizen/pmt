@@ -21,7 +21,7 @@
     "categories": "Categories",
     "browseByCategory": "Browse by Category",
     "hero": {
-      "title": "PMT Coupon Platform",
+      "title": "KUMMAK Coupon Platform",
       "subtitle": "Discover the best deals around you",
       "searchPlaceholder": "Search for merchants or coupons..."
     },
@@ -64,7 +64,7 @@
     "sort": "Sort"
   },
   "login": {
-    "title": "Welcome to PMT",
+    "title": "Welcome to KUMMAK",
     "googleLogin": "Sign in with Google",
     "orUseEmail": "Or use email",
     "email": "Email",
@@ -314,7 +314,7 @@
       "title": "Welcome to Your Dashboard!",
       "subtitle": "Just one more step. Create your store profile to start creating coupons.",
       "shopName": "Store Name*",
-      "shopNamePlaceholder": "e.g., PMT Restaurant Co., Ltd.",
+      "shopNamePlaceholder": "e.g., KUMMAK Restaurant Co., Ltd.",
       "address": "Store Address*",
       "addressPlaceholder": "Please enter your main business address",
       "phone": "Store Contact Phone*",
@@ -366,7 +366,7 @@
     "bonusDescription": "Welcome! New merchant trial credit",
     "form": {
       "shopName": "Store Name *",
-      "shopNamePlaceholder": "e.g., PMT Cafe",
+      "shopNamePlaceholder": "e.g., KUMMAK Cafe",
       "phone": "Contact Phone *",
       "phonePlaceholder": "For customers to contact you",
       "address": "Detailed Address *",
@@ -609,7 +609,7 @@
       "uploadLogoDesc": "Upload shop logo, will be displayed on shop page",
       "removeLogo": "Remove Logo",
       "name": "Shop Name",
-      "namePlaceholder": "e.g.: PMT SHOP",
+      "namePlaceholder": "e.g.: KUMMAK SHOP",
       "address": "Shop Address (Text)",
       "addressPlaceholder": "e.g.: 30 Sukhumvit Soi 12, Bangkok...",
       "description": "Shop Description",
@@ -1211,8 +1211,8 @@
   },
   "footer": {
     "about": {
-      "title": "About PMT",
-      "description": "PMT is your trusted coupon platform, connecting merchants and customers with the best deals in town.",
+      "title": "About KUMMAK",
+      "description": "KUMMAK is your trusted coupon platform, connecting merchants and customers with the best deals in town.",
       "tagline": "Discover savings, support local businesses"
     },
     "quickLinks": {
@@ -1241,7 +1241,7 @@
       "instagram": "Instagram",
       "twitter": "Twitter"
     },
-    "copyright": "© {year} PMT Coupon Platform. All rights reserved.",
+    "copyright": "© {year} KUMMAK Coupon Platform. All rights reserved.",
     "madeWith": "Made with ❤️ in Thailand"
   }
 }

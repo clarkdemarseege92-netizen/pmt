@@ -21,7 +21,7 @@
     "categories": "分类",
     "browseByCategory": "按分类浏览",
     "hero": {
-      "title": "PMT 优惠平台",
+      "title": "KUMMAK 优惠平台",
       "subtitle": "发现您身边的最佳优惠",
       "searchPlaceholder": "搜索商家或优惠券..."
     },
@@ -64,7 +64,7 @@
     "sort": "排序"
   },
   "login": {
-    "title": "欢迎来到 PMT",
+    "title": "欢迎来到 KUMMAK",
     "googleLogin": "使用 Google 登录",
     "orUseEmail": "或使用邮箱",
     "email": "邮箱",
@@ -314,7 +314,7 @@
       "title": "欢迎来到您的控制台！",
       "subtitle": "只差最后一步。请创建您的店铺资料，即可开始创建优惠券。",
       "shopName": "店铺名称*",
-      "shopNamePlaceholder": "例如：PMT 餐饮有限公司",
+      "shopNamePlaceholder": "例如：KUMMAK 餐饮有限公司",
       "address": "店铺地址*",
       "addressPlaceholder": "请输入您的主要营业地址",
       "phone": "店铺联系电话*",
@@ -366,7 +366,7 @@
     "bonusDescription": "欢迎加入！新商户体验金",
     "form": {
       "shopName": "店铺名称 *",
-      "shopNamePlaceholder": "例如：PMT 咖啡馆",
+      "shopNamePlaceholder": "例如：KUMMAK 咖啡馆",
       "phone": "联系电话 *",
       "phonePlaceholder": "用于客户联系您",
       "address": "详细地址 *",
@@ -609,7 +609,7 @@
       "uploadLogoDesc": "上传店铺 Logo，将在店铺页面显示",
       "removeLogo": "移除 Logo",
       "name": "店铺名称",
-      "namePlaceholder": "例如: PMT SHOP",
+      "namePlaceholder": "例如: KUMMAK SHOP",
       "address": "店铺地址 (文字)",
       "addressPlaceholder": "例如: 曼谷素坤逸路 12 巷 30 号...",
       "description": "店铺描述",
@@ -1212,7 +1212,7 @@
   "footer": {
     "about": {
       "title": "关于我们",
-      "description": "PMT是您值得信赖的优惠券平台，连接商家与顾客，提供最优质的本地优惠。",
+      "description": "KUMMAK是您值得信赖的优惠券平台，连接商家与顾客，提供最优质的本地优惠。",
       "tagline": "发现优惠，支持本地商家"
     },
     "quickLinks": {
@@ -1241,7 +1241,7 @@
       "instagram": "Instagram",
       "twitter": "Twitter"
     },
-    "copyright": "© {year} PMT 优惠平台。保留所有权利。",
+    "copyright": "© {year} KUMMAK 优惠平台。保留所有权利。",
     "madeWith": "用❤️在泰国制作"
   }
 }

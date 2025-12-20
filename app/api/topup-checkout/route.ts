@@ -47,7 +47,7 @@ export async function POST(request: Request) {
           price_data: {
             currency: "thb",
             product_data: {
-              name: "PMT 平台服务充值",
+              name: "KUMMAK 平台服务充值",
               description: `充值金额: ฿${parsedAmount}`,
             },
             unit_amount: parsedAmount * 100, // Stripe 单位是分
