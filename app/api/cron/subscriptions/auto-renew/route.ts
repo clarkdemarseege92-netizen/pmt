@@ -76,8 +76,8 @@ export async function GET(request: NextRequest) {
     }
 
     for (const sub of expiringSubscriptions) {
-      const plan = sub.subscription_plans;
-      const merchant = sub.merchants;
+      const plan = sub.subscription_plans as unknown as { id: string; name: string; price: number } | null;
+      const merchant = sub.merchants as unknown as { merchant_id: string; shop_name: string; owner_id: string; balance: number } | null;
       const planPrice = plan?.price || 0;
       const merchantBalance = merchant?.balance || 0;
 

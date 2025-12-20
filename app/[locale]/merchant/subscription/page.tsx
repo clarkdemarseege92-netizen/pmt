@@ -62,7 +62,7 @@ export default function SubscriptionPage() {
 
   const fetchSubscription = async (mId: string) => {
     const result = await getCurrentSubscription(mId);
-    if (result.success) {
+    if (result.success && result.data) {
       setSubscription(result.data);
     }
   };

@@ -23,10 +23,9 @@ import {
   HiUserGroup,
   HiCalculator,
   HiBoltSlash,
-  HiTag,
-  HiCrown,
-  HiClock
+  HiTag
 } from "react-icons/hi2";
+import { Crown, Clock } from "lucide-react";
 
 export default function MerchantSidebar() {
   const t = useTranslations('merchantNav');
@@ -115,9 +114,9 @@ export default function MerchantSidebar() {
             title={!isExpanded ? tSub(`subscriptionStatus.${subscription.status}`) : ''}
           >
             {subscription.status === 'trial' ? (
-              <HiClock className="w-5 h-5 shrink-0" />
+              <Clock className="w-5 h-5 shrink-0" />
             ) : (
-              <HiCrown className="w-5 h-5 shrink-0" />
+              <Crown className="w-5 h-5 shrink-0" />
             )}
             {isExpanded && (
               <div className="flex-1 min-w-0">
