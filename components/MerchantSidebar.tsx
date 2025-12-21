@@ -34,7 +34,6 @@ export default function MerchantSidebar() {
   const [isExpanded, setIsExpanded] = useState(true);
   const pathname = usePathname();
   const [subscription, setSubscription] = useState<SubscriptionWithPlan | null>(null);
-  const [merchantId, setMerchantId] = useState<string | null>(null);
 
   const toggleSidebar = () => setIsExpanded(!isExpanded);
 
@@ -51,7 +50,6 @@ export default function MerchantSidebar() {
         .single();
 
       if (merchant) {
-        setMerchantId(merchant.merchant_id);
         const result = await getCurrentSubscription(merchant.merchant_id);
         if (result.success && result.data) {
           setSubscription(result.data);
@@ -75,6 +73,7 @@ export default function MerchantSidebar() {
     { name: t('wallet'), href: "/merchant/wallet", icon: <HiWallet className="w-6 h-6" /> },
     { name: t('staff'), href: "/merchant/staff", icon: <HiUserGroup className="w-6 h-6" /> },
     { name: t('redeem'), href: "/merchant/redeem", icon: <HiQrCode className="w-6 h-6" /> },
+    { name: t('subscription'), href: "/merchant/subscription", icon: <Crown className="w-6 h-6" /> },
     { name: t('settings'), href: "/merchant/settings", icon: <HiCog6Tooth className="w-6 h-6" /> },
   ];
 
