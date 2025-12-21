@@ -409,13 +409,18 @@
       "packagePrice": "Package Price",
       "cancel": "Cancel",
       "save": "Save Coupon",
-      "saving": "Saving..."
+      "saving": "Saving...",
+      "maxStock": "Max issuable",
+      "walletBalance": "Wallet Balance",
+      "certificationFee": "Certification Fee",
+      "insufficientBalanceWarning": "Insufficient balance. Please reduce quantity or top up."
     },
     "errors": {
       "uploadFailed": "Image upload failed",
       "selectProduct": "Please select at least one product for the package",
       "saveFailed": "Save failed",
-      "unknownError": "Unknown error"
+      "unknownError": "Unknown error",
+      "insufficientBalance": "Insufficient balance! Issuing {required} coupons requires ฿{required}. Your balance is ฿{balance}. Certification fee is ฿{fee} per coupon. You can issue up to {maxStock} coupons."
     },
     "limitReached": {
       "confirmUpgrade": "You have reached your coupon type limit. Would you like to upgrade your plan?"

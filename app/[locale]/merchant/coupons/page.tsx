@@ -72,6 +72,12 @@ export default function CouponsPage() {
   // 订阅限制状态
   const [couponLimit, setCouponLimit] = useState({ current_count: 0, limit_count: 0, can_create: true });
 
+  // 钱包余额
+  const [walletBalance, setWalletBalance] = useState<number>(0);
+
+  // 每张优惠券认证费用（泰铢）
+  const COUPON_CERTIFICATION_FEE = 3;
+
   // 模态框与表单
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -111,7 +117,8 @@ export default function CouponsPage() {
         await Promise.all([
           fetchCoupons(merchant.merchant_id),
           fetchProducts(merchant.merchant_id),
-          fetchCouponLimit(merchant.merchant_id)
+          fetchCouponLimit(merchant.merchant_id),
+          fetchWalletBalance(merchant.merchant_id)
         ]);
       }
       setLoading(false);
@@ -148,6 +155,30 @@ export default function CouponsPage() {
     } catch (error) {
       console.error('Error fetching coupon limit:', error);
     }
+  };
+
+  // 5. 获取钱包余额
+  const fetchWalletBalance = async (mId: string) => {
+    const { data: lastTransaction } = await supabase
+      .from('merchant_transactions')
+      .select('balance_after')
+      .eq('merchant_id', mId)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    setWalletBalance(lastTransaction?.balance_after || 0);
+  };
+
+  // 计算认证费用
+  const calculateCertificationFee = (stockQuantity: number) => {
+    return stockQuantity * COUPON_CERTIFICATION_FEE;
+  };
+
+  // 计算最大可发行数量
+  const getMaxStock = () => {
+    return Math.floor(walletBalance / COUPON_CERTIFICATION_FEE);
   };
 
   // --- 逻辑：打开模态框 (新增/编辑) ---
@@ -261,6 +292,21 @@ export default function CouponsPage() {
     if (!merchantId) return;
     if (selection.size === 0) {
       alert(t('errors.selectProduct'));
+      return;
+    }
+
+    // 验证库存数量与余额
+    const stockQuantity = parseInt(formData.stock) || 0;
+    const requiredFee = calculateCertificationFee(stockQuantity);
+
+    if (requiredFee > walletBalance) {
+      const maxStock = getMaxStock();
+      alert(t('errors.insufficientBalance', {
+        required: requiredFee,
+        balance: walletBalance,
+        maxStock: maxStock,
+        fee: COUPON_CERTIFICATION_FEE
+      }));
       return;
     }
 
@@ -433,9 +479,45 @@ export default function CouponsPage() {
                         value={formData.sellingPrice} onChange={e => setFormData({...formData, sellingPrice: e.target.value})} />
                     </div>
                     <div className="form-control">
-                      <label className="label"><span className="label-text">{t('modal.stock')}</span></label>
-                      <input type="number" className="input input-bordered"
-                        value={formData.stock} onChange={e => setFormData({...formData, stock: e.target.value})} />
+                      <label className="label">
+                        <span className="label-text">{t('modal.stock')}</span>
+                        <span className="label-text-alt text-xs">
+                          {t('modal.maxStock')}: {getMaxStock()}
+                        </span>
+                      </label>
+                      <input
+                        type="number"
+                        className={`input input-bordered ${
+                          calculateCertificationFee(parseInt(formData.stock) || 0) > walletBalance
+                            ? 'input-error'
+                            : ''
+                        }`}
+                        value={formData.stock}
+                        onChange={e => setFormData({...formData, stock: e.target.value})}
+                      />
+                    </div>
+                  </div>
+
+                  {/* 认证费用提示 */}
+                  <div className={`alert ${
+                    calculateCertificationFee(parseInt(formData.stock) || 0) > walletBalance
+                      ? 'alert-error'
+                      : 'alert-info'
+                  } py-2`}>
+                    <div className="text-sm">
+                      <div className="flex justify-between">
+                        <span>{t('modal.walletBalance')}:</span>
+                        <span className="font-semibold">฿{walletBalance.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{t('modal.certificationFee')} ({parseInt(formData.stock) || 0} x ฿{COUPON_CERTIFICATION_FEE}):</span>
+                        <span className="font-semibold">฿{calculateCertificationFee(parseInt(formData.stock) || 0)}</span>
+                      </div>
+                      {calculateCertificationFee(parseInt(formData.stock) || 0) > walletBalance && (
+                        <div className="text-error font-semibold mt-1">
+                          {t('modal.insufficientBalanceWarning')}
+                        </div>
+                      )}
                     </div>
                   </div>
 

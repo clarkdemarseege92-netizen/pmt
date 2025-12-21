@@ -409,13 +409,18 @@
       "packagePrice": "套餐售价",
       "cancel": "取消",
       "save": "保存优惠券",
-      "saving": "保存中..."
+      "saving": "保存中...",
+      "maxStock": "最大可发行",
+      "walletBalance": "钱包余额",
+      "certificationFee": "认证费用",
+      "insufficientBalanceWarning": "余额不足，请减少发行数量或充值"
     },
     "errors": {
       "uploadFailed": "图片上传失败",
       "selectProduct": "请至少选择一个商品作为套餐内容",
       "saveFailed": "保存失败",
-      "unknownError": "未知错误"
+      "unknownError": "未知错误",
+      "insufficientBalance": "余额不足！发行 {required} 张优惠券需要 ฿{required}，您当前余额为 ฿{balance}。每张优惠券认证费 ฿{fee}，您最多可发行 {maxStock} 张。"
     },
     "limitReached": {
       "confirmUpgrade": "您已达到优惠券种类上限。是否要升级您的方案？"
