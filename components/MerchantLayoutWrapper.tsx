@@ -19,6 +19,7 @@ import {
   HiCalculator,
   HiPlus
 } from "react-icons/hi2";
+import { Crown } from "lucide-react";
 
 export default function MerchantLayoutWrapper({
   children,
@@ -61,7 +62,9 @@ export default function MerchantLayoutWrapper({
     '/merchant/settings',
     '/merchant/design',
     '/merchant/wallet',
+    '/merchant/subscription',
     '/merchant/accounting'
+
   ].includes(pathname);
 
   // --- 商家已入驻：显示完整布局 ---
@@ -137,6 +140,7 @@ export default function MerchantLayoutWrapper({
               <li><Link href="/merchant/accounting" onClick={closeDropdown}><HiCalculator className="w-4 h-4"/> {t('accounting')}</Link></li>
               <li><Link href="/merchant/design" onClick={closeDropdown}><HiPaintBrush className="w-4 h-4"/> {t('design')}</Link></li>
               <li><Link href="/merchant/wallet" onClick={closeDropdown}><HiWallet className="w-4 h-4"/> {t('wallet')}</Link></li>
+              <li><Link href="/merchant/subscription" onClick={closeDropdown}><Crown className="w-4 h-4"/> {t('subscription')}</Link></li>
               <li><Link href="/merchant/settings" onClick={closeDropdown}><HiCog6Tooth className="w-4 h-4"/> {t('accountSettings')}</Link></li>
             </ul>
           </div>
