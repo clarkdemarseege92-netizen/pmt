@@ -156,7 +156,7 @@ export default function ProductGrid({ products, categories, config, themeColor }
             <p>{t('noProducts')}</p>
           </div>
         ) : (
-          <div className={`grid gap-3 md:gap-4 lg:gap-6 grid-cols-2 md:${displayGridCols} lg:grid-cols-3 xl:grid-cols-4`}>
+          <div className={`grid gap-3 md:gap-4 lg:gap-6 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5`}>
             {filteredProducts.map(product => (
               <ProductCard
                 key={product.product_id}

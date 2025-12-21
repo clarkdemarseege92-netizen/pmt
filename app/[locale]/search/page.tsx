@@ -190,7 +190,8 @@ export default async function SearchPage({
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* 手机2列、小平板3列、平板4列、桌面5列 */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
           {coupons && coupons.length > 0 ? (
             coupons.map((coupon: Coupon) => (
               <div key={coupon.coupon_id} className="card bg-base-100 shadow-xl transition-transform hover:scale-105">

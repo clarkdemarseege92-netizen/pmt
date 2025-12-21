@@ -53,9 +53,13 @@ export function SubscriptionPlanCard({
 
       {/* Price */}
       <div className="mb-4">
-        <span className="text-3xl font-bold text-gray-900">฿{plan.price}</span>
-        {plan.price > 0 && (
-          <span className="text-gray-500 ml-2">/{t('month')}</span>
+        {plan.price > 0 ? (
+          <>
+            <span className="text-3xl font-bold text-gray-900">฿{plan.price}</span>
+            <span className="text-gray-500 ml-2">/{t('month')}</span>
+          </>
+        ) : (
+          <span className="text-3xl font-bold text-green-600">{t('free')}</span>
         )}
       </div>
 

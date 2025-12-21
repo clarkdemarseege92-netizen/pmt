@@ -95,15 +95,22 @@ export default function SubscriptionPage() {
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!merchantId) return;
 
-    // 检查余额
-    if (walletBalance < plan.price) {
+    const planName = plan.display_name[locale as 'en' | 'th' | 'zh'] || plan.display_name.en;
+
+    // 检查余额（仅对付费方案）
+    if (plan.price > 0 && walletBalance < plan.price) {
       if (confirm(t('insufficientBalance'))) {
         router.push(`/${locale}/merchant/wallet`);
       }
       return;
     }
 
-    if (!confirm(t('confirmSubscribe', { plan: plan.display_name[locale as 'en' | 'th' | 'zh'] || plan.display_name.en, price: plan.price }))) {
+    // 确认订阅：免费方案和付费方案使用不同的提示
+    const confirmMessage = plan.price > 0
+      ? t('confirmSubscribe', { plan: planName, price: plan.price })
+      : t('confirmSubscribeFree', { plan: planName });
+
+    if (!confirm(confirmMessage)) {
       return;
     }
 

@@ -127,8 +127,8 @@ export default async function Home({
       {/* Sprint 2 - Coupons Grid (优惠券卡片网格)  */}
       <div className="w-full max-w-6xl p-4">
         <h2 className="text-2xl font-bold mb-4">{t('featuredDeals')}</h2>
-        {/* 手机2列、平板3列、桌面4列 */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        {/* 手机2列、小平板3列、平板4列、桌面5列 */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
 
           {coupons && coupons.map((coupon: Coupon) => (
             <div key={coupon.coupon_id} className="card bg-base-100 shadow-xl transition-transform hover:scale-105">
