@@ -46,7 +46,12 @@ export function TopCouponsChart({ merchantId, limit = 5 }: TopCouponsChartProps)
           .eq('coupons.merchant_id', merchantId)
           .not('coupons', 'is', null);
 
-        if (error) throw error;
+        if (error) {
+          // 静默处理 - 可能是表不存在或无数据
+          console.debug('TopCouponsChart: No coupon sales data available');
+          setLoading(false);
+          return;
+        }
 
         // 按优惠券分组统计
         const salesByCoupon: Record<string, { name: any; sales: number; quantity: number }> = {};
@@ -78,8 +83,9 @@ export function TopCouponsChart({ merchantId, limit = 5 }: TopCouponsChartProps)
           .slice(0, limit);
 
         setData(sortedData);
-      } catch (error) {
-        console.error('获取热门优惠券数据失败:', error);
+      } catch {
+        // 静默处理查询错误
+        console.debug('TopCouponsChart: Failed to fetch coupon data');
       } finally {
         setLoading(false);
       }

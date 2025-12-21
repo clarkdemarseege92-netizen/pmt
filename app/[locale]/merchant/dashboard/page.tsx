@@ -144,8 +144,7 @@ const StatsDashboard = ({ merchant }: { merchant: Merchant }) => {
       {subscription && (
         <SubscriptionStatusCard
           subscription={subscription}
-          onUpgradeClick={() => router.push(`/${locale}/merchant/subscription`)}
-          onManageClick={() => router.push(`/${locale}/merchant/subscription`)}
+          onUpgradeClick={() => router.push(`/${locale}/merchant/subscription?tab=plans`)}
         />
       )}
 

@@ -9,13 +9,11 @@ import { TrialCountdown } from './TrialCountdown';
 interface SubscriptionStatusCardProps {
   subscription: SubscriptionWithPlan;
   onUpgradeClick?: () => void;
-  onManageClick?: () => void;
 }
 
 export function SubscriptionStatusCard({
   subscription,
-  onUpgradeClick,
-  onManageClick
+  onUpgradeClick
 }: SubscriptionStatusCardProps) {
   const t = useTranslations('subscription');
   const locale = useLocale() as 'en' | 'th' | 'zh';
@@ -158,14 +156,6 @@ export function SubscriptionStatusCard({
           >
             <Crown className="w-4 h-4" />
             {subscription.status === 'trial' ? t('upgradeNow') : t('changePlan')}
-          </button>
-        )}
-        {onManageClick && (
-          <button
-            onClick={onManageClick}
-            className="flex-1 bg-white text-gray-700 py-2 px-4 rounded-lg font-semibold hover:bg-gray-100 transition-colors border border-gray-300"
-          >
-            {t('manageSubscription')}
           </button>
         )}
       </div>

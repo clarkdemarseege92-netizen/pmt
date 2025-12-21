@@ -41,7 +41,12 @@ export function SalesTrendChart({ merchantId, days = 7 }: SalesTrendChartProps) 
           .lte('created_at', endDate.toISOString())
           .in('status', ['completed', 'pending']); // 只统计已完成和待处理的订单
 
-        if (error) throw error;
+        if (error) {
+          // 静默处理 - 可能是表不存在或无数据
+          console.debug('SalesTrendChart: No sales data available');
+          setLoading(false);
+          return;
+        }
 
         // 按日期分组统计
         const salesByDate: Record<string, { sales: number; orders: number }> = {};
@@ -71,8 +76,9 @@ export function SalesTrendChart({ merchantId, days = 7 }: SalesTrendChartProps) 
         }));
 
         setData(chartData);
-      } catch (error) {
-        console.error('获取销售数据失败:', error);
+      } catch {
+        // 静默处理查询错误
+        console.debug('SalesTrendChart: Failed to fetch sales data');
       } finally {
         setLoading(false);
       }

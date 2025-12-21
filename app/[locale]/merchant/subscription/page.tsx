@@ -4,7 +4,7 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabaseClient';
 import { useTranslations, useLocale } from 'next-intl';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   getCurrentSubscription,
   subscribeToPlan,
@@ -25,11 +25,16 @@ export default function SubscriptionPage() {
   const t = useTranslations('subscriptionPage');
   const locale = useLocale();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
   const [merchantId, setMerchantId] = useState<string | null>(null);
   const [subscription, setSubscription] = useState<SubscriptionWithPlan | null>(null);
-  const [activeTab, setActiveTab] = useState<TabType>('overview');
+  const [activeTab, setActiveTab] = useState<TabType>(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'plans' || tab === 'invoices') return tab;
+    return 'overview';
+  });
   const [isProcessing, setIsProcessing] = useState(false);
   const [walletBalance, setWalletBalance] = useState<number>(0);
 
@@ -242,7 +247,6 @@ export default function SubscriptionPage() {
             <SubscriptionStatusCard
               subscription={subscription}
               onUpgradeClick={() => setActiveTab('plans')}
-              onManageClick={() => {}}
             />
           ) : (
             <div className="bg-base-100 rounded-lg border-2 border-dashed border-base-300 p-8 text-center">
