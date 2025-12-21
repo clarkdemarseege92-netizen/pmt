@@ -41,9 +41,9 @@ export async function subscribeToPlan(
       .single();
 
     // 3. 如果使用钱包支付，检查余额
+    let currentBalance = 0;
     if (paymentMethod === 'wallet' && plan.price > 0) {
       // 尝试使用RPC函数，如果不存在则回退到查询
-      let balance = 0;
       const { data: rpcBalance, error: rpcError } = await supabase
         .rpc('get_merchant_balance', { p_merchant_id: merchantId });
 
@@ -57,15 +57,15 @@ export async function subscribeToPlan(
           .order('created_at', { ascending: false })
           .limit(1)
           .single();
-        balance = lastTx?.balance_after || 0;
+        currentBalance = lastTx?.balance_after || 0;
       } else {
-        balance = rpcBalance || 0;
+        currentBalance = rpcBalance || 0;
       }
 
-      if (balance < plan.price) {
+      if (currentBalance < plan.price) {
         return {
           success: false,
-          error: `Insufficient balance. Required: ฿${plan.price}, Available: ฿${balance}`
+          error: `Insufficient balance. Required: ฿${plan.price}, Available: ฿${currentBalance}`
         };
       }
     }
@@ -155,11 +155,13 @@ export async function subscribeToPlan(
 
       // 从钱包扣款
       if (paymentMethod === 'wallet' && invoice) {
+        const newBalance = currentBalance - plan.price;
         const { data: transaction, error: txError } = await supabase
           .from('merchant_transactions')
           .insert({
             merchant_id: merchantId,
             amount: plan.price,
+            balance_after: newBalance,
             type: 'withdrawal',
             status: 'completed',
             description: `Subscription payment: ${plan.display_name.zh || plan.name}`
