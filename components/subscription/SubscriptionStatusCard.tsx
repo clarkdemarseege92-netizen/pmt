@@ -139,13 +139,13 @@ export function SubscriptionStatusCard({
           <div className="text-2xl font-bold text-gray-900">
             {subscription.plan.product_limit}
           </div>
-          <div className="text-xs text-gray-600">{t('productLimit')}</div>
+          <div className="text-xs text-gray-600">{t('productLimitLabel')}</div>
         </div>
         <div className="bg-white bg-opacity-50 rounded-lg p-3">
           <div className="text-2xl font-bold text-gray-900">
             {subscription.plan.coupon_type_limit}
           </div>
-          <div className="text-xs text-gray-600">{t('couponTypeLimit')}</div>
+          <div className="text-xs text-gray-600">{t('couponTypeLimitLabel')}</div>
         </div>
       </div>
 

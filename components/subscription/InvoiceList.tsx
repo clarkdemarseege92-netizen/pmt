@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { getSubscriptionInvoices } from '@/app/actions/subscriptions';
 import type { SubscriptionInvoice } from '@/app/types/subscription';
-import { FileText, Download, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
+import { FileText, AlertCircle, CheckCircle2, Clock, Loader2 } from 'lucide-react';
 
 interface InvoiceListProps {
   merchantId: string;
@@ -161,7 +161,7 @@ export function InvoiceList({ merchantId, limit = 10 }: InvoiceListProps) {
             </div>
           </div>
 
-          {/* Action buttons */}
+          {/* Action buttons - TODO: 下载收据功能待实现
           {invoice.status === 'paid' && (
             <div className="mt-3 pt-3 border-t flex gap-2">
               <button className="text-sm text-blue-600 hover:text-blue-700 font-medium flex items-center gap-1">
@@ -170,6 +170,7 @@ export function InvoiceList({ merchantId, limit = 10 }: InvoiceListProps) {
               </button>
             </div>
           )}
+          */}
         </div>
       ))}
     </div>
