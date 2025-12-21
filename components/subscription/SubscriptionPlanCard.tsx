@@ -94,7 +94,10 @@ export function SubscriptionPlanCard({
       {/* Action Button */}
       {onSelect && !currentPlan && (
         <button
-          onClick={onSelect}
+          onClick={(e) => {
+            e.stopPropagation(); // 阻止事件冒泡，防止触发卡片的onClick
+            onSelect();
+          }}
           disabled={disabled}
           className={`
             mt-6 w-full py-2 px-4 rounded-lg font-semibold transition-colors

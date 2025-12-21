@@ -78,6 +78,20 @@ export default function SubscriptionPage() {
     }
   };
 
+  // 刷新钱包余额
+  const refreshWalletBalance = async (mId: string) => {
+    const { data: lastTransaction } = await supabase
+      .from('merchant_transactions')
+      .select('balance_after')
+      .eq('merchant_id', mId)
+      .eq('status', 'completed')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    setWalletBalance(lastTransaction?.balance_after || 0);
+  };
+
   const handleSubscribe = async (plan: SubscriptionPlan) => {
     if (!merchantId) return;
 
@@ -98,7 +112,10 @@ export default function SubscriptionPage() {
       const result = await subscribeToPlan(merchantId, plan.id);
       if (result.success) {
         alert(t('subscribeSuccess'));
-        await fetchSubscription(merchantId);
+        await Promise.all([
+          fetchSubscription(merchantId),
+          refreshWalletBalance(merchantId)
+        ]);
         setActiveTab('overview');
       } else {
         alert(t('subscribeFailed') + ': ' + result.error);
@@ -148,7 +165,10 @@ export default function SubscriptionPage() {
       const result = await reactivateSubscription(merchantId, subscription.plan_id);
       if (result.success) {
         alert(t('reactivateSuccess'));
-        await fetchSubscription(merchantId);
+        await Promise.all([
+          fetchSubscription(merchantId),
+          refreshWalletBalance(merchantId)
+        ]);
       } else {
         alert(t('reactivateFailed') + ': ' + result.error);
       }
