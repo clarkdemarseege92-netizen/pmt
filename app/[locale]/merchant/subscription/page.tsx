@@ -7,7 +7,6 @@ import { useTranslations, useLocale } from 'next-intl';
 import { useRouter } from 'next/navigation';
 import {
   getCurrentSubscription,
-  getSubscriptionPlans,
   subscribeToPlan,
   cancelSubscription,
   reactivateSubscription
@@ -24,7 +23,6 @@ type TabType = 'overview' | 'plans' | 'invoices';
 
 export default function SubscriptionPage() {
   const t = useTranslations('subscriptionPage');
-  const tSub = useTranslations('subscription');
   const locale = useLocale();
   const router = useRouter();
 
@@ -129,7 +127,7 @@ export default function SubscriptionPage() {
       } else {
         alert(t('subscribeFailed') + ': ' + result.error);
       }
-    } catch (error) {
+    } catch {
       alert(t('subscribeFailed'));
     } finally {
       setIsProcessing(false);
@@ -152,7 +150,7 @@ export default function SubscriptionPage() {
       } else {
         alert(t('cancelFailed') + ': ' + result.error);
       }
-    } catch (error) {
+    } catch {
       alert(t('cancelFailed'));
     } finally {
       setIsProcessing(false);
@@ -185,7 +183,7 @@ export default function SubscriptionPage() {
       } else {
         alert(t('reactivateFailed') + ': ' + result.error);
       }
-    } catch (error) {
+    } catch {
       alert(t('reactivateFailed'));
     } finally {
       setIsProcessing(false);

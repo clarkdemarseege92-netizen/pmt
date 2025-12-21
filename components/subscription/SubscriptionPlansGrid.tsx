@@ -72,15 +72,16 @@ export function SubscriptionPlansGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+    <div className="flex flex-wrap justify-center gap-6">
       {plans.map((plan) => (
-        <SubscriptionPlanCard
-          key={plan.id}
-          plan={plan}
-          currentPlan={currentPlanId === plan.id}
-          onSelect={onSelectPlan ? () => onSelectPlan(plan) : undefined}
-          disabled={disabled}
-        />
+        <div key={plan.id} className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(25%-18px)] max-w-[280px]">
+          <SubscriptionPlanCard
+            plan={plan}
+            currentPlan={currentPlanId === plan.id}
+            onSelect={onSelectPlan ? () => onSelectPlan(plan) : undefined}
+            disabled={disabled}
+          />
+        </div>
       ))}
     </div>
   );

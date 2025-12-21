@@ -95,7 +95,14 @@ export function SubscriptionPlanCard({
       </div>
 
       {/* Action Button */}
-      {onSelect && !currentPlan && (
+      {currentPlan ? (
+        <button
+          disabled
+          className="mt-6 w-full py-2 px-4 rounded-lg font-semibold bg-blue-100 text-blue-600 border-2 border-blue-500 cursor-default"
+        >
+          {t('inUse')}
+        </button>
+      ) : onSelect && (
         <button
           onClick={onSelect}
           disabled={disabled}

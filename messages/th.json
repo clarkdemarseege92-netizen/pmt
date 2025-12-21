@@ -1298,6 +1298,7 @@
     "couponTypeLimitLabel": "จำกัดประเภทคูปอง",
     "features": "คุณสมบัติ",
     "selectPlan": "เลือกแผน",
+    "inUse": "กำลังใช้งาน",
     "loadingPlans": "กำลังโหลดแผน...",
     "errorLoadingPlans": "เกิดข้อผิดพลาดในการโหลดแผน",
     "trialExpired": "ช่วงทดลองใช้หมดอายุ",

@@ -1298,6 +1298,7 @@
     "couponTypeLimitLabel": "优惠券种类上限",
     "features": "功能特性",
     "selectPlan": "选择方案",
+    "inUse": "使用中",
     "loadingPlans": "加载方案中...",
     "errorLoadingPlans": "加载方案出错",
     "trialExpired": "试用期已结束",
