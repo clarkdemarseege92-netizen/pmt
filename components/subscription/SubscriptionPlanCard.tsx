@@ -30,10 +30,9 @@ export function SubscriptionPlanCard({
         relative rounded-lg border-2 p-6 transition-all
         ${currentPlan ? 'border-blue-500 bg-blue-50' : 'border-gray-200 bg-white'}
         ${isPopular && !currentPlan ? 'ring-2 ring-purple-500' : ''}
-        ${!disabled && onSelect ? 'cursor-pointer hover:shadow-lg' : ''}
+        ${!disabled && onSelect && !currentPlan ? 'hover:shadow-lg' : ''}
         ${disabled ? 'opacity-60' : ''}
       `}
-      onClick={!disabled && onSelect ? onSelect : undefined}
     >
       {/* Popular Badge */}
       {isPopular && !currentPlan && (
@@ -94,10 +93,7 @@ export function SubscriptionPlanCard({
       {/* Action Button */}
       {onSelect && !currentPlan && (
         <button
-          onClick={(e) => {
-            e.stopPropagation(); // 阻止事件冒泡，防止触发卡片的onClick
-            onSelect();
-          }}
+          onClick={onSelect}
           disabled={disabled}
           className={`
             mt-6 w-full py-2 px-4 rounded-lg font-semibold transition-colors
