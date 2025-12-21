@@ -116,6 +116,8 @@ export default function SubscriptionPage() {
           fetchSubscription(merchantId),
           refreshWalletBalance(merchantId)
         ]);
+        // 触发侧边栏订阅状态更新
+        window.dispatchEvent(new CustomEvent('subscription-updated'));
         setActiveTab('overview');
       } else {
         alert(t('subscribeFailed') + ': ' + result.error);
@@ -138,6 +140,8 @@ export default function SubscriptionPage() {
       if (result.success) {
         alert(t('cancelSuccess'));
         await fetchSubscription(merchantId);
+        // 触发侧边栏订阅状态更新
+        window.dispatchEvent(new CustomEvent('subscription-updated'));
       } else {
         alert(t('cancelFailed') + ': ' + result.error);
       }
@@ -169,6 +173,8 @@ export default function SubscriptionPage() {
           fetchSubscription(merchantId),
           refreshWalletBalance(merchantId)
         ]);
+        // 触发侧边栏订阅状态更新
+        window.dispatchEvent(new CustomEvent('subscription-updated'));
       } else {
         alert(t('reactivateFailed') + ': ' + result.error);
       }

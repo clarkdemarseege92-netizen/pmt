@@ -38,26 +38,37 @@ export default function MerchantSidebar() {
   const toggleSidebar = () => setIsExpanded(!isExpanded);
 
   // 获取订阅信息
-  useEffect(() => {
-    const fetchSubscription = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+  const fetchSubscription = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
 
-      const { data: merchant } = await supabase
-        .from("merchants")
-        .select("merchant_id")
-        .eq("owner_id", user.id)
-        .single();
+    const { data: merchant } = await supabase
+      .from("merchants")
+      .select("merchant_id")
+      .eq("owner_id", user.id)
+      .single();
 
-      if (merchant) {
-        const result = await getCurrentSubscription(merchant.merchant_id);
-        if (result.success && result.data) {
-          setSubscription(result.data);
-        }
+    if (merchant) {
+      const result = await getCurrentSubscription(merchant.merchant_id);
+      if (result.success && result.data) {
+        setSubscription(result.data);
       }
+    }
+  };
+
+  useEffect(() => {
+    fetchSubscription();
+
+    // 监听订阅更新事件
+    const handleSubscriptionUpdate = () => {
+      fetchSubscription();
     };
 
-    fetchSubscription();
+    window.addEventListener('subscription-updated', handleSubscriptionUpdate);
+
+    return () => {
+      window.removeEventListener('subscription-updated', handleSubscriptionUpdate);
+    };
   }, []);
 
   const navItems = [
