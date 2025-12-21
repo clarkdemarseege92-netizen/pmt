@@ -40,6 +40,26 @@ export async function subscribeToPlan(
       .eq('merchant_id', merchantId)
       .single();
 
+    // 2.5 防止重复订阅：检查最近10秒内是否有相同方案的订阅交易
+    const tenSecondsAgo = new Date(Date.now() - 10000).toISOString();
+    const { data: recentTransaction } = await supabase
+      .from('merchant_transactions')
+      .select('id, created_at')
+      .eq('merchant_id', merchantId)
+      .eq('type', 'withdrawal')
+      .eq('status', 'completed')
+      .ilike('description', `%${plan.name}%`)
+      .gte('created_at', tenSecondsAgo)
+      .limit(1)
+      .single();
+
+    if (recentTransaction) {
+      return {
+        success: false,
+        error: 'Please wait a moment before retrying. A subscription is already being processed.'
+      };
+    }
+
     // 3. 如果使用钱包支付，检查余额
     let currentBalance = 0;
     if (paymentMethod === 'wallet' && plan.price > 0) {

@@ -53,6 +53,26 @@ export async function reactivateSubscription(
       };
     }
 
+    // 3.5 防止重复激活：检查最近10秒内是否有相同方案的交易
+    const tenSecondsAgo = new Date(Date.now() - 10000).toISOString();
+    const { data: recentTransaction } = await supabase
+      .from('merchant_transactions')
+      .select('id, created_at')
+      .eq('merchant_id', merchantId)
+      .eq('type', 'withdrawal')
+      .eq('status', 'completed')
+      .ilike('description', `%${plan.name}%`)
+      .gte('created_at', tenSecondsAgo)
+      .limit(1)
+      .single();
+
+    if (recentTransaction) {
+      return {
+        success: false,
+        error: 'Please wait a moment before retrying. A reactivation is already being processed.'
+      };
+    }
+
     // 4. 检查余额（如果方案价格 > 0）
     let currentBalance = 0;
     if (plan.price > 0) {

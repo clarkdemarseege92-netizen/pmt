@@ -80,9 +80,9 @@ export function SubscriptionPlanCard({
         {Object.entries(plan.features).map(([feature, enabled]) => (
           <div key={feature} className="flex items-center text-sm">
             {enabled ? (
-              <CheckCircle2 className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-green-500 mr-2 shrink-0" />
             ) : (
-              <XCircle className="w-4 h-4 text-gray-300 mr-2 flex-shrink-0" />
+              <XCircle className="w-4 h-4 text-gray-300 mr-2 shrink-0" />
             )}
             <span className={enabled ? 'text-gray-700' : 'text-gray-400'}>
               {t(`feature.${feature}`)}

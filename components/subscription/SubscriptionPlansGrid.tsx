@@ -12,12 +12,14 @@ interface SubscriptionPlansGridProps {
   currentPlanId?: string;
   onSelectPlan?: (plan: SubscriptionPlan) => void;
   excludeTrial?: boolean;
+  disabled?: boolean;
 }
 
 export function SubscriptionPlansGrid({
   currentPlanId,
   onSelectPlan,
-  excludeTrial = false
+  excludeTrial = false,
+  disabled = false
 }: SubscriptionPlansGridProps) {
   const t = useTranslations('subscription');
   const [plans, setPlans] = useState<SubscriptionPlan[]>([]);
@@ -77,6 +79,7 @@ export function SubscriptionPlansGrid({
           plan={plan}
           currentPlan={currentPlanId === plan.id}
           onSelect={onSelectPlan ? () => onSelectPlan(plan) : undefined}
+          disabled={disabled}
         />
       ))}
     </div>

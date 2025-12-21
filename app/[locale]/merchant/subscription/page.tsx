@@ -284,6 +284,7 @@ export default function SubscriptionPage() {
               currentPlanId={subscription?.plan_id}
               onSelectPlan={handleSubscribe}
               excludeTrial={true}
+              disabled={isProcessing}
             />
           </div>
         </div>
