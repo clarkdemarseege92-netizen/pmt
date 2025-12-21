@@ -36,12 +36,22 @@ type Product = {
   merchant_category_id?: string | null;
 };
 
-// --- 工具函数：获取分类名称 ---
-const getCategoryName = (name: string | { th?: string; en?: string; [key: string]: string | undefined }): string => {
+// --- 工具函数：获取分类名称（支持国际化）---
+const getCategoryName = (
+  name: string | { th?: string; en?: string; zh?: string; [key: string]: string | undefined },
+  locale: string
+): string => {
   if (typeof name === 'string') {
-    return name;
+    // 如果是字符串，尝试解析为JSON
+    try {
+      const parsed = JSON.parse(name);
+      return parsed[locale] || parsed.th || parsed.en || "未命名";
+    } catch {
+      return name;
+    }
   }
-  return name.th || name.en || "未命名";
+  // 根据当前语言环境返回对应的名称
+  return name[locale] || name.th || name.en || "未命名";
 };
 
 export default function ProductsPage() {
@@ -185,13 +195,13 @@ export default function ProductsPage() {
     // 在主分类中查找
     for (const category of categories) {
       if (category.category_id === categoryId) {
-        return getCategoryName(category.name);
+        return getCategoryName(category.name, locale);
       }
       // 在子分类中查找
       if (category.subcategories) {
         for (const sub of category.subcategories) {
           if (sub.category_id === categoryId) {
-            return `${getCategoryName(category.name)} > ${getCategoryName(sub.name)}`;
+            return `${getCategoryName(category.name, locale)} > ${getCategoryName(sub.name, locale)}`;
           }
         }
       }
