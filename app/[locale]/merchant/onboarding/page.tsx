@@ -2,13 +2,10 @@
 "use client";
 
 import { useState } from "react";
-import { supabase } from "@/lib/supabaseClient";
 import { useTranslations } from 'next-intl';
-import { useRouter } from '@/i18n/routing';
 
 export default function OnboardingPage() {
   const t = useTranslations('merchantOnboarding');
-  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -28,48 +25,29 @@ export default function OnboardingPage() {
     setError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error(t('errors.notLoggedIn'));
-
-      // 1. Insert merchant record and get merchant_id
-      const { data: newMerchant, error: insertError } = await supabase
-        .from("merchants")
-        .insert({
-          owner_id: user.id,
-          shop_name: formData.shopName,
+      // 调用 API 端点 (使用 Admin 客户端绕过 RLS)
+      const response = await fetch('/api/merchant/onboarding', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          shopName: formData.shopName,
           address: formData.address,
-          contact_phone: formData.phone,
-          status: 'pending',
-        })
-        .select()
-        .single();
-
-      if (insertError) throw insertError;
-
-      // 2. Create bonus transaction record
-      const { error: transError } = await supabase.from("merchant_transactions").insert({
-        merchant_id: newMerchant.merchant_id,
-        type: 'bonus',
-        amount: 2000,
-        balance_after: 2000,
-        description: t('bonusDescription')
+          phone: formData.phone,
+        }),
       });
 
-      if (transError) {
-        console.error("Failed to create bonus transaction:", transError);
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(result.message || t('errors.submitFailed'));
       }
 
-      // 3. Upgrade user role to merchant via RPC
-      const { error: rpcError } = await supabase.rpc('set_role_to_merchant', {
-        user_uuid: user.id
-      });
-
-      if (rpcError) {
-         console.error("Failed to upgrade user role:", rpcError);
-      }
-
-      // 4. Success! Redirect to dashboard
-      router.push("/merchant/dashboard");
+      // Success! 使用 window.location 强制跳转，确保页面完全刷新
+      // 这样可以确保用户角色和商户数据在新页面中被正确加载
+      window.location.href = "/merchant/dashboard";
+      return; // 阻止后续代码执行
 
     } catch (err: unknown) {
       let errorMessage = t('errors.submitFailed');
@@ -79,7 +57,6 @@ export default function OnboardingPage() {
          errorMessage = (err as { message: string }).message;
       }
       setError(errorMessage);
-    } finally {
       setLoading(false);
     }
   };
@@ -89,12 +66,9 @@ export default function OnboardingPage() {
       <div className="card w-full max-w-lg bg-base-100 shadow-xl">
         <div className="card-body">
           <h2 className="card-title text-2xl justify-center mb-2">{t('title')}</h2>
-          <p className="text-center text-base-content/60 mb-2">
+          <p className="text-center text-base-content/60 mb-4">
             {t('subtitle')}
           </p>
-          <div className="alert alert-success py-2 mb-4 text-sm">
-             {t('bonusPromotion')}
-          </div>
 
           {error && <div className="alert alert-error text-sm mb-4">{error}</div>}
 

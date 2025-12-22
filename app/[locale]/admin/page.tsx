@@ -1,18 +1,19 @@
 // app/[locale]/admin/page.tsx
 import { createSupabaseServerClient } from "@/lib/supabaseServer";
 import Link from "next/link";
-import { HiFolder, HiUsers, HiBuildingStorefront, HiShoppingBag, HiTicket } from "react-icons/hi2";
+import { HiFolder, HiUsers, HiBuildingStorefront, HiShoppingBag, HiTicket, HiBanknotes } from "react-icons/hi2";
 
 export default async function AdminDashboard() {
   const supabase = await createSupabaseServerClient();
 
   // 获取统计数据
-  const [categoriesCount, usersCount, merchantsCount, productsCount, couponsCount] = await Promise.all([
+  const [categoriesCount, usersCount, merchantsCount, productsCount, couponsCount, pendingWithdrawals] = await Promise.all([
     supabase.from('categories').select('*', { count: 'exact', head: true }),
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('merchants').select('*', { count: 'exact', head: true }),
     supabase.from('products').select('*', { count: 'exact', head: true }),
     supabase.from('coupons').select('*', { count: 'exact', head: true }),
+    supabase.from('referral_withdrawals').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
   ]);
 
   const stats = [
@@ -51,6 +52,13 @@ export default async function AdminDashboard() {
       link: '/admin/coupons',
       color: 'bg-success',
     },
+    {
+      title: '待处理提现',
+      count: pendingWithdrawals.count || 0,
+      icon: <HiBanknotes className="w-8 h-8" />,
+      link: '/admin/withdrawals',
+      color: 'bg-warning',
+    },
   ];
 
   return (
@@ -58,7 +66,7 @@ export default async function AdminDashboard() {
       <h1 className="text-3xl font-bold mb-8">管理员仪表板</h1>
 
       {/* 统计卡片 */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 mb-8">
         {stats.map((stat, index) => (
           <Link key={index} href={stat.link}>
             <div className="card bg-base-100 shadow-lg hover:shadow-xl transition-all cursor-pointer">
@@ -90,6 +98,10 @@ export default async function AdminDashboard() {
             <Link href="/admin/merchants" className="btn btn-outline btn-accent justify-start gap-3">
               <HiBuildingStorefront className="w-5 h-5" />
               管理商户
+            </Link>
+            <Link href="/admin/withdrawals" className="btn btn-outline btn-warning justify-start gap-3">
+              <HiBanknotes className="w-5 h-5" />
+              审核提现申请
             </Link>
           </div>
         </div>

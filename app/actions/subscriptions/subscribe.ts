@@ -4,6 +4,103 @@
 import { createSupabaseServerClient } from '@/lib/supabaseServer';
 import type { ActionResponse, MerchantSubscription, PaymentMethod } from '@/app/types/subscription';
 
+// 推荐返利金额配置
+const REFERRAL_REWARDS: Record<string, number> = {
+  'standard': 50,    // 标准版订阅返利 50 THB
+  'professional': 100, // 专业版订阅返利 100 THB
+  'enterprise': 200,  // 企业版订阅返利 200 THB
+};
+
+/**
+ * 处理推荐返利
+ * @param supabase Supabase客户端
+ * @param merchantId 新订阅的商户ID
+ * @param planName 订阅方案名称
+ * @param planPrice 订阅价格
+ */
+async function processReferralReward(
+  supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
+  merchantId: string,
+  planName: string,
+  planPrice: number
+) {
+  try {
+    // 1. 获取商户对应的用户ID
+    const { data: merchant } = await supabase
+      .from('merchants')
+      .select('owner_id')
+      .eq('merchant_id', merchantId)
+      .single();
+
+    if (!merchant?.owner_id) {
+      console.log('REFERRAL: 无法找到商户对应的用户');
+      return;
+    }
+
+    // 2. 检查用户是否有推荐人
+    const { data: userProfile } = await supabase
+      .from('profiles')
+      .select('referred_by')
+      .eq('id', merchant.owner_id)
+      .single();
+
+    if (!userProfile?.referred_by) {
+      console.log('REFERRAL: 用户没有推荐人');
+      return;
+    }
+
+    // 3. 检查是否已经有过返利记录（仅首次订阅有效）
+    const { data: existingReward } = await supabase
+      .from('referral_rewards')
+      .select('id')
+      .eq('referee_id', merchant.owner_id)
+      .limit(1)
+      .single();
+
+    if (existingReward) {
+      console.log('REFERRAL: 该用户已经触发过推荐返利');
+      return;
+    }
+
+    // 4. 计算返利金额
+    const rewardAmount = REFERRAL_REWARDS[planName.toLowerCase()] || 0;
+    if (rewardAmount === 0) {
+      console.log('REFERRAL: 该方案不参与推荐返利:', planName);
+      return;
+    }
+
+    // 5. 创建返利记录（1天后生效）
+    const eligibleAt = new Date();
+    eligibleAt.setDate(eligibleAt.getDate() + 1); // 1天后可发放
+
+    const { error: rewardError } = await supabase
+      .from('referral_rewards')
+      .insert({
+        referrer_id: userProfile.referred_by,
+        referee_id: merchant.owner_id,
+        subscription_plan: planName,
+        subscription_amount: planPrice,
+        reward_amount: rewardAmount,
+        status: 'pending',
+        eligible_at: eligibleAt.toISOString(),
+      });
+
+    if (rewardError) {
+      console.error('REFERRAL: 创建返利记录失败:', rewardError);
+    } else {
+      console.log('REFERRAL: 成功创建返利记录', {
+        referrerId: userProfile.referred_by,
+        refereeId: merchant.owner_id,
+        rewardAmount,
+        eligibleAt: eligibleAt.toISOString(),
+      });
+    }
+  } catch (error) {
+    console.error('REFERRAL: 处理推荐返利时出错:', error);
+    // 不影响主流程，仅记录错误
+  }
+}
+
 /**
  * 订阅付费方案
  * @param merchantId 商户ID
@@ -184,7 +281,7 @@ export async function subscribeToPlan(
             balance_after: newBalance,
             type: 'withdrawal',
             status: 'completed',
-            description: `Subscription payment: ${plan.display_name.zh || plan.name}`
+            description: `Subscription payment: ${plan.name}`
           })
           .select()
           .single();
@@ -203,6 +300,9 @@ export async function subscribeToPlan(
             .eq('id', invoice.id);
         }
       }
+
+      // 7. 处理推荐返利（仅限付费订阅）
+      await processReferralReward(supabase, merchantId, plan.name, plan.price);
     }
 
     return {

@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useCallback, ChangeEvent } from "react";
 import { supabase } from "@/lib/supabaseClient";
-import { HiWallet, HiArrowUp, HiArrowDown, HiCheckCircle, HiXCircle, HiTrash, HiQrCode, HiClock } from "react-icons/hi2";
+import { HiWallet, HiArrowUp, HiArrowDown, HiCheckCircle, HiXCircle, HiTrash, HiQrCode, HiClock, HiBanknotes, HiArrowPath } from "react-icons/hi2";
 import QRCode from 'react-qr-code';
 import { PostgrestError } from '@supabase/supabase-js';
 import { useTranslations } from 'next-intl';
@@ -49,6 +49,20 @@ interface Message {
     text: string;
 }
 
+interface WithdrawalRecord {
+  id: string;
+  amount: number;
+  fee: number;
+  net_amount: number;
+  bank_name: string;
+  bank_account: string;
+  account_name: string;
+  status: 'pending' | 'processing' | 'completed' | 'rejected';
+  requested_at: string;
+  processed_at: string | null;
+  rejection_reason: string | null;
+}
+
 const formatDate = (dateString: string) => {
   if (!dateString) return '-';
   return new Date(dateString).toLocaleString('th-TH', {
@@ -89,6 +103,18 @@ export default function WalletPage() {
   // 操作加载状态
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
 
+  // 提现相关状态
+  const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
+  const [withdrawals, setWithdrawals] = useState<WithdrawalRecord[]>([]);
+  const [withdrawForm, setWithdrawForm] = useState({
+    amount: '',
+    bankName: '',
+    accountNumber: '',
+    accountName: '',
+  });
+  const [isWithdrawing, setIsWithdrawing] = useState(false);
+  const [showWithdrawHistory, setShowWithdrawHistory] = useState(false);
+
   // 辅助：获取友好的类型名称
   const getTypeName = useCallback((type: Transaction['type']) => {
       const map: Record<string, string> = {
@@ -98,6 +124,63 @@ export default function WalletPage() {
           bonus: t('transactionTypes.bonus')
       };
       return map[type] || type;
+  }, [t]);
+
+  // 辅助：翻译交易描述（处理套餐名称的国际化）
+  const translateDescription = useCallback((description: string): string => {
+    if (!description) return '-';
+
+    // 匹配 "Subscription payment: <plan_name>" 格式
+    const subscriptionPaymentMatch = description.match(/^Subscription payment:\s*(.+)$/i);
+    if (subscriptionPaymentMatch) {
+      const planName = subscriptionPaymentMatch[1].trim();
+      // 尝试匹配各语言的套餐名称并转换为key
+      const planKeyMap: Record<string, string> = {
+        // 中文名称映射
+        '试用版': 'trial', '基础版': 'basic', '标准版': 'standard',
+        '专业版': 'professional', '企业版': 'enterprise',
+        // 英文名称映射
+        'Trial': 'trial', 'Basic': 'basic', 'Standard': 'standard',
+        'Professional': 'professional', 'Enterprise': 'enterprise',
+        // 泰语名称映射
+        'ทดลองใช้': 'trial', 'พื้นฐาน': 'basic', 'มาตรฐาน': 'standard',
+        'มืออาชีพ': 'professional', 'องค์กร': 'enterprise',
+        // plan code 映射
+        'trial': 'trial', 'basic': 'basic', 'standard': 'standard',
+        'professional': 'professional', 'enterprise': 'enterprise',
+      };
+      const planKey = planKeyMap[planName] || 'basic';
+      const localizedPlanName = t(`descriptions.planNames.${planKey}`);
+      return `${t('descriptions.subscriptionPayment')}: ${localizedPlanName}`;
+    }
+
+    // 匹配 "Subscription reactivation: <plan_name>" 格式
+    const reactivationMatch = description.match(/^Subscription reactivation:\s*(.+)$/i);
+    if (reactivationMatch) {
+      const planName = reactivationMatch[1].trim();
+      const planKeyMap: Record<string, string> = {
+        '试用版': 'trial', '基础版': 'basic', '标准版': 'standard',
+        '专业版': 'professional', '企业版': 'enterprise',
+        'Trial': 'trial', 'Basic': 'basic', 'Standard': 'standard',
+        'Professional': 'professional', 'Enterprise': 'enterprise',
+        'ทดลองใช้': 'trial', 'พื้นฐาน': 'basic', 'มาตรฐาน': 'standard',
+        'มืออาชีพ': 'professional', 'องค์กร': 'enterprise',
+        'trial': 'trial', 'basic': 'basic', 'standard': 'standard',
+        'professional': 'professional', 'enterprise': 'enterprise',
+      };
+      const planKey = planKeyMap[planName] || 'basic';
+      const localizedPlanName = t(`descriptions.planNames.${planKey}`);
+      return `${t('descriptions.subscriptionReactivation')}: ${localizedPlanName}`;
+    }
+
+    // 匹配 "Withdrawal refund (rejected): ฿xxx" 格式
+    const refundMatch = description.match(/^Withdrawal refund \(rejected\):\s*(.+)$/i);
+    if (refundMatch) {
+      return `${t('descriptions.withdrawalRefund')}: ${refundMatch[1]}`;
+    }
+
+    // 其他描述保持原样
+    return description;
   }, [t]);
 
   const fetchData = useCallback(async () => {
@@ -170,9 +253,23 @@ export default function WalletPage() {
     setLoading(false);
   }, [t]);
 
+  // 获取提现记录
+  const fetchWithdrawals = useCallback(async () => {
+    try {
+      const response = await fetch('/api/merchant/withdraw');
+      if (response.ok) {
+        const data = await response.json();
+        setWithdrawals(data.withdrawals || []);
+      }
+    } catch (error) {
+      console.error('Error fetching withdrawals:', error);
+    }
+  }, []);
+
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    fetchWithdrawals();
+  }, [fetchData, fetchWithdrawals]);
 
   // --- 恢复支付 ---
   const handleResumeTransaction = async (tx: Transaction) => {
@@ -320,6 +417,95 @@ export default function WalletPage() {
       setTopUpAmount("1000");
   };
 
+  // 计算提现手续费（2%，最低10泰铢）
+  const calculateWithdrawFee = (amount: number): number => {
+    const fee = amount * 0.02;
+    return Math.max(fee, 10);
+  };
+
+  // 提交提现申请
+  const handleWithdrawSubmit = async () => {
+    const amount = parseFloat(withdrawForm.amount);
+    if (isNaN(amount) || amount < 500) {
+      setMessage({ type: 'error', text: t('withdraw.invalidAmount') });
+      return;
+    }
+
+    if (!merchant || amount > merchant.platform_balance) {
+      setMessage({ type: 'error', text: t('withdraw.insufficientBalance') });
+      return;
+    }
+
+    if (!withdrawForm.bankName || !withdrawForm.accountNumber || !withdrawForm.accountName) {
+      setMessage({ type: 'error', text: 'Please fill in all bank details' });
+      return;
+    }
+
+    setIsWithdrawing(true);
+    setMessage(null);
+
+    try {
+      const response = await fetch('/api/merchant/withdraw', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(withdrawForm),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        setMessage({ type: 'success', text: t('withdraw.success') });
+        setIsWithdrawModalOpen(false);
+        setWithdrawForm({ amount: '', bankName: '', accountNumber: '', accountName: '' });
+        // 刷新数据
+        await Promise.all([fetchData(), fetchWithdrawals()]);
+      } else {
+        setMessage({ type: 'error', text: data.error || t('withdraw.failed') });
+      }
+    } catch (error) {
+      console.error('Withdrawal error:', error);
+      setMessage({ type: 'error', text: t('withdraw.failed') });
+    } finally {
+      setIsWithdrawing(false);
+    }
+  };
+
+  // 打开提现弹窗
+  const openWithdrawModal = () => {
+    if (!merchant || merchant.platform_balance < 500) {
+      setMessage({ type: 'error', text: t('withdraw.insufficientBalance') });
+      return;
+    }
+    setWithdrawForm({
+      ...withdrawForm,
+      amount: merchant.platform_balance.toString()
+    });
+    setIsWithdrawModalOpen(true);
+    setMessage(null);
+  };
+
+  // 关闭提现弹窗
+  const closeWithdrawModal = () => {
+    setIsWithdrawModalOpen(false);
+    setWithdrawForm({ amount: '', bankName: '', accountNumber: '', accountName: '' });
+  };
+
+  // 获取提现状态徽章样式
+  const getWithdrawStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return 'badge-warning';
+      case 'processing':
+        return 'badge-info';
+      case 'completed':
+        return 'badge-success';
+      case 'rejected':
+        return 'badge-error';
+      default:
+        return 'badge-ghost';
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center items-center h-96"><span className="loading loading-spinner loading-lg text-primary"></span></div>;
   }
@@ -341,12 +527,15 @@ export default function WalletPage() {
                 </p>
             </div>
             <div className="flex gap-3 mt-4 md:mt-0 w-full md:w-auto">
-                <button
-                    className="btn btn-warning flex-1 md:flex-none shadow-md border-none bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
-                    onClick={() => setMessage({ type: 'info', text: t('withdrawInDevelopment') })}
-                >
-                    {t('withdrawButton')}
-                </button>
+                <div className="tooltip tooltip-bottom" data-tip={!merchant || merchant.platform_balance < 500 ? t('withdraw.minAmount') : ''}>
+                  <button
+                      className="btn btn-warning flex-1 md:flex-none shadow-md border-none bg-yellow-400 hover:bg-yellow-500 text-yellow-900"
+                      onClick={openWithdrawModal}
+                      disabled={!merchant || merchant.platform_balance < 500}
+                  >
+                      <HiArrowDown className="w-5 h-5" /> {t('withdrawButton')}
+                  </button>
+                </div>
                 <button
                     className="btn btn-secondary flex-1 md:flex-none shadow-md"
                     onClick={() => { resetModal(); setIsTopUpModalOpen(true); }}
@@ -399,7 +588,7 @@ export default function WalletPage() {
                               {tx.status === 'failed' && <span className="badge badge-error badge-xs">{t('status.failed')}</span>}
                               {tx.status === 'completed' && <span className="badge badge-success badge-xs">{t('status.completed')}</span>}
                           </div>
-                          <p className="text-xs text-base-content/50 truncate pr-2">{tx.description}</p>
+                          <p className="text-xs text-base-content/50 truncate pr-2">{translateDescription(tx.description)}</p>
                       </div>
                       <div className={`col-span-2 text-right font-bold flex justify-end items-center gap-1 ${tx.amount > 0 ? 'text-success' : 'text-error'}`}>
                           {tx.amount > 0 ? '+' : '-'}{Math.abs(tx.amount).toFixed(2)}
@@ -480,7 +669,7 @@ export default function WalletPage() {
 
                       {/* 第三行：描述与余额 */}
                       <div className="flex justify-between items-end pt-2 border-t border-base-100 mt-1">
-                          <p className="text-xs text-base-content/50 truncate max-w-[60%]">{tx.description}</p>
+                          <p className="text-xs text-base-content/50 truncate max-w-[60%]">{translateDescription(tx.description)}</p>
                           <div className="text-xs text-base-content/70">
                               {t('balanceLabel')}: <span className="font-semibold text-base-content">{tx.balance_after !== null ? `฿${tx.balance_after.toFixed(2)}` : '-'}</span>
                           </div>
@@ -497,6 +686,50 @@ export default function WalletPage() {
           )}
         </div>
       </div>
+
+      {/* 2.5 提现记录 */}
+      {withdrawals.length > 0 && (
+        <div className="bg-base-100 rounded-xl shadow-lg border border-base-200 overflow-hidden mt-6">
+          <div className="p-4 md:p-6 border-b border-base-200 bg-base-50 flex justify-between items-center">
+              <h2 className="text-lg font-bold flex items-center gap-2">
+                  <HiBanknotes className="w-5 h-5 text-warning"/>
+                  {t('withdrawHistory.title')}
+              </h2>
+          </div>
+
+          <div className="divide-y divide-base-100">
+            {withdrawals.map((wd) => (
+              <div key={wd.id} className="p-4 hover:bg-base-50 transition-colors">
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-full bg-warning/20 text-warning">
+                      <HiArrowDown className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <div className="font-bold">฿{wd.amount.toFixed(2)}</div>
+                      <div className="text-xs text-base-content/60">
+                        {t('withdraw.processingFee')}: ฿{wd.fee.toFixed(2)} → {t('withdraw.actualAmount')}: ฿{wd.net_amount.toFixed(2)}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-4 text-sm">
+                    <div className="text-base-content/70">{wd.bank_name}</div>
+                    <span className={`badge ${getWithdrawStatusBadge(wd.status)}`}>
+                      {t(`withdrawHistory.${wd.status}`)}
+                    </span>
+                    <div className="text-xs text-base-content/50">{formatDate(wd.requested_at)}</div>
+                  </div>
+                </div>
+                {wd.rejection_reason && (
+                  <div className="mt-2 text-xs text-error bg-error/10 p-2 rounded">
+                    {wd.rejection_reason}
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* 3. 充值 Modal */}
       {isTopUpModalOpen && (
@@ -583,6 +816,139 @@ export default function WalletPage() {
                 )}
             </div>
           </div>
+        </dialog>
+      )}
+
+      {/* 4. 提现 Modal */}
+      {isWithdrawModalOpen && (
+        <dialog className="modal modal-open items-center sm:items-center">
+          <div className="modal-box w-11/12 max-w-md p-0 overflow-hidden bg-base-100">
+            {/* Header */}
+            <div className="bg-warning text-warning-content p-4 text-center relative">
+                 <h3 className="font-bold text-lg">{t('withdraw.title')}</h3>
+                 <p className="text-xs opacity-80 mt-1">{t('withdraw.subtitle')}</p>
+                 <button className="btn btn-sm btn-circle btn-ghost absolute right-2 top-2" onClick={closeWithdrawModal}>✕</button>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* 当前余额 */}
+              <div className="alert alert-info">
+                <span>{t('withdraw.currentBalance')}: ฿{merchant?.platform_balance.toFixed(2) || '0.00'}</span>
+              </div>
+
+              {/* 提现金额 */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">{t('withdraw.amount')}</span>
+                </label>
+                <div className="relative">
+                  <input
+                    type="number"
+                    className="input input-bordered w-full text-lg font-bold pl-8"
+                    value={withdrawForm.amount}
+                    min={500}
+                    max={merchant?.platform_balance || 0}
+                    onChange={(e) => setWithdrawForm({ ...withdrawForm, amount: e.target.value })}
+                    disabled={isWithdrawing}
+                  />
+                  <span className="absolute left-3 top-3 text-base-content/50 font-bold">฿</span>
+                </div>
+                <label className="label">
+                  <span className="label-text-alt text-base-content/60">{t('withdraw.minAmount')}</span>
+                </label>
+              </div>
+
+              {/* 手续费计算 */}
+              {withdrawForm.amount && parseFloat(withdrawForm.amount) >= 500 && (
+                <div className="bg-base-200 rounded-lg p-3 text-sm">
+                  <div className="flex justify-between mb-1">
+                    <span>{t('withdraw.processingFee')} (2%)</span>
+                    <span>฿{calculateWithdrawFee(parseFloat(withdrawForm.amount)).toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-bold text-success">
+                    <span>{t('withdraw.actualAmount')}</span>
+                    <span>฿{(parseFloat(withdrawForm.amount) - calculateWithdrawFee(parseFloat(withdrawForm.amount))).toFixed(2)}</span>
+                  </div>
+                  <p className="text-xs text-base-content/50 mt-2">{t('withdraw.feeNote')}</p>
+                </div>
+              )}
+
+              {/* 银行名称 */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">{t('withdraw.bankName')}</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered"
+                  placeholder={t('withdraw.bankNamePlaceholder')}
+                  value={withdrawForm.bankName}
+                  onChange={(e) => setWithdrawForm({ ...withdrawForm, bankName: e.target.value })}
+                  disabled={isWithdrawing}
+                />
+              </div>
+
+              {/* 银行账号 */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">{t('withdraw.accountNumber')}</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered"
+                  placeholder={t('withdraw.accountNumberPlaceholder')}
+                  value={withdrawForm.accountNumber}
+                  onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
+                  disabled={isWithdrawing}
+                />
+              </div>
+
+              {/* 账户名称 */}
+              <div className="form-control">
+                <label className="label">
+                  <span className="label-text font-semibold">{t('withdraw.accountName')}</span>
+                </label>
+                <input
+                  type="text"
+                  className="input input-bordered"
+                  placeholder={t('withdraw.accountNamePlaceholder')}
+                  value={withdrawForm.accountName}
+                  onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
+                  disabled={isWithdrawing}
+                />
+              </div>
+
+              {/* 按钮 */}
+              <div className="flex gap-3 pt-4">
+                <button className="btn btn-outline flex-1" onClick={closeWithdrawModal} disabled={isWithdrawing}>
+                  {t('withdraw.cancel')}
+                </button>
+                <button
+                  className="btn btn-warning flex-1"
+                  onClick={handleWithdrawSubmit}
+                  disabled={
+                    isWithdrawing ||
+                    !withdrawForm.amount ||
+                    !withdrawForm.bankName ||
+                    !withdrawForm.accountNumber ||
+                    !withdrawForm.accountName ||
+                    parseFloat(withdrawForm.amount) < 500 ||
+                    parseFloat(withdrawForm.amount) > (merchant?.platform_balance || 0)
+                  }
+                >
+                  {isWithdrawing ? (
+                    <>
+                      <HiArrowPath className="w-4 h-4 animate-spin" />
+                      {t('withdraw.submitting')}
+                    </>
+                  ) : (
+                    t('withdraw.submit')
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={closeWithdrawModal}></div>
         </dialog>
       )}
     </div>

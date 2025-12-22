@@ -1,21 +1,59 @@
 // 文件: /app/[locale]/login/page.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "@/i18n/routing";
+import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
 import { Provider } from '@supabase/supabase-js';
 import { useTranslations } from 'next-intl';
+import { HiGift } from 'react-icons/hi2';
+
+// 推荐码 Cookie 名称和有效期
+const REFERRAL_COOKIE_NAME = 'kummak_referral_code';
+const REFERRAL_COOKIE_DAYS = 30;
+
+// 设置推荐码 Cookie
+const setReferralCookie = (code: string) => {
+  const expires = new Date();
+  expires.setDate(expires.getDate() + REFERRAL_COOKIE_DAYS);
+  document.cookie = `${REFERRAL_COOKIE_NAME}=${code}; expires=${expires.toUTCString()}; path=/`;
+};
+
+// 获取推荐码 Cookie
+const getReferralCode = (): string | null => {
+  const match = document.cookie.match(new RegExp(`(^| )${REFERRAL_COOKIE_NAME}=([^;]+)`));
+  return match ? match[2] : null;
+};
 
 export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const t = useTranslations('login');
 
   // 状态
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+
+  // 检查并保存推荐码
+  useEffect(() => {
+    const refFromUrl = searchParams.get('ref');
+    if (refFromUrl) {
+      console.log('🎁 LOGIN: 检测到推荐码:', refFromUrl);
+      setReferralCookie(refFromUrl);
+      setReferralCode(refFromUrl);
+    } else {
+      // 检查是否已有推荐码 Cookie
+      const existingRef = getReferralCode();
+      if (existingRef) {
+        console.log('🎁 LOGIN: 从 Cookie 读取推荐码:', existingRef);
+        setReferralCode(existingRef);
+      }
+    }
+  }, [searchParams]);
 
   // ----- 社交账号登录处理 -----
   const handleOAuthLogin = async (provider: Provider) => {
@@ -145,6 +183,14 @@ export default function LoginPage() {
           <div className="card-body">
             
             <h1 className="card-title text-2xl text-center">{t('title')}</h1>
+
+            {/* ----- 推荐码提示 ----- */}
+            {referralCode && (
+              <div className="alert alert-success mt-2">
+                <HiGift className="w-5 h-5" />
+                <span>🎁 通过推荐链接注册</span>
+              </div>
+            )}
 
             {/* ----- 社交登录按钮 ----- */}
             <div className="space-y-2 my-4">

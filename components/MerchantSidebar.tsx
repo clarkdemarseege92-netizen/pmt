@@ -23,7 +23,8 @@ import {
   HiUserGroup,
   HiCalculator,
   HiBoltSlash,
-  HiTag
+  HiTag,
+  HiGift
 } from "react-icons/hi2";
 import { Crown, Clock } from "lucide-react";
 
@@ -71,6 +72,9 @@ export default function MerchantSidebar() {
     };
   }, []);
 
+  // 检查是否有员工管理功能权限 (专业版和企业版)
+  const hasEmployeeManagement = subscription?.plan?.features?.employee_management === true;
+
   const navItems = [
     { name: t('dashboard'), href: "/merchant/dashboard", icon: <HiSquares2X2 className="w-6 h-6" /> },
     { name: t('orders'), href: "/merchant/orders", icon: <HiClipboardDocumentList className="w-6 h-6" /> },
@@ -82,9 +86,11 @@ export default function MerchantSidebar() {
     { name: t('accounting'), href: "/merchant/accounting", icon: <HiCalculator className="w-6 h-6" /> },
     { name: t('quickEntry'), href: "/merchant/quick-entry", icon: <HiBoltSlash className="w-6 h-6" /> },
     { name: t('wallet'), href: "/merchant/wallet", icon: <HiWallet className="w-6 h-6" /> },
-    { name: t('staff'), href: "/merchant/staff", icon: <HiUserGroup className="w-6 h-6" /> },
+    // 员工管理 - 仅专业版和企业版可见
+    ...(hasEmployeeManagement ? [{ name: t('staff'), href: "/merchant/staff", icon: <HiUserGroup className="w-6 h-6" /> }] : []),
     { name: t('redeem'), href: "/merchant/redeem", icon: <HiQrCode className="w-6 h-6" /> },
     { name: t('subscription'), href: "/merchant/subscription", icon: <Crown className="w-6 h-6" /> },
+    { name: t('referral'), href: "/merchant/referral", icon: <HiGift className="w-6 h-6" /> },
     { name: t('settings'), href: "/merchant/settings", icon: <HiCog6Tooth className="w-6 h-6" /> },
   ];
 

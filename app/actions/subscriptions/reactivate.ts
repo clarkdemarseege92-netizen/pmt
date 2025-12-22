@@ -161,7 +161,7 @@ export async function reactivateSubscription(
             balance_after: newBalance,
             type: 'withdrawal',
             status: 'completed',
-            description: `Subscription reactivation: ${plan.display_name.zh || plan.name}`
+            description: `Subscription reactivation: ${plan.name}`
           })
           .select()
           .single();

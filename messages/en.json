@@ -181,7 +181,9 @@
       "reviews": "Pending Reviews",
       "collapse": "Collapse",
       "expand": "Expand",
-      "backHome": "Back to Home"
+      "backHome": "Back to Home",
+      "staffSection": "Staff Functions",
+      "staffRedeem": "Scan to Redeem"
     }
   },
   "orders": {
@@ -323,7 +325,7 @@
     },
     "stats": {
       "title": "Dashboard",
-      "trialNotice": "Your store is in a 30-day trial period, and our team is reviewing your information.",
+      "trialNotice": "Please complete KYC verification in Settings. Customers can only purchase your products or coupons after verification.",
       "todaySales": "Today's Sales",
       "todayRedemptions": "Today's Redemptions",
       "ordersCount": "{count} orders"
@@ -443,6 +445,7 @@
     "wallet": "Wallet",
     "staff": "Staff Management",
     "subscription": "Subscription",
+    "referral": "Referral Rewards",
     "accountSettings": "Account Settings",
     "backToHome": "Back to Home",
     "collapse": "Collapse Menu",
@@ -729,6 +732,53 @@
       "failedTitle": "Verification Failed",
       "reuploadButton": "Re-upload",
       "closeButton": "Close"
+    },
+    "withdraw": {
+      "title": "Request Withdrawal",
+      "subtitle": "Withdraw from merchant wallet to bank account",
+      "currentBalance": "Current Balance",
+      "amount": "Withdrawal Amount",
+      "minAmount": "Minimum withdrawal ฿500",
+      "bankName": "Bank Name",
+      "bankNamePlaceholder": "e.g. Bangkok Bank, Kasikorn Bank",
+      "accountNumber": "Account Number",
+      "accountNumberPlaceholder": "xxx-x-xxxxx-x",
+      "accountName": "Account Name",
+      "accountNamePlaceholder": "Enter bank account holder name",
+      "submit": "Submit Request",
+      "submitting": "Submitting...",
+      "cancel": "Cancel",
+      "success": "Withdrawal request submitted. Please wait for approval.",
+      "failed": "Withdrawal request failed. Please try again later.",
+      "insufficientBalance": "Insufficient balance for withdrawal",
+      "invalidAmount": "Invalid withdrawal amount",
+      "processingFee": "Processing Fee",
+      "actualAmount": "Amount to Receive",
+      "feeNote": "2% processing fee, minimum ฿10"
+    },
+    "withdrawHistory": {
+      "title": "Withdrawal History",
+      "noRecords": "No withdrawal records",
+      "amount": "Amount",
+      "bank": "Bank",
+      "status": "Status",
+      "date": "Date",
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    },
+    "descriptions": {
+      "subscriptionPayment": "Subscription payment",
+      "subscriptionReactivation": "Subscription reactivation",
+      "withdrawalRefund": "Withdrawal refund (rejected)",
+      "planNames": {
+        "trial": "Trial",
+        "basic": "Basic",
+        "standard": "Standard",
+        "professional": "Professional",
+        "enterprise": "Enterprise"
+      }
     }
   },
   "merchantStaff": {
@@ -747,7 +797,8 @@
     "noStaff": "No staff yet",
     "unknownNumber": "Unknown number",
     "joinedAt": "Joined at",
-    "removeTooltip": "Remove"
+    "removeTooltip": "Remove",
+    "staffLabel": "Staff {number}"
   },
   "merchantDesign": {
     "title": "Store Design",
@@ -1374,5 +1425,79 @@
       "inlineTitle": "Upgrade to unlock this feature"
     },
     "noNotifications": "No notifications"
+  },
+  "referral": {
+    "title": "Referral Center",
+    "subtitle": "Invite friends and earn cash rewards",
+    "yourReferralLink": "Your Referral Link",
+    "copyLink": "Copy Link",
+    "copied": "Copied",
+    "shareLink": "Share Link",
+    "shareText": "I'm using KUMMAK to manage my shop, it's great! Click to sign up for free",
+    "stats": {
+      "title": "Referral Statistics",
+      "totalReferrals": "Total Referrals",
+      "successfulReferrals": "Successful Subscriptions",
+      "totalEarned": "Total Earned",
+      "availableBalance": "Available Balance",
+      "pendingRewards": "Pending"
+    },
+    "rewards": {
+      "title": "Reward History",
+      "noRewards": "No rewards yet",
+      "referee": "Referred User",
+      "plan": "Subscription Plan",
+      "amount": "Reward Amount",
+      "status": "Status",
+      "date": "Date",
+      "pending": "Pending",
+      "approved": "Approved",
+      "cancelled": "Cancelled"
+    },
+    "withdraw": {
+      "title": "Request Withdrawal",
+      "balance": "Current Balance",
+      "minAmount": "Minimum withdrawal ฿100",
+      "insufficientBalance": "Balance below ฿100, cannot withdraw",
+      "bankAccount": "Bank Account",
+      "bankName": "Bank Name",
+      "accountNumber": "Account Number",
+      "accountName": "Account Name",
+      "amount": "Withdrawal Amount",
+      "submit": "Submit Request",
+      "submitting": "Submitting...",
+      "success": "Withdrawal request submitted",
+      "failed": "Request failed"
+    },
+    "withdrawals": {
+      "title": "Withdrawal History",
+      "noWithdrawals": "No withdrawals yet",
+      "amount": "Amount",
+      "status": "Status",
+      "date": "Request Date",
+      "pending": "Pending",
+      "processing": "Processing",
+      "completed": "Completed",
+      "rejected": "Rejected"
+    },
+    "howItWorks": {
+      "title": "How Referral Rewards Work",
+      "step1": "Share your referral link with friends",
+      "step2": "Friends sign up and subscribe",
+      "step3": "Rewards credited 1 day after subscription",
+      "rewards": "Reward Amounts",
+      "standard": "Standard Plan: ฿50",
+      "professional": "Professional Plan: ฿100",
+      "enterprise": "Enterprise Plan: ฿200",
+      "note": "Note: Only valid for new users' first subscription"
+    }
+  },
+  "staffRedeem": {
+    "metaTitle": "Staff Redemption",
+    "metaDescription": "Scan QR code to redeem customer orders",
+    "title": "Staff Redemption",
+    "subtitle": "Scan customer order QR code to redeem",
+    "workingFor": "You are working for",
+    "unknownShop": "Unknown Shop"
   }
 }

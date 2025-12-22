@@ -181,7 +181,9 @@
       "reviews": "รอการรีวิว",
       "collapse": "ย่อ",
       "expand": "ขยาย",
-      "backHome": "กลับหน้าแรก"
+      "backHome": "กลับหน้าแรก",
+      "staffSection": "ฟังก์ชันพนักงาน",
+      "staffRedeem": "สแกนเพื่อแลก"
     }
   },
   "orders": {
@@ -323,7 +325,7 @@
     },
     "stats": {
       "title": "แดชบอร์ด",
-      "trialNotice": "ร้านค้าของคุณอยู่ในช่วงทดลองใช้ 30 วัน และทีมงานของเรากำลังตรวจสอบข้อมูลของคุณ",
+      "trialNotice": "กรุณายืนยันตัวตน KYC ในหน้าตั้งค่า ลูกค้าจะสามารถซื้อสินค้าหรือคูปองของคุณได้หลังจากยืนยันตัวตนแล้ว",
       "todaySales": "ยอดขายวันนี้",
       "todayRedemptions": "การแลกวันนี้",
       "ordersCount": "{count} คำสั่งซื้อ"
@@ -443,6 +445,7 @@
     "wallet": "กระเป๋าเงิน",
     "staff": "จัดการพนักงาน",
     "subscription": "การสมัครสมาชิก",
+    "referral": "รางวัลแนะนำ",
     "accountSettings": "ตั้งค่าบัญชี",
     "backToHome": "กลับหน้าหลัก",
     "collapse": "ย่อเมนู",
@@ -729,6 +732,53 @@
       "failedTitle": "การยืนยันล้มเหลว",
       "reuploadButton": "อัปโหลดใหม่",
       "closeButton": "ปิด"
+    },
+    "withdraw": {
+      "title": "ขอถอนเงิน",
+      "subtitle": "ถอนเงินจากกระเป๋าร้านค้าไปยังบัญชีธนาคาร",
+      "currentBalance": "ยอดเงินปัจจุบัน",
+      "amount": "จำนวนเงินที่ถอน",
+      "minAmount": "ถอนขั้นต่ำ ฿500",
+      "bankName": "ชื่อธนาคาร",
+      "bankNamePlaceholder": "เช่น ธนาคารกรุงเทพ, ธนาคารกสิกรไทย",
+      "accountNumber": "เลขที่บัญชี",
+      "accountNumberPlaceholder": "xxx-x-xxxxx-x",
+      "accountName": "ชื่อบัญชี",
+      "accountNamePlaceholder": "กรอกชื่อเจ้าของบัญชี",
+      "submit": "ส่งคำขอ",
+      "submitting": "กำลังส่ง...",
+      "cancel": "ยกเลิก",
+      "success": "ส่งคำขอถอนเงินแล้ว กรุณารอการอนุมัติ",
+      "failed": "คำขอถอนเงินล้มเหลว โปรดลองอีกครั้งในภายหลัง",
+      "insufficientBalance": "ยอดเงินไม่เพียงพอสำหรับการถอน",
+      "invalidAmount": "จำนวนเงินที่ถอนไม่ถูกต้อง",
+      "processingFee": "ค่าธรรมเนียม",
+      "actualAmount": "ยอดเงินที่จะได้รับ",
+      "feeNote": "ค่าธรรมเนียมการถอน 2% ขั้นต่ำ ฿10"
+    },
+    "withdrawHistory": {
+      "title": "ประวัติการถอนเงิน",
+      "noRecords": "ไม่มีรายการถอนเงิน",
+      "amount": "จำนวนเงิน",
+      "bank": "ธนาคาร",
+      "status": "สถานะ",
+      "date": "วันที่",
+      "pending": "รอดำเนินการ",
+      "processing": "กำลังดำเนินการ",
+      "completed": "สำเร็จ",
+      "rejected": "ถูกปฏิเสธ"
+    },
+    "descriptions": {
+      "subscriptionPayment": "ชำระค่าแพ็กเกจ",
+      "subscriptionReactivation": "เปิดใช้งานแพ็กเกจอีกครั้ง",
+      "withdrawalRefund": "คืนเงินการถอน (ถูกปฏิเสธ)",
+      "planNames": {
+        "trial": "ทดลองใช้",
+        "basic": "พื้นฐาน",
+        "standard": "มาตรฐาน",
+        "professional": "มืออาชีพ",
+        "enterprise": "องค์กร"
+      }
     }
   },
   "merchantStaff": {
@@ -747,7 +797,8 @@
     "noStaff": "ยังไม่มีพนักงาน",
     "unknownNumber": "หมายเลขที่ไม่รู้จัก",
     "joinedAt": "เข้าร่วมเมื่อ",
-    "removeTooltip": "ลบ"
+    "removeTooltip": "ลบ",
+    "staffLabel": "พนักงาน {number}"
   },
   "merchantDesign": {
     "title": "ตกแต่งร้านค้า",
@@ -1374,5 +1425,79 @@
       "inlineTitle": "อัพเกรดเพื่อปลดล็อคฟีเจอร์นี้"
     },
     "noNotifications": "ไม่มีการแจ้งเตือน"
+  },
+  "referral": {
+    "title": "ศูนย์แนะนำ",
+    "subtitle": "เชิญเพื่อนเข้าร่วมและรับเงินคืน",
+    "yourReferralLink": "ลิงก์แนะนำของคุณ",
+    "copyLink": "คัดลอกลิงก์",
+    "copied": "คัดลอกแล้ว",
+    "shareLink": "แชร์ลิงก์",
+    "shareText": "ฉันใช้ KUMMAK จัดการร้านค้า ดีมาก! คลิกเพื่อลงทะเบียนฟรี",
+    "stats": {
+      "title": "สถิติการแนะนำ",
+      "totalReferrals": "จำนวนการแนะนำทั้งหมด",
+      "successfulReferrals": "สมัครสมาชิกสำเร็จ",
+      "totalEarned": "รายได้รวม",
+      "availableBalance": "ยอดคงเหลือที่ถอนได้",
+      "pendingRewards": "รอดำเนินการ"
+    },
+    "rewards": {
+      "title": "ประวัติรางวัล",
+      "noRewards": "ยังไม่มีรางวัล",
+      "referee": "ผู้ถูกแนะนำ",
+      "plan": "แผนสมาชิก",
+      "amount": "จำนวนเงินรางวัล",
+      "status": "สถานะ",
+      "date": "วันที่",
+      "pending": "รอดำเนินการ",
+      "approved": "อนุมัติแล้ว",
+      "cancelled": "ยกเลิก"
+    },
+    "withdraw": {
+      "title": "ขอถอนเงิน",
+      "balance": "ยอดคงเหลือปัจจุบัน",
+      "minAmount": "ถอนขั้นต่ำ ฿100",
+      "insufficientBalance": "ยอดคงเหลือต่ำกว่า ฿100 ไม่สามารถถอนได้",
+      "bankAccount": "บัญชีธนาคาร",
+      "bankName": "ชื่อธนาคาร",
+      "accountNumber": "เลขบัญชี",
+      "accountName": "ชื่อบัญชี",
+      "amount": "จำนวนเงินถอน",
+      "submit": "ส่งคำขอ",
+      "submitting": "กำลังส่ง...",
+      "success": "ส่งคำขอถอนเงินแล้ว",
+      "failed": "คำขอล้มเหลว"
+    },
+    "withdrawals": {
+      "title": "ประวัติการถอน",
+      "noWithdrawals": "ยังไม่มีการถอน",
+      "amount": "จำนวนเงิน",
+      "status": "สถานะ",
+      "date": "วันที่ขอ",
+      "pending": "รอดำเนินการ",
+      "processing": "กำลังดำเนินการ",
+      "completed": "เสร็จสิ้น",
+      "rejected": "ถูกปฏิเสธ"
+    },
+    "howItWorks": {
+      "title": "วิธีการรับรางวัลแนะนำ",
+      "step1": "แชร์ลิงก์แนะนำของคุณให้เพื่อน",
+      "step2": "เพื่อนลงทะเบียนและสมัครสมาชิก",
+      "step3": "รางวัลเข้าบัญชี 1 วันหลังสมัคร",
+      "rewards": "จำนวนเงินรางวัล",
+      "standard": "แผน Standard: ฿50",
+      "professional": "แผน Professional: ฿100",
+      "enterprise": "แผน Enterprise: ฿200",
+      "note": "หมายเหตุ: ใช้ได้เฉพาะการสมัครครั้งแรกของผู้ใช้ใหม่"
+    }
+  },
+  "staffRedeem": {
+    "metaTitle": "สแกนแลกสินค้าพนักงาน",
+    "metaDescription": "สแกน QR code เพื่อแลกรับคำสั่งซื้อ",
+    "title": "สแกนแลกสินค้า",
+    "subtitle": "สแกน QR code ของลูกค้าเพื่อแลกรับสินค้า",
+    "workingFor": "คุณกำลังทำงานให้กับ",
+    "unknownShop": "ร้านค้าไม่ทราบชื่อ"
   }
 }

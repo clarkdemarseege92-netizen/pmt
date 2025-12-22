@@ -12,6 +12,8 @@ type Staff = {
   profiles: {
     phone: string;
     email: string | null;
+    avatar_url: string | null;
+    full_name: string | null;
   };
 };
 
@@ -125,32 +127,56 @@ export default function StaffPage() {
             <div className="p-8 text-center text-base-content/50">{t('noStaff')}</div>
         ) : (
             <div className="divide-y divide-base-100">
-                {staffList.map((staff) => (
-                    <div key={staff.id} className="p-4 flex justify-between items-center hover:bg-base-50 transition-colors">
-                        <div className="flex items-center gap-4">
-                            <div className="avatar placeholder">
-                                <div className="bg-neutral text-neutral-content rounded-full w-10">
-                                    <span>{staff.profiles?.phone?.slice(-2) || 'St'}</span>
+                {staffList.map((staff, index) => {
+                    // 格式化手机号显示：将 66xxxxxxxxx 转换为 0xxxxxxxxx
+                    const formatPhoneDisplay = (phone: string | undefined) => {
+                        if (!phone) return null;
+                        if (phone.startsWith('66')) {
+                            return '0' + phone.substring(2);
+                        }
+                        return phone;
+                    };
+                    const displayPhone = formatPhoneDisplay(staff.profiles?.phone);
+                    const staffNumber = index + 1;
+
+                    return (
+                        <div key={staff.id} className="p-4 flex justify-between items-center hover:bg-base-50 transition-colors">
+                            <div className="flex items-center gap-4">
+                                {staff.profiles?.avatar_url ? (
+                                    <div className="avatar">
+                                        <div className="w-10 rounded-full">
+                                            <img src={staff.profiles.avatar_url} alt={`Staff ${staffNumber}`} />
+                                        </div>
+                                    </div>
+                                ) : (
+                                    <div className="avatar placeholder">
+                                        <div className="bg-primary text-primary-content rounded-full w-10">
+                                            <span>{staffNumber}</span>
+                                        </div>
+                                    </div>
+                                )}
+                                <div>
+                                    <div className="font-bold flex items-center gap-2">
+                                        {t('staffLabel', { number: staffNumber })}
+                                    </div>
+                                    <div className="text-sm text-base-content/70">
+                                        {displayPhone || t('unknownNumber')}
+                                    </div>
+                                    <div className="text-xs text-base-content/50">
+                                        {t('joinedAt')}: {new Date(staff.created_at).toLocaleDateString()}
+                                    </div>
                                 </div>
                             </div>
-                            <div>
-                                <div className="font-bold flex items-center gap-2">
-                                    {staff.profiles?.phone || t('unknownNumber')}
-                                </div>
-                                <div className="text-xs text-base-content/60">
-                                    {t('joinedAt')}: {new Date(staff.created_at).toLocaleDateString()}
-                                </div>
-                            </div>
+                            <button
+                                className="btn btn-ghost btn-sm text-error tooltip"
+                                data-tip={t('removeTooltip')}
+                                onClick={() => handleDelete(staff.id)}
+                            >
+                                <HiTrash className="w-5 h-5" />
+                            </button>
                         </div>
-                        <button
-                            className="btn btn-ghost btn-sm text-error tooltip"
-                            data-tip={t('removeTooltip')}
-                            onClick={() => handleDelete(staff.id)}
-                        >
-                            <HiTrash className="w-5 h-5" />
-                        </button>
-                    </div>
-                ))}
+                    );
+                })}
             </div>
         )}
       </div>

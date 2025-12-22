@@ -1,7 +1,7 @@
 // 文件: /components/ClientSidebar.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {Link, usePathname} from "@/i18n/routing";
 import {
   HiUser,               // 个人资料
@@ -12,13 +12,40 @@ import {
   HiChevronLeft,
   HiChevronRight,
   HiArrowLeftStartOnRectangle, // 返回主页
+  HiQrCode,             // 核销扫码
 } from "react-icons/hi2";
 import { useTranslations } from 'next-intl';
 
 export default function ClientSidebar() {
   const [isExpanded, setIsExpanded] = useState(true);
+  const [hasStaffPermission, setHasStaffPermission] = useState(false);
   const pathname = usePathname();
   const t = useTranslations('client');
+
+  // 检查用户是否有员工核销权限 - 通过 API 绕过 RLS
+  useEffect(() => {
+    const checkStaffPermission = async () => {
+      console.log('🔍 [ClientSidebar] Checking staff permission via API...');
+
+      try {
+        const res = await fetch('/api/client/check-staff');
+        const data = await res.json();
+
+        console.log('📋 [ClientSidebar] API response:', data);
+
+        if (data.isStaff) {
+          console.log('✅ [ClientSidebar] User is staff, showing redeem option');
+          setHasStaffPermission(true);
+        } else {
+          console.log('⚠️ [ClientSidebar] User is NOT staff');
+        }
+      } catch (err) {
+        console.error('❌ [ClientSidebar] Error checking staff permission:', err);
+      }
+    };
+
+    checkStaffPermission();
+  }, []);
 
   const toggleSidebar = () => setIsExpanded(!isExpanded);
 
@@ -90,6 +117,33 @@ export default function ClientSidebar() {
             </Link>
           );
         })}
+
+        {/* 员工核销入口 - 仅在有权限时显示 */}
+        {hasStaffPermission && (
+          <>
+            {isExpanded && (
+              <div className="text-xs text-base-content/50 px-3 pt-4 pb-2 uppercase tracking-wider">
+                {t('sidebar.staffSection')}
+              </div>
+            )}
+            <Link
+              href="/client/staff-redeem"
+              className={`flex items-center p-3 rounded-xl transition-all duration-200 ${
+                pathname === "/client/staff-redeem"
+                  ? "bg-secondary text-secondary-content shadow-md"
+                  : "hover:bg-secondary/10 text-secondary hover:text-secondary"
+              } ${isExpanded ? "justify-start gap-3" : "justify-center"}`}
+              title={!isExpanded ? t('sidebar.staffRedeem') : ""}
+            >
+              <span className="shrink-0"><HiQrCode className="w-6 h-6" /></span>
+              <span className={`whitespace-nowrap transition-all duration-300 origin-left ${
+                isExpanded ? "opacity-100 scale-100" : "opacity-0 scale-0 w-0 overflow-hidden"
+              }`}>
+                {t('sidebar.staffRedeem')}
+              </span>
+            </Link>
+          </>
+        )}
       </nav>
 
       <div className="p-4 border-t border-base-200">

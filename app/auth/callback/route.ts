@@ -135,28 +135,76 @@ export async function GET(request: Request) {
       } else {
         // 普通用户登录，确保有 profile 记录（如果没有则创建）
         console.log("AUTH CALLBACK: 普通用户登录流程");
+
+        // 检查是否有推荐码 Cookie
+        const referralCode = cookieStore.get('kummak_referral_code')?.value;
+        console.log("AUTH CALLBACK: 推荐码:", referralCode || '无');
+
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('id')
+          .select('id, referred_by')
           .eq('id', data.user.id)
           .single();
 
         if (profileError && profileError.code === 'PGRST116') {
-          // PGRST116 = 没有找到记录
+          // PGRST116 = 没有找到记录 - 新用户
           console.log("AUTH CALLBACK: 用户首次登录，创建 profile");
+
+          // 如果有推荐码，查找推荐人
+          let referrerId = null;
+          if (referralCode) {
+            const { data: referrer } = await supabase
+              .from('profiles')
+              .select('id')
+              .eq('referral_code', referralCode)
+              .single();
+
+            if (referrer) {
+              referrerId = referrer.id;
+              console.log("AUTH CALLBACK: 找到推荐人:", referrerId);
+            } else {
+              console.log("AUTH CALLBACK: 推荐码无效或推荐人不存在");
+            }
+          }
+
           const { error: insertError } = await supabase
             .from('profiles')
             .insert({
               id: data.user.id,
               email: data.user.email,
               role: 'user',
+              referred_by: referrerId,
+              referred_at: referrerId ? new Date().toISOString() : null,
             });
 
           if (insertError) {
             console.error("AUTH CALLBACK: 创建 profile 失败:", insertError.message);
             // 不阻止登录，继续执行
           } else {
-            console.log("AUTH CALLBACK: Profile 创建成功");
+            console.log("AUTH CALLBACK: Profile 创建成功", referrerId ? `(推荐人: ${referrerId})` : '');
+          }
+        } else if (profile && !profile.referred_by && referralCode) {
+          // 用户已存在但没有推荐人，且有推荐码 - 尝试关联（仅限首次）
+          console.log("AUTH CALLBACK: 用户已存在，检查是否可以关联推荐人");
+          const { data: referrer } = await supabase
+            .from('profiles')
+            .select('id')
+            .eq('referral_code', referralCode)
+            .single();
+
+          if (referrer && referrer.id !== data.user.id) {
+            // 防止自我推荐
+            const { error: updateError } = await supabase
+              .from('profiles')
+              .update({
+                referred_by: referrer.id,
+                referred_at: new Date().toISOString(),
+              })
+              .eq('id', data.user.id);
+
+            if (!updateError) {
+              console.log("AUTH CALLBACK: 成功关联推荐人:", referrer.id);
+            }
           }
         }
       }

@@ -267,12 +267,12 @@ INSERT INTO subscription_plans (name, display_name, price, product_limit, coupon
    "marketing_tools": false
  }'::jsonb),
 
--- 基础版
+-- 基础版（免费）
 ('basic',
- '{"en": "Basic", "th": "พื้นฐาน", "zh": "基础版"}'::jsonb,
- 89,
- 25,
- 8,
+ '{"en": "Basic (Free)", "th": "พื้นฐาน (ฟรี)", "zh": "基础版（免费）"}'::jsonb,
+ 0,
+ 10,
+ 2,
  '{
    "pos_system": true,
    "basic_accounting": true,
@@ -406,7 +406,7 @@ BEGIN
   RAISE NOTICE '';
   RAISE NOTICE '初始化的订阅方案：';
   RAISE NOTICE '  - Trial (฿0, 50 products, 15 coupons)';
-  RAISE NOTICE '  - Basic (฿89, 25 products, 8 coupons)';
+  RAISE NOTICE '  - Basic (Free, 10 products, 2 coupons)';
   RAISE NOTICE '  - Standard (฿169, 50 products, 15 coupons)';
   RAISE NOTICE '  - Professional (฿269, 100 products, 20 coupons)';
   RAISE NOTICE '  - Enterprise (฿399, 200 products, 30 coupons)';

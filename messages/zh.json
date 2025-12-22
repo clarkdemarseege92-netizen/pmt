@@ -181,7 +181,9 @@
       "reviews": "待评价",
       "collapse": "收起",
       "expand": "展开",
-      "backHome": "返回首页"
+      "backHome": "返回首页",
+      "staffSection": "员工功能",
+      "staffRedeem": "扫码核销"
     }
   },
   "orders": {
@@ -323,7 +325,7 @@
     },
     "stats": {
       "title": "仪表板 (Dashboard)",
-      "trialNotice": "您的店铺正在 30 天试用期，同时我们的团队将对您的资料进行审核。",
+      "trialNotice": "请在设置页面进行KYC认证，通过认证后客户才能购买您的商品或优惠券。",
       "todaySales": "今日销售额",
       "todayRedemptions": "今日核销",
       "ordersCount": "{count} 单"
@@ -443,6 +445,7 @@
     "wallet": "钱包",
     "staff": "员工管理",
     "subscription": "订阅管理",
+    "referral": "推荐返利",
     "accountSettings": "账户设置",
     "backToHome": "返回主站",
     "collapse": "收起菜单",
@@ -729,6 +732,53 @@
       "failedTitle": "验证失败",
       "reuploadButton": "重新上传",
       "closeButton": "关闭"
+    },
+    "withdraw": {
+      "title": "申请提现",
+      "subtitle": "从商户钱包提现到银行账户",
+      "currentBalance": "当前余额",
+      "amount": "提现金额",
+      "minAmount": "最低提现金额 ฿500",
+      "bankName": "银行名称",
+      "bankNamePlaceholder": "例如: Bangkok Bank, Kasikorn Bank",
+      "accountNumber": "银行账号",
+      "accountNumberPlaceholder": "xxx-x-xxxxx-x",
+      "accountName": "账户名称",
+      "accountNamePlaceholder": "请输入银行账户姓名",
+      "submit": "提交申请",
+      "submitting": "提交中...",
+      "cancel": "取消",
+      "success": "提现申请已提交，请等待审核。",
+      "failed": "提现申请失败，请稍后再试。",
+      "insufficientBalance": "余额不足，无法提现",
+      "invalidAmount": "提现金额无效",
+      "processingFee": "手续费",
+      "actualAmount": "实际到账",
+      "feeNote": "提现手续费 2%，最低 ฿10"
+    },
+    "withdrawHistory": {
+      "title": "提现记录",
+      "noRecords": "暂无提现记录",
+      "amount": "金额",
+      "bank": "银行",
+      "status": "状态",
+      "date": "日期",
+      "pending": "审核中",
+      "processing": "处理中",
+      "completed": "已完成",
+      "rejected": "已拒绝"
+    },
+    "descriptions": {
+      "subscriptionPayment": "套餐订阅支付",
+      "subscriptionReactivation": "套餐重新激活",
+      "withdrawalRefund": "提现退还（已拒绝）",
+      "planNames": {
+        "trial": "试用版",
+        "basic": "基础版",
+        "standard": "标准版",
+        "professional": "专业版",
+        "enterprise": "企业版"
+      }
     }
   },
   "merchantStaff": {
@@ -747,7 +797,8 @@
     "noStaff": "暂无员工",
     "unknownNumber": "未知号码",
     "joinedAt": "加入时间",
-    "removeTooltip": "移除"
+    "removeTooltip": "移除",
+    "staffLabel": "员工 {number}"
   },
   "merchantDesign": {
     "title": "店铺装修",
@@ -1374,5 +1425,79 @@
       "inlineTitle": "升级以解锁此功能"
     },
     "noNotifications": "暂无通知"
+  },
+  "referral": {
+    "title": "推荐中心",
+    "subtitle": "邀请朋友加入，获得现金返利",
+    "yourReferralLink": "您的专属推荐链接",
+    "copyLink": "复制链接",
+    "copied": "已复制",
+    "shareLink": "分享链接",
+    "shareText": "我在用 KUMMAK 管理店铺，超好用！点击注册免费试用",
+    "stats": {
+      "title": "推荐统计",
+      "totalReferrals": "总推荐人数",
+      "successfulReferrals": "成功订阅",
+      "totalEarned": "累计收益",
+      "availableBalance": "可提现余额",
+      "pendingRewards": "待发放"
+    },
+    "rewards": {
+      "title": "返利记录",
+      "noRewards": "暂无返利记录",
+      "referee": "被推荐人",
+      "plan": "订阅方案",
+      "amount": "返利金额",
+      "status": "状态",
+      "date": "日期",
+      "pending": "待发放",
+      "approved": "已发放",
+      "cancelled": "已取消"
+    },
+    "withdraw": {
+      "title": "申请提现",
+      "balance": "当前余额",
+      "minAmount": "最低提现金额 ฿100",
+      "insufficientBalance": "余额不足 ฿100，无法提现",
+      "bankAccount": "银行账户",
+      "bankName": "银行名称",
+      "accountNumber": "账户号码",
+      "accountName": "账户名",
+      "amount": "提现金额",
+      "submit": "提交申请",
+      "submitting": "提交中...",
+      "success": "提现申请已提交",
+      "failed": "申请失败"
+    },
+    "withdrawals": {
+      "title": "提现记录",
+      "noWithdrawals": "暂无提现记录",
+      "amount": "金额",
+      "status": "状态",
+      "date": "申请日期",
+      "pending": "待处理",
+      "processing": "处理中",
+      "completed": "已完成",
+      "rejected": "已拒绝"
+    },
+    "howItWorks": {
+      "title": "推荐奖励规则",
+      "step1": "分享您的专属链接给朋友",
+      "step2": "朋友通过链接注册并订阅",
+      "step3": "订阅成功1天后，返利自动到账",
+      "rewards": "返利金额",
+      "standard": "标准版订阅: ฿50",
+      "professional": "专业版订阅: ฿100",
+      "enterprise": "企业版订阅: ฿200",
+      "note": "注意：仅限新用户首次订阅有效"
+    }
+  },
+  "staffRedeem": {
+    "metaTitle": "员工核销",
+    "metaDescription": "扫描二维码核销客户订单",
+    "title": "员工核销",
+    "subtitle": "扫描客户订单二维码进行核销",
+    "workingFor": "您正在为以下店铺工作",
+    "unknownShop": "未知店铺"
   }
 }
