@@ -75,7 +75,7 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json({ 
         success: false, 
-        message: 'กรุณาเข้าสู่ระบบก่อนทำการซื้อ｜Please log in before purchasing｜请先登录后再购买' 
+        message: 'Please log in first.' 
       }, { status: 401 });
     }
 
