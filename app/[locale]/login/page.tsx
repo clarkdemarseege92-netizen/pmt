@@ -1,7 +1,7 @@
 // 文件: /app/[locale]/login/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, Suspense } from "react";
 import { useRouter } from "@/i18n/routing";
 import { useSearchParams } from "next/navigation";
 import { supabase } from "@/lib/supabaseClient";
@@ -26,7 +26,8 @@ const getReferralCode = (): string | null => {
   return match ? match[2] : null;
 };
 
-export default function LoginPage() {
+// 登录表单组件（使用 useSearchParams）
+function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -251,10 +252,42 @@ export default function LoginPage() {
                 <span>{error}</span>
               </div>
             )}
-            
+
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+// 加载骨架屏
+function LoginFormSkeleton() {
+  return (
+    <div className="hero min-h-screen bg-base-200">
+      <div className="hero-content w-full max-w-md">
+        <div className="card w-full shadow-2xl bg-base-100">
+          <div className="card-body">
+            <div className="skeleton h-8 w-32 mx-auto mb-4"></div>
+            <div className="skeleton h-12 w-full mb-4"></div>
+            <div className="skeleton h-4 w-16 mx-auto mb-4"></div>
+            <div className="skeleton h-10 w-full mb-2"></div>
+            <div className="skeleton h-10 w-full mb-4"></div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="skeleton h-12 w-full"></div>
+              <div className="skeleton h-12 w-full"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// 主页面组件（用 Suspense 包裹 LoginForm）
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<LoginFormSkeleton />}>
+      <LoginForm />
+    </Suspense>
   );
 }
