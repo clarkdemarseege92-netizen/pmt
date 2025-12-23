@@ -49,10 +49,21 @@ export async function GET() {
       return NextResponse.json({ isStaff: false });
     }
 
+    // merchants 可能是数组或单个对象，需要正确处理
+    const merchantsData = staffRecord.merchants;
+    let shopName: string | null = null;
+    if (merchantsData) {
+      if (Array.isArray(merchantsData)) {
+        shopName = (merchantsData[0] as { shop_name: string })?.shop_name || null;
+      } else {
+        shopName = (merchantsData as { shop_name: string }).shop_name || null;
+      }
+    }
+
     return NextResponse.json({
       isStaff: true,
       merchantId: staffRecord.merchant_id,
-      shopName: (staffRecord.merchants as { shop_name: string } | null)?.shop_name || null
+      shopName
     });
 
   } catch (err) {
