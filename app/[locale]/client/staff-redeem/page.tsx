@@ -64,7 +64,16 @@ export default async function StaffRedeemPage({
     }
 
     const t = await getTranslations('staffRedeem');
-    const shopName = (staffRecord.merchants as { shop_name: string } | null)?.shop_name || t('unknownShop');
+    // merchants 可能是数组或单个对象，需要正确处理
+    const merchantsData = staffRecord.merchants;
+    let shopName = t('unknownShop');
+    if (merchantsData) {
+        if (Array.isArray(merchantsData)) {
+            shopName = (merchantsData[0] as { shop_name: string })?.shop_name || t('unknownShop');
+        } else {
+            shopName = (merchantsData as { shop_name: string }).shop_name || t('unknownShop');
+        }
+    }
 
     return (
         <div className="flex flex-col gap-6 p-4 md:p-8">
