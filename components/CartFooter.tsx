@@ -190,6 +190,7 @@ export default function CartFooter() {
             <div className="flex-none w-36">
               <BuyButton
                 productIds={productIds}
+                merchantId={merchantId}
                 merchantPromptPayId={merchantId}
                 quantity={totalQuantity}
                 showQuantitySelector={false}

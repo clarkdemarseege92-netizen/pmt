@@ -217,6 +217,11 @@ export interface CashOrderWithTransaction extends CashOrder {
 }
 
 /**
+ * 支付方式
+ */
+export type PaymentMethod = 'cash' | 'qr_code';
+
+/**
  * 创建现金订单的输入
  */
 export interface CreateCashOrderInput {
@@ -224,6 +229,7 @@ export interface CreateCashOrderInput {
   items: CashOrderItem[];
   note?: string;
   order_date?: string; // ISO timestamp, defaults to now
+  payment_method?: PaymentMethod; // 支付方式，默认为 cash
 }
 
 /**

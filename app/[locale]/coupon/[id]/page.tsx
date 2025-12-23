@@ -268,6 +268,7 @@ export default async function CouponDetailPage({
 
             <BuyButton
               couponId={coupon.coupon_id}
+              merchantId={merchantData?.merchant_id || ''}
               merchantPromptPayId={paymentIdentifier}
               stockQuantity={coupon.stock_quantity}
             />

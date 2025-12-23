@@ -11,6 +11,7 @@ import { useTranslations } from 'next-intl';
 interface BuyButtonProps {
   couponId?: string;
   productIds?: string[];
+  merchantId: string; // 商户ID，用于余额检查
   merchantPromptPayId: string;
   stockQuantity?: number;
   quantity?: number;
@@ -30,6 +31,7 @@ interface PaymentInfo {
 export default function BuyButton({
   couponId,
   productIds,
+  merchantId,
   merchantPromptPayId,
   stockQuantity = 999,
   quantity: externalQuantity,
@@ -181,24 +183,52 @@ export default function BuyButton({
         setError(t('errors.merchantNotConfigured'));
         return;
     }
-    
+
     setLoading(true);
     setError(null);
 
     try {
+      // 1. 先检查商户余额是否满足 Slip2Go 验证要求 (>= 200 THB)
+      const balanceResponse = await fetch('/api/merchant/check-balance', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchantId }),
+      });
+
+      const balanceData = await balanceResponse.json();
+
+      if (!balanceResponse.ok || !balanceData.success) {
+        setError(t('errors.balanceCheckFailed'));
+        setLoading(false);
+        return;
+      }
+
+      // 检查余额是否足够
+      if (!balanceData.data?.hasEnoughBalance) {
+        const currentBalance = balanceData.data?.balance || 0;
+        const requiredBalance = balanceData.data?.requiredBalance || 200;
+        setError(t('errors.merchantInsufficientBalance', {
+          current: currentBalance.toFixed(2),
+          required: requiredBalance.toFixed(2)
+        }));
+        setLoading(false);
+        return;
+      }
+
+      // 2. 余额检查通过，继续创建订单
       // 购物车模式 vs 单商品模式
-      const payload = productIds 
-        ? { productIds, quantity } 
+      const payload = productIds
+        ? { productIds, quantity }
         : { couponId, quantity };
 
       const response = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload), 
+        body: JSON.stringify(payload),
       });
 
       const data = await response.json();
-      
+
       if (response.ok && data.success) {
         setPaymentInfo({
             orderId: data.orderId,

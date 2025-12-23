@@ -2,7 +2,7 @@
 'use client';
 
 import { useTranslations, useLocale } from 'next-intl';
-import { HiTrash, HiPlus, HiMinus } from 'react-icons/hi2';
+import { HiTrash, HiPlus, HiMinus, HiQrCode, HiBanknotes } from 'react-icons/hi2';
 import type { CashOrderItem } from '@/app/types/accounting';
 
 type ShoppingCartProps = {
@@ -10,7 +10,9 @@ type ShoppingCartProps = {
   onUpdateQuantity: (index: number, quantity: number) => void;
   onRemoveItem: (index: number) => void;
   onCheckout: () => void;
+  onQRCheckout: () => void;
   onClear: () => void;
+  isCheckingBalance?: boolean;
 };
 
 export function ShoppingCart({
@@ -18,7 +20,9 @@ export function ShoppingCart({
   onUpdateQuantity,
   onRemoveItem,
   onCheckout,
+  onQRCheckout,
   onClear,
+  isCheckingBalance = false,
 }: ShoppingCartProps) {
   const t = useTranslations('quickEntry');
   const locale = useLocale();
@@ -152,14 +156,33 @@ export function ShoppingCart({
           </div>
 
           {/* 结算按钮 */}
-          <button
-            type="button"
-            onClick={onCheckout}
-            className="btn btn-primary btn-lg w-full"
-            disabled={total <= 0}
-          >
-            {t('income.cart.checkout')}
-          </button>
+          <div className="flex gap-2">
+            {/* 现金结算 */}
+            <button
+              type="button"
+              onClick={onCheckout}
+              className="btn btn-primary btn-lg flex-1"
+              disabled={total <= 0}
+            >
+              <HiBanknotes className="w-5 h-5" />
+              {t('income.cart.cashCheckout')}
+            </button>
+
+            {/* 二维码结算 */}
+            <button
+              type="button"
+              onClick={onQRCheckout}
+              className="btn btn-secondary btn-lg flex-1"
+              disabled={total <= 0 || isCheckingBalance}
+            >
+              {isCheckingBalance ? (
+                <span className="loading loading-spinner loading-sm"></span>
+              ) : (
+                <HiQrCode className="w-5 h-5" />
+              )}
+              {t('income.cart.qrCheckout')}
+            </button>
+          </div>
 
           {total <= 0 && (
             <p className="text-xs text-error text-center mt-2">

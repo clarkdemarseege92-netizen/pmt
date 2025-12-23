@@ -6,7 +6,9 @@ import { useTranslations } from 'next-intl';
 import { ProductGrid } from './ProductGrid';
 import { ShoppingCart } from './ShoppingCart';
 import { CheckoutModal } from './CheckoutModal';
+import { QRCheckoutModal } from './QRCheckoutModal';
 import { createCashOrder } from '@/app/actions/accounting/cash-orders';
+import { getMerchantBalanceForQR } from '@/app/actions/accounting/get-balance';
 import type { CashOrderItem } from '@/app/types/accounting';
 
 type IncomePOSTabProps = {
@@ -18,7 +20,10 @@ export function IncomePOSTab({ merchantId, onSuccess }: IncomePOSTabProps) {
   const t = useTranslations('quickEntry');
   const [cartItems, setCartItems] = useState<CashOrderItem[]>([]);
   const [isCheckoutModalOpen, setIsCheckoutModalOpen] = useState(false);
+  const [isQRCheckoutModalOpen, setIsQRCheckoutModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isCheckingBalance, setIsCheckingBalance] = useState(false);
+  const [promptpayId, setPromptpayId] = useState<string>('');
 
   // 添加商品到购物车
   const handleAddItem = (item: CashOrderItem) => {
@@ -72,12 +77,74 @@ export function IncomePOSTab({ merchantId, onSuccess }: IncomePOSTabProps) {
     }
   };
 
-  // 打开结算弹窗
+  // 打开现金结算弹窗
   const handleCheckout = () => {
     setIsCheckoutModalOpen(true);
   };
 
-  // 确认结算
+  // 打开二维码结算弹窗（需先检查KYC和余额）
+  const handleQRCheckout = async () => {
+    setIsCheckingBalance(true);
+
+    const balanceResult = await getMerchantBalanceForQR(merchantId);
+
+    setIsCheckingBalance(false);
+
+    if (!balanceResult.success) {
+      alert(t('income.qrCheckout.balanceCheckError'));
+      return;
+    }
+
+    // 检查KYC状态
+    if (!balanceResult.data?.hasKYC) {
+      alert(t('income.qrCheckout.kycRequired'));
+      return;
+    }
+
+    // 检查余额
+    if (!balanceResult.data?.hasEnoughForQR) {
+      const balance = balanceResult.data?.balance || 0;
+      alert(
+        t('income.qrCheckout.insufficientBalance') + '\n' +
+        t('income.qrCheckout.currentBalance') + ': ฿' + balance.toFixed(2) + '\n' +
+        t('income.qrCheckout.requiredBalance') + ': ฿3.00'
+      );
+      return;
+    }
+
+    // 保存 promptpayId 用于生成 QR 码
+    setPromptpayId(balanceResult.data.promptpayId || '');
+
+    // KYC已验证且余额足够，打开二维码结算弹窗
+    setIsQRCheckoutModalOpen(true);
+  };
+
+  // 确认二维码结算
+  const handleConfirmQRCheckout = async (data: {
+    note?: string;
+  }) => {
+    setIsSubmitting(true);
+
+    const result = await createCashOrder({
+      merchant_id: merchantId,
+      items: cartItems,
+      note: data.note,
+      payment_method: 'qr_code',
+    });
+
+    setIsSubmitting(false);
+
+    if (result.success) {
+      alert(t('income.success') + '\n' + t('income.orderNumber') + ': ' + result.data?.order_number);
+      setCartItems([]);
+      setIsQRCheckoutModalOpen(false);
+      onSuccess?.();
+    } else {
+      alert(t('income.error') + ': ' + (result.error || 'Unknown error'));
+    }
+  };
+
+  // 确认现金结算
   const handleConfirmCheckout = async (data: {
     note?: string;
   }) => {
@@ -130,12 +197,14 @@ export function IncomePOSTab({ merchantId, onSuccess }: IncomePOSTabProps) {
             onUpdateQuantity={handleUpdateQuantity}
             onRemoveItem={handleRemoveItem}
             onCheckout={handleCheckout}
+            onQRCheckout={handleQRCheckout}
             onClear={handleClearCart}
+            isCheckingBalance={isCheckingBalance}
           />
         </div>
       </div>
 
-      {/* 结算弹窗 */}
+      {/* 现金结算弹窗 */}
       <CheckoutModal
         items={cartItems}
         total={total}
@@ -143,6 +212,18 @@ export function IncomePOSTab({ merchantId, onSuccess }: IncomePOSTabProps) {
         onClose={() => setIsCheckoutModalOpen(false)}
         onConfirm={handleConfirmCheckout}
         isSubmitting={isSubmitting}
+      />
+
+      {/* 二维码结算弹窗 */}
+      <QRCheckoutModal
+        items={cartItems}
+        total={total}
+        isOpen={isQRCheckoutModalOpen}
+        onClose={() => setIsQRCheckoutModalOpen(false)}
+        onConfirm={handleConfirmQRCheckout}
+        isSubmitting={isSubmitting}
+        merchantId={merchantId}
+        promptpayId={promptpayId}
       />
     </div>
   );

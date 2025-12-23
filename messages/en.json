@@ -134,7 +134,9 @@
       "uploadFailed": "Upload failed, please try again later",
       "merchantNotConfigured": "Merchant payment setup incomplete, purchase unavailable",
       "purchaseFailed": "Purchase failed, please check login status or try again",
-      "networkError": "Network or server error, please try again later"
+      "networkError": "Network or server error, please try again later",
+      "balanceCheckFailed": "Unable to check merchant balance, please try again",
+      "merchantInsufficientBalance": "Merchant balance insufficient, purchase unavailable. Current: ฿{current}, Required: ฿{required}"
     },
     "upload": {
       "title": "Upload Payment Slip",
@@ -1153,7 +1155,21 @@
         "remove": "Remove",
         "total": "Total",
         "checkout": "Checkout",
+        "cashCheckout": "Cash",
+        "qrCheckout": "QR Code",
         "invalidTotal": "Order total must be greater than 0"
+      },
+      "qrCheckout": {
+        "title": "QR Code Checkout",
+        "scanHint": "Ask customer to scan this QR code to complete payment",
+        "confirmPaid": "Confirm Payment Received",
+        "insufficientBalance": "Insufficient balance for QR code checkout",
+        "currentBalance": "Current Balance",
+        "requiredBalance": "Required Balance",
+        "balanceCheckError": "Failed to check balance, please try again",
+        "rechargeHint": "Please recharge in wallet page first",
+        "kycRequired": "KYC verification required. Please complete identity verification in Settings before using QR code checkout.",
+        "generateError": "Failed to generate QR code. Please check merchant settings."
       },
       "checkout": {
         "title": "Confirm Checkout",

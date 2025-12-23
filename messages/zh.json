@@ -134,7 +134,9 @@
       "uploadFailed": "上传失败，请稍后重试",
       "merchantNotConfigured": "商户收款设置不完整，暂时无法购买",
       "purchaseFailed": "购买失败，请检查登录状态或重试",
-      "networkError": "网络或服务器错误，请稍后重试"
+      "networkError": "网络或服务器错误，请稍后重试",
+      "balanceCheckFailed": "无法检查商户余额，请稍后再试",
+      "merchantInsufficientBalance": "商户余额不足，暂时无法完成购买。当前余额: ฿{current}，所需余额: ฿{required}"
     },
     "upload": {
       "title": "上传付款凭证",
@@ -1153,7 +1155,21 @@
         "remove": "移除",
         "total": "总计",
         "checkout": "结算",
+        "cashCheckout": "现金",
+        "qrCheckout": "二维码",
         "invalidTotal": "订单金额必须大于0"
+      },
+      "qrCheckout": {
+        "title": "二维码结算",
+        "scanHint": "请让客户扫描此二维码完成支付",
+        "confirmPaid": "确认已收款",
+        "insufficientBalance": "余额不足，无法使用二维码结算",
+        "currentBalance": "当前余额",
+        "requiredBalance": "所需余额",
+        "balanceCheckError": "检查余额失败，请稍后再试",
+        "rechargeHint": "请先到钱包页面充值",
+        "kycRequired": "您尚未完成KYC认证，无法使用二维码结算功能。请先在设置页面完成身份认证。",
+        "generateError": "二维码生成失败，请检查商户设置"
       },
       "checkout": {
         "title": "确认结算",
