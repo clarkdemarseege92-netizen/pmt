@@ -2,7 +2,7 @@
 // API Route: 发送推送通知到商户
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/lib/supabase/server';
+import { createSupabaseServerClient } from '@/lib/supabaseServer';
 
 // 通知类型
 type NotificationType =
@@ -32,7 +32,7 @@ const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = await createClient();
+    const supabase = await createSupabaseServerClient();
 
     // 验证用户身份
     const {
