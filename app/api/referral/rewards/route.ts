@@ -52,17 +52,30 @@ export async function GET() {
     }
 
     // 格式化数据
-    const formattedRewards = rewards?.map(reward => ({
-      id: reward.id,
-      refereeEmail: (reward.referee as { email: string } | null)?.email || 'Unknown',
-      subscriptionPlan: reward.subscription_plan,
-      subscriptionAmount: parseFloat(reward.subscription_amount),
-      rewardAmount: parseFloat(reward.reward_amount),
-      status: reward.status,
-      eligibleAt: reward.eligible_at,
-      approvedAt: reward.approved_at,
-      createdAt: reward.created_at,
-    })) || [];
+    const formattedRewards = rewards?.map(reward => {
+      // referee 可能是数组或单个对象，需要正确处理
+      const refereeData = reward.referee;
+      let refereeEmail = 'Unknown';
+      if (refereeData) {
+        if (Array.isArray(refereeData)) {
+          refereeEmail = (refereeData[0] as { email: string })?.email || 'Unknown';
+        } else {
+          refereeEmail = (refereeData as { email: string }).email || 'Unknown';
+        }
+      }
+
+      return {
+        id: reward.id,
+        refereeEmail,
+        subscriptionPlan: reward.subscription_plan,
+        subscriptionAmount: parseFloat(reward.subscription_amount),
+        rewardAmount: parseFloat(reward.reward_amount),
+        status: reward.status,
+        eligibleAt: reward.eligible_at,
+        approvedAt: reward.approved_at,
+        createdAt: reward.created_at,
+      };
+    }) || [];
 
     return NextResponse.json({ rewards: formattedRewards });
   } catch (error) {

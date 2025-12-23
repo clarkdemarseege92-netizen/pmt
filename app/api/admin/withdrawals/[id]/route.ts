@@ -148,7 +148,16 @@ export async function PATCH(
       newStatus = 'rejected';
 
       // 拒绝时，将金额退还到用户余额
-      const currentBalance = Number((withdrawal.user as { referral_balance: number })?.referral_balance) || 0;
+      // user 可能是数组或单个对象，需要正确处理
+      const userData = withdrawal.user;
+      let currentBalance = 0;
+      if (userData) {
+        if (Array.isArray(userData)) {
+          currentBalance = Number((userData[0] as { referral_balance: number })?.referral_balance) || 0;
+        } else {
+          currentBalance = Number((userData as { referral_balance: number }).referral_balance) || 0;
+        }
+      }
       const refundAmount = Number(withdrawal.amount) || 0;
 
       const { error: balanceError } = await supabase
