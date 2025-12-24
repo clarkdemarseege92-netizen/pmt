@@ -161,10 +161,10 @@ export default function Navbar() {
     router.refresh();
   };
 
-  if (!mounted) return <div className="navbar bg-base-100 border-b border-base-200"></div>;
+  if (!mounted) return <div className="navbar bg-base-100 border-b border-base-200 sticky top-0 z-50"></div>;
 
   return (
-    <div className="navbar bg-base-100 border-b border-base-200 z-50">
+    <div className="navbar bg-base-100 border-b border-base-200 sticky top-0 z-50">
 
       {/* 左侧：Logo */}
       <div className="flex-1">

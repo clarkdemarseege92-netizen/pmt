@@ -17,7 +17,8 @@ import {
   HiPaintBrush,
   HiWallet,
   HiCalculator,
-  HiPlus
+  HiPlus,
+  HiRectangleGroup
 } from "react-icons/hi2";
 import { Crown } from "lucide-react";
 
@@ -70,11 +71,11 @@ export default function MerchantLayoutWrapper({
   // --- 商家已入驻：显示完整布局 ---
   if (isMerchant) {
     return (
-      <div className="flex flex-col h-screen bg-base-200">
+      <div className="flex flex-col min-h-screen bg-base-200">
         {/* 中间主体 */}
-        <div className="flex flex-1 overflow-hidden">
+        <div className="flex flex-1">
           <MerchantSidebar />
-          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 pb-24 md:pb-8 relative">
+          <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-8 pb-24 md:pb-8 relative scrollbar-hide">
              {children}
           </main>
         </div>
@@ -95,6 +96,7 @@ export default function MerchantLayoutWrapper({
             <ul tabIndex={0} className="dropdown-content z-1 menu p-2 shadow-lg bg-base-100 rounded-box w-48 mb-2 border border-base-200 text-base-content">
               <li><Link href="/merchant/dashboard" onClick={closeDropdown}><HiSquares2X2 className="w-4 h-4"/> {t('dashboard')}</Link></li>
               <li><Link href="/merchant/products" onClick={closeDropdown}><HiShoppingBag className="w-4 h-4"/> {t('products')}</Link></li>
+              <li><Link href="/merchant/product-categories" onClick={closeDropdown}><HiRectangleGroup className="w-4 h-4"/> {t('productCategories')}</Link></li>
               <li><Link href="/merchant/coupons" onClick={closeDropdown}><HiTicket className="w-4 h-4"/> {t('coupons')}</Link></li>
               <li><Link href="/merchant/reviews" onClick={closeDropdown}><HiChatBubbleLeftRight className="w-4 h-4"/> {t('reviews')}</Link></li>
             </ul>

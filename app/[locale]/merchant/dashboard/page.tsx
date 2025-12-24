@@ -126,7 +126,7 @@ const StatsDashboard = ({ merchant }: { merchant: Merchant }) => {
   }, [merchant.merchant_id]);
 
   return (
-    <div className="w-full space-y-6 p-4 md:p-6">
+    <div className="space-y-6 scrollbar-hide">
       {/* 页面标题 */}
       <div>
         <h1 className="text-3xl font-bold mb-2">{t('title')}</h1>

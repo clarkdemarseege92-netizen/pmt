@@ -2,3 +2,14 @@
 
 @import "tailwindcss";
 @plugin "daisyui";
+
+/* 隐藏滚动条但保留滚动功能 */
+@layer utilities {
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* IE and Edge */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;  /* Chrome, Safari and Opera */
+  }
+}
