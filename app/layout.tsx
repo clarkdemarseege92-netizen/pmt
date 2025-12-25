@@ -17,6 +17,9 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "KUMMAK - Coupon Platform",
   description: "Your trusted coupon platform",
+  icons: {
+    icon: '/logo.svg',
+  },
 };
 
 export default function RootLayout({
