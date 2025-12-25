@@ -24,6 +24,9 @@ interface FetchedMerchantData {
     shop_name: string;
     status: string;
     is_suspended: boolean;
+    bank_name: string | null;
+    bank_account_number: string | null;
+    bank_account_name: string | null;
     merchant_transactions: Transaction[];
 }
 
@@ -34,6 +37,9 @@ interface MerchantInfo {
   is_suspended: boolean;
   status: string;
   merchant_transactions: Transaction[];
+  bank_name: string | null;
+  bank_account_number: string | null;
+  bank_account_name: string | null;
 }
 
 type RechargeStep = 'input' | 'payment' | 'verifying' | 'result';
@@ -200,6 +206,9 @@ export default function WalletPage() {
                 shop_name,
                 status,
                 is_suspended,
+                bank_name,
+                bank_account_number,
+                bank_account_name,
                 merchant_transactions (
                     id, type, amount, balance_after, description, created_at, status
                 )
@@ -233,6 +242,9 @@ export default function WalletPage() {
                 is_suspended: merchantData.is_suspended,
                 status: merchantData.status,
                 merchant_transactions: sortedTransactions,
+                bank_name: merchantData.bank_name,
+                bank_account_number: merchantData.bank_account_number,
+                bank_account_name: merchantData.bank_account_name,
             });
         } else {
              setMerchant({
@@ -242,6 +254,9 @@ export default function WalletPage() {
                 is_suspended: true,
                 status: 'unregistered',
                 merchant_transactions: [],
+                bank_name: null,
+                bank_account_number: null,
+                bank_account_name: null,
              });
         }
 
@@ -436,8 +451,8 @@ export default function WalletPage() {
       return;
     }
 
-    if (!withdrawForm.bankName || !withdrawForm.accountNumber || !withdrawForm.accountName) {
-      setMessage({ type: 'error', text: 'Please fill in all bank details' });
+    if (!merchant.bank_name || !merchant.bank_account_number || !merchant.bank_account_name) {
+      setMessage({ type: 'error', text: t('withdraw.kycRequired') || '请在提现前先完成银行账户KYC认证' });
       return;
     }
 
@@ -448,7 +463,12 @@ export default function WalletPage() {
       const response = await fetch('/api/merchant/withdraw', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(withdrawForm),
+        body: JSON.stringify({
+          amount: withdrawForm.amount,
+          bankName: merchant.bank_name,
+          accountNumber: merchant.bank_account_number,
+          accountName: merchant.bank_account_name,
+        }),
       });
 
       const data = await response.json();
@@ -873,50 +893,59 @@ export default function WalletPage() {
                 </div>
               )}
 
-              {/* 银行名称 */}
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">{t('withdraw.bankName')}</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered"
-                  placeholder={t('withdraw.bankNamePlaceholder')}
-                  value={withdrawForm.bankName}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, bankName: e.target.value })}
-                  disabled={isWithdrawing}
-                />
-              </div>
+              {/* 银行信息显示或KYC提示 */}
+              {merchant?.bank_name && merchant?.bank_account_number && merchant?.bank_account_name ? (
+                <>
+                  {/* 银行名称 */}
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold">{t('withdraw.bankName')}</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered bg-base-200"
+                      value={merchant.bank_name}
+                      disabled
+                      readOnly
+                    />
+                  </div>
 
-              {/* 银行账号 */}
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">{t('withdraw.accountNumber')}</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered"
-                  placeholder={t('withdraw.accountNumberPlaceholder')}
-                  value={withdrawForm.accountNumber}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, accountNumber: e.target.value })}
-                  disabled={isWithdrawing}
-                />
-              </div>
+                  {/* 银行账号 */}
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold">{t('withdraw.accountNumber')}</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered bg-base-200"
+                      value={merchant.bank_account_number}
+                      disabled
+                      readOnly
+                    />
+                  </div>
 
-              {/* 账户名称 */}
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text font-semibold">{t('withdraw.accountName')}</span>
-                </label>
-                <input
-                  type="text"
-                  className="input input-bordered"
-                  placeholder={t('withdraw.accountNamePlaceholder')}
-                  value={withdrawForm.accountName}
-                  onChange={(e) => setWithdrawForm({ ...withdrawForm, accountName: e.target.value })}
-                  disabled={isWithdrawing}
-                />
-              </div>
+                  {/* 账户名称 */}
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-semibold">{t('withdraw.accountName')}</span>
+                    </label>
+                    <input
+                      type="text"
+                      className="input input-bordered bg-base-200"
+                      value={merchant.bank_account_name}
+                      disabled
+                      readOnly
+                    />
+                  </div>
+                </>
+              ) : (
+                <div className="alert alert-warning">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                  </svg>
+                  <span>{t('withdraw.kycRequired') || '请在提现前先完成银行账户KYC认证'}</span>
+                </div>
+              )}
 
               {/* 按钮 */}
               <div className="flex gap-3 pt-4">
@@ -929,9 +958,9 @@ export default function WalletPage() {
                   disabled={
                     isWithdrawing ||
                     !withdrawForm.amount ||
-                    !withdrawForm.bankName ||
-                    !withdrawForm.accountNumber ||
-                    !withdrawForm.accountName ||
+                    !merchant?.bank_name ||
+                    !merchant?.bank_account_number ||
+                    !merchant?.bank_account_name ||
                     parseFloat(withdrawForm.amount) < 500 ||
                     parseFloat(withdrawForm.amount) > (merchant?.platform_balance || 0)
                   }

@@ -756,7 +756,8 @@
       "invalidAmount": "Invalid withdrawal amount",
       "processingFee": "Processing Fee",
       "actualAmount": "Amount to Receive",
-      "feeNote": "2% processing fee, minimum ฿10"
+      "feeNote": "2% processing fee, minimum ฿10",
+      "kycRequired": "Please complete bank account KYC verification before withdrawal"
     },
     "withdrawHistory": {
       "title": "Withdrawal History",

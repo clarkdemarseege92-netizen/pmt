@@ -756,7 +756,8 @@
       "invalidAmount": "提现金额无效",
       "processingFee": "手续费",
       "actualAmount": "实际到账",
-      "feeNote": "提现手续费 2%，最低 ฿10"
+      "feeNote": "提现手续费 2%，最低 ฿10",
+      "kycRequired": "请在提现前先完成银行账户KYC认证"
     },
     "withdrawHistory": {
       "title": "提现记录",
