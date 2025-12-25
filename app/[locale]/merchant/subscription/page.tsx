@@ -41,23 +41,31 @@ export default function SubscriptionPage() {
   // 初始化
   useEffect(() => {
     const init = async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) {
-        router.push(`/${locale}/auth/login`);
-        return;
-      }
+      try {
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
 
-      const { data: merchant } = await supabase
-        .from("merchants")
-        .select("merchant_id")
-        .eq("owner_id", user.id)
-        .single();
+        if (authError || !user) {
+          console.error('Auth error:', authError);
+          router.push(`/${locale}/login`);
+          return;
+        }
 
-      if (merchant) {
+        const { data: merchant, error: merchantError } = await supabase
+          .from("merchants")
+          .select("merchant_id")
+          .eq("owner_id", user.id)
+          .single();
+
+        if (merchantError || !merchant) {
+          console.error('Merchant error:', merchantError);
+          setLoading(false);
+          return;
+        }
+
         setMerchantId(merchant.merchant_id);
 
         // 从交易记录获取钱包余额
-        const { data: lastTransaction } = await supabase
+        const { data: lastTransaction, error: transactionError } = await supabase
           .from('merchant_transactions')
           .select('balance_after')
           .eq('merchant_id', merchant.merchant_id)
@@ -66,10 +74,17 @@ export default function SubscriptionPage() {
           .limit(1)
           .single();
 
+        if (transactionError && transactionError.code !== 'PGRST116') {
+          console.error('Transaction error:', transactionError);
+        }
+
         setWalletBalance(lastTransaction?.balance_after || 0);
         await fetchSubscription(merchant.merchant_id);
+      } catch (error) {
+        console.error('Initialization error:', error);
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     init();
   }, [locale, router]);
@@ -83,16 +98,25 @@ export default function SubscriptionPage() {
 
   // 刷新钱包余额
   const refreshWalletBalance = async (mId: string) => {
-    const { data: lastTransaction } = await supabase
-      .from('merchant_transactions')
-      .select('balance_after')
-      .eq('merchant_id', mId)
-      .eq('status', 'completed')
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    try {
+      const { data: lastTransaction, error } = await supabase
+        .from('merchant_transactions')
+        .select('balance_after')
+        .eq('merchant_id', mId)
+        .eq('status', 'completed')
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
 
-    setWalletBalance(lastTransaction?.balance_after || 0);
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error refreshing wallet balance:', error);
+        return;
+      }
+
+      setWalletBalance(lastTransaction?.balance_after || 0);
+    } catch (error) {
+      console.error('Error refreshing wallet balance:', error);
+    }
   };
 
   const handleSubscribe = async (plan: SubscriptionPlan) => {

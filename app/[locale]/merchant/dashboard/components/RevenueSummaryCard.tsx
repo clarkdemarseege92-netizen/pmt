@@ -44,42 +44,14 @@ export function RevenueSummaryCard({ merchantId }: RevenueSummaryCardProps) {
         const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
         const monthStartStr = monthStart.toISOString().split('T')[0];
 
-        // 并行查询订单收入和记账收入
+        // 只查询 account_transactions 表的收入数据
+        // 这个表应该包含所有收入来源：manual（手动）、platform_order（平台订单）、cash_order（现金订单）
         const [
-          todayOrdersResult,
-          weekOrdersResult,
-          monthOrdersResult,
-          totalOrdersResult,
           todayTransactionsResult,
           weekTransactionsResult,
           monthTransactionsResult,
           totalTransactionsResult,
         ] = await Promise.all([
-          // 订单收入
-          supabase
-            .from('orders')
-            .select('total_amount')
-            .eq('merchant_id', merchantId)
-            .gte('created_at', today.toISOString())
-            .in('status', ['completed', 'paid']),
-          supabase
-            .from('orders')
-            .select('total_amount')
-            .eq('merchant_id', merchantId)
-            .gte('created_at', weekAgo.toISOString())
-            .in('status', ['completed', 'paid']),
-          supabase
-            .from('orders')
-            .select('total_amount')
-            .eq('merchant_id', merchantId)
-            .gte('created_at', monthStart.toISOString())
-            .in('status', ['completed', 'paid']),
-          supabase
-            .from('orders')
-            .select('total_amount')
-            .eq('merchant_id', merchantId)
-            .in('status', ['completed', 'paid']),
-          // 记账收入 (account_transactions)
           supabase
             .from('account_transactions')
             .select('amount')
@@ -109,24 +81,17 @@ export function RevenueSummaryCard({ merchantId }: RevenueSummaryCardProps) {
             .is('deleted_at', null),
         ]);
 
-        // 计算订单收入
-        const todayOrderRevenue = todayOrdersResult.data?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-        const weekOrderRevenue = weekOrdersResult.data?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-        const monthOrderRevenue = monthOrdersResult.data?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
-        const totalOrderRevenue = totalOrdersResult.data?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+        // 计算收入（包含所有来源）
+        const todayRevenue = todayTransactionsResult.data?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
+        const weekRevenue = weekTransactionsResult.data?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
+        const monthRevenue = monthTransactionsResult.data?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
+        const totalRevenue = totalTransactionsResult.data?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
 
-        // 计算记账收入
-        const todayTransRevenue = todayTransactionsResult.data?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
-        const weekTransRevenue = weekTransactionsResult.data?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
-        const monthTransRevenue = monthTransactionsResult.data?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
-        const totalTransRevenue = totalTransactionsResult.data?.reduce((sum, t) => sum + Number(t.amount || 0), 0) || 0;
-
-        // 合并两种收入
         setData({
-          today: Math.round((todayOrderRevenue + todayTransRevenue) * 100) / 100,
-          week: Math.round((weekOrderRevenue + weekTransRevenue) * 100) / 100,
-          month: Math.round((monthOrderRevenue + monthTransRevenue) * 100) / 100,
-          total: Math.round((totalOrderRevenue + totalTransRevenue) * 100) / 100,
+          today: Math.round(todayRevenue * 100) / 100,
+          week: Math.round(weekRevenue * 100) / 100,
+          month: Math.round(monthRevenue * 100) / 100,
+          total: Math.round(totalRevenue * 100) / 100,
         });
       } catch (error) {
         console.error('获取收入数据失败:', error);

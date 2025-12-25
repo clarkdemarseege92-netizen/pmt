@@ -319,7 +319,7 @@ export function CategoriesPageClient() {
       {/* 页面标题 */}
       <div className="flex items-center gap-4">
         <Link
-          href="/merchant/accounting"
+          href={`/${locale}/merchant/accounting`}
           className="btn btn-ghost btn-circle"
         >
           <HiArrowLeft className="w-5 h-5" />

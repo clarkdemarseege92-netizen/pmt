@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabaseClient';
 import { FinancialSummaryCards } from './components/FinancialSummaryCards';
 import { TransactionList } from './components/TransactionList';
@@ -26,6 +26,7 @@ export type TransactionFiltersType = {
 
 export function AccountingPageClient() {
   const t = useTranslations('accounting');
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -90,14 +91,14 @@ export function AccountingPageClient() {
         </div>
         <div className="flex flex-wrap gap-2">
           <Link
-            href="/merchant/accounting/categories"
+            href={`/${locale}/merchant/accounting/categories`}
             className="btn btn-outline btn-sm"
           >
             <HiTag className="w-4 h-4" />
             {t('categories.title')}
           </Link>
           <Link
-            href="/merchant/accounting/analytics"
+            href={`/${locale}/merchant/accounting/analytics`}
             className="btn btn-outline btn-sm"
           >
             <HiChartBar className="w-4 h-4" />

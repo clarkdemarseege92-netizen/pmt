@@ -649,7 +649,8 @@
       "idNumber": "证件号码",
       "idName": "证件姓名",
       "submitButton": "提交认证资料",
-      "submitting": "提交中..."
+      "submitting": "提交中...",
+      "requiredFieldsMissing": "请填写所有必填项（身份证号、姓名、PromptPay ID）"
     },
     "payment": {
       "title": "收款方式 (PromptPay)",
@@ -659,6 +660,20 @@
       "pleaseSelect": "请选择...",
       "phoneNumber": "手机号",
       "idNumber": "证件号"
+    },
+    "bank": {
+      "title": "银行账户信息",
+      "optional": "可选",
+      "infoTitle": "用于提现",
+      "infoDesc": "填写银行信息后，可以将平台余额提现到您的银行账户。账户名称必须与身份证姓名一致。",
+      "bankName": "银行名称",
+      "bankNamePlaceholder": "例如: กสิกรไทย (KASIKORNBANK)",
+      "accountNumber": "银行账号",
+      "accountNumberPlaceholder": "请输入银行账号",
+      "accountName": "账户持有人姓名",
+      "mustMatchIdName": "必须与身份证姓名一致",
+      "accountNameHint": "此姓名自动从身份证信息获取，无法单独修改",
+      "bothFieldsRequired": "银行名称和账号必须同时填写"
     },
     "security": {
       "title": "账号安全",
@@ -930,6 +945,7 @@
     "title": "记账管理",
     "addTransaction": "添加记账",
     "editTransaction": "编辑记账",
+    "type": "类型",
     "income": "收入",
     "expense": "支出",
     "amount": "金额",

@@ -649,7 +649,8 @@
       "idNumber": "ID Number",
       "idName": "Name on ID",
       "submitButton": "Submit Verification Documents",
-      "submitting": "Submitting..."
+      "submitting": "Submitting...",
+      "requiredFieldsMissing": "Please fill in all required fields (ID Number, Name, PromptPay ID)"
     },
     "payment": {
       "title": "Payment Method (PromptPay)",
@@ -659,6 +660,20 @@
       "pleaseSelect": "Please select...",
       "phoneNumber": "Phone Number",
       "idNumber": "ID Number"
+    },
+    "bank": {
+      "title": "Bank Account Information",
+      "optional": "Optional",
+      "infoTitle": "For Withdrawals",
+      "infoDesc": "After filling in bank information, you can withdraw platform balance to your bank account. Account name must match ID name.",
+      "bankName": "Bank Name",
+      "bankNamePlaceholder": "e.g.: KASIKORNBANK",
+      "accountNumber": "Account Number",
+      "accountNumberPlaceholder": "Enter your bank account number",
+      "accountName": "Account Holder Name",
+      "mustMatchIdName": "Must match ID name",
+      "accountNameHint": "This name is automatically retrieved from ID information and cannot be modified separately",
+      "bothFieldsRequired": "Both bank name and account number must be filled in"
     },
     "security": {
       "title": "Account Security",
@@ -945,6 +960,7 @@
     "title": "Accounting",
     "addTransaction": "Add Transaction",
     "editTransaction": "Edit Transaction",
+    "type": "Type",
     "income": "Income",
     "expense": "Expense",
     "amount": "Amount",

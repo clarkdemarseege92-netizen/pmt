@@ -32,6 +32,8 @@ interface Merchant {
   contact_phone?: string;
   description?: string;
   logo_url?: string;
+  bank_name?: string;
+  bank_account_number?: string;
   social_links?: {
     facebook?: string;
     line?: string;
@@ -71,11 +73,15 @@ export default function SettingsPage() {
       tiktok: ""
     },
 
-    // KYC & 支付信息
+    // KYC & 支付信息（必填）
     idCardNumber: "",
     bankAccountName: "",
     idCardImg: "",
-    promptpayId: ""
+    promptpayId: "",
+
+    // 银行信息（可选，用于提现）
+    bankName: "",
+    bankAccountNumber: ""
   });
 
   const [ocrLoading, setOcrLoading] = useState(false);
@@ -97,6 +103,30 @@ export default function SettingsPage() {
 
         if (m) {
           setMerchant(m as Merchant);
+
+          // 安全解析 social_links
+          let parsedSocialLinks = {
+            facebook: "",
+            line: "",
+            instagram: "",
+            tiktok: ""
+          };
+
+          if (m.social_links) {
+            try {
+              // 如果是字符串，尝试解析
+              if (typeof m.social_links === 'string') {
+                parsedSocialLinks = JSON.parse(m.social_links);
+              } else if (typeof m.social_links === 'object') {
+                // 如果已经是对象，直接使用
+                parsedSocialLinks = m.social_links;
+              }
+            } catch (error) {
+              console.error('Failed to parse social_links:', error);
+              // 使用默认值
+            }
+          }
+
           setForm({
             shopName: m.shop_name || "",
             address: m.address || "",
@@ -104,16 +134,13 @@ export default function SettingsPage() {
             contactPhone: m.contact_phone || "",
             description: m.description || "",
             logoUrl: m.logo_url || "",
-            socialLinks: m.social_links || {
-              facebook: "",
-              line: "",
-              instagram: "",
-              tiktok: ""
-            },
+            socialLinks: parsedSocialLinks,
             idCardNumber: m.id_card_number || "",
             bankAccountName: m.bank_account_name || "",
             idCardImg: m.id_card_image_url || "",
-            promptpayId: m.promptpay_id || ""
+            promptpayId: m.promptpay_id || "",
+            bankName: m.bank_name || "",
+            bankAccountNumber: m.bank_account_number || ""
           });
         }
       }
@@ -177,7 +204,7 @@ export default function SettingsPage() {
   };
 
   // --- 处理 OCR 上传 ---
-  const handleOcrUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'id_card' | 'bank_book') => {
+  const handleOcrUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'id_card') => {
     if (!e.target.files?.[0]) return;
     const file = e.target.files[0];
     setOcrLoading(true);
@@ -257,6 +284,22 @@ export default function SettingsPage() {
   // --- 仅保存 KYC/支付信息 ---
   const saveKycInfo = async () => {
     if (!merchant) return;
+
+    // 验证必填项
+    if (!form.idCardNumber || !form.bankAccountName || !form.promptpayId) {
+      setMessage({ type: 'error', text: t('kyc.requiredFieldsMissing') });
+      return;
+    }
+
+    // 如果填写了银行信息，验证账户名称必须与身份证姓名一致
+    if (form.bankName || form.bankAccountNumber) {
+      if (!form.bankName || !form.bankAccountNumber) {
+        setMessage({ type: 'error', text: t('bank.bothFieldsRequired') });
+        return;
+      }
+      // 注意：这里暂不验证姓名一致性，因为可能有格式差异，由后台人工审核
+    }
+
     setSaveKycLoading(true);
 
     const { error } = await supabase
@@ -266,14 +309,25 @@ export default function SettingsPage() {
         bank_account_name: form.bankAccountName,
         id_card_image_url: form.idCardImg,
         promptpay_id: form.promptpayId,
+        bank_name: form.bankName || null,
+        bank_account_number: form.bankAccountNumber || null,
       })
       .eq('merchant_id', merchant.merchant_id);
 
     if (error) {
-      alert(`${t('saveKycFailed')}: ${error.message}`);
+      setMessage({ type: 'error', text: `${t('saveKycFailed')}: ${error.message}` });
     } else {
-      alert(t('kycSubmitted'));
-      window.location.reload();
+      setMessage({ type: 'success', text: t('kycSubmitted') });
+      // 刷新数据
+      const { data: updatedMerchant } = await supabase
+        .from('merchants')
+        .select('*')
+        .eq('merchant_id', merchant.merchant_id)
+        .single();
+
+      if (updatedMerchant) {
+        setMerchant(updatedMerchant as Merchant);
+      }
     }
     setSaveKycLoading(false);
   };
@@ -605,6 +659,69 @@ export default function SettingsPage() {
                 {user?.phone && <option value={user.phone}>{t('payment.phoneNumber')}: {user.phone}</option>}
                 {form.idCardNumber && <option value={form.idCardNumber}>{t('payment.idNumber')}: {form.idCardNumber}</option>}
               </select>
+            </div>
+          </div>
+        </div>
+
+        {/* 银行信息折叠面板（可选，用于提现） */}
+        <div className="collapse collapse-arrow bg-base-200 border border-base-300">
+          <input type="checkbox" />
+          <div className="collapse-title text-lg font-medium flex items-center gap-2">
+            {t('bank.title')}
+            <span className="badge badge-sm badge-ghost">{t('bank.optional')}</span>
+          </div>
+          <div className="collapse-content space-y-4 pt-4">
+            <div className="alert alert-info text-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+              <div>
+                <div className="font-bold">{t('bank.infoTitle')}</div>
+                <div className="text-xs">{t('bank.infoDesc')}</div>
+              </div>
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-bold">{t('bank.bankName')}</span>
+              </label>
+              <input
+                type="text"
+                className="input input-bordered w-full"
+                placeholder={t('bank.bankNamePlaceholder')}
+                value={form.bankName}
+                onChange={(e) => setForm({...form, bankName: e.target.value})}
+              />
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-bold">{t('bank.accountNumber')}</span>
+              </label>
+              <input
+                type="text"
+                className="input input-bordered w-full"
+                placeholder={t('bank.accountNumberPlaceholder')}
+                value={form.bankAccountNumber}
+                onChange={(e) => setForm({...form, bankAccountNumber: e.target.value})}
+              />
+            </div>
+
+            <div className="form-control">
+              <label className="label">
+                <span className="label-text font-bold">{t('bank.accountName')}</span>
+                <span className="label-text-alt text-xs text-warning">{t('bank.mustMatchIdName')}</span>
+              </label>
+              <input
+                type="text"
+                className="input input-bordered w-full bg-base-300"
+                value={form.bankAccountName}
+                disabled
+                readOnly
+              />
+              <label className="label">
+                <span className="label-text-alt text-xs opacity-70">{t('bank.accountNameHint')}</span>
+              </label>
             </div>
           </div>
         </div>

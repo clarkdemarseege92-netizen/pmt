@@ -2,7 +2,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useTranslations } from 'next-intl';
+import { useTranslations, useLocale } from 'next-intl';
 import { supabase } from '@/lib/supabaseClient';
 import { TrendChart } from './components/TrendChart';
 import { TopCategoriesChart } from './components/TopCategoriesChart';
@@ -18,6 +18,7 @@ type Merchant = {
 
 export function AnalyticsPageClient() {
   const t = useTranslations('accounting.analytics');
+  const locale = useLocale();
   const [loading, setLoading] = useState(true);
   const [merchant, setMerchant] = useState<Merchant | null>(null);
   const [dateRange, setDateRange] = useState({
@@ -69,7 +70,7 @@ export function AnalyticsPageClient() {
       {/* 页面标题 */}
       <div className="flex items-center gap-4">
         <Link
-          href="/merchant/accounting"
+          href={`/${locale}/merchant/accounting`}
           className="btn btn-ghost btn-circle"
         >
           <HiArrowLeft className="w-5 h-5" />

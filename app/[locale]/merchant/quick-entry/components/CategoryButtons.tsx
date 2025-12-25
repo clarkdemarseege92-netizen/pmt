@@ -21,7 +21,15 @@ export function CategoryButtons({
 
   // 获取类目显示名称
   const getCategoryName = (category: AccountCategory) => {
-    return getLocalizedValue(category.name, locale as 'th' | 'zh' | 'en');
+    // 优先使用自定义名称
+    if (category.custom_name) {
+      return category.custom_name;
+    }
+    // 否则使用国际化名称
+    if (category.name) {
+      return getLocalizedValue(category.name, locale as 'th' | 'zh' | 'en');
+    }
+    return 'Unknown';
   };
 
   if (categories.length === 0) {

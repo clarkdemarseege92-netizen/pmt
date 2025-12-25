@@ -26,24 +26,23 @@ export function SalesTrendChart({ merchantId, days = 7 }: SalesTrendChartProps) 
     const fetchSalesData = async () => {
       setLoading(true);
 
-      // 计算日期范围
-      const endDate = new Date();
+      // 计算日期范围（最近 N 天）
       const startDate = new Date();
       startDate.setDate(startDate.getDate() - days);
+      const startDateStr = startDate.toISOString().split('T')[0];
 
       try {
-        // 查询该商户的订单数据
-        const { data: orders, error } = await supabase
-          .from('orders')
-          .select('created_at, total_amount, status')
+        // 查询 account_transactions 表的收入数据
+        const { data: transactions, error } = await supabase
+          .from('account_transactions')
+          .select('transaction_date, amount')
           .eq('merchant_id', merchantId)
-          .gte('created_at', startDate.toISOString())
-          .lte('created_at', endDate.toISOString())
-          .in('status', ['completed', 'pending']); // 只统计已完成和待处理的订单
+          .eq('type', 'income')
+          .gte('transaction_date', startDateStr)
+          .is('deleted_at', null);
 
         if (error) {
-          // 静默处理 - 可能是表不存在或无数据
-          console.debug('SalesTrendChart: No sales data available');
+          console.error('SalesTrendChart: Error fetching data:', error);
           setLoading(false);
           return;
         }
@@ -60,10 +59,10 @@ export function SalesTrendChart({ merchantId, days = 7 }: SalesTrendChartProps) 
         }
 
         // 统计实际数据
-        orders?.forEach((order) => {
-          const dateStr = order.created_at.split('T')[0];
+        transactions?.forEach((transaction) => {
+          const dateStr = transaction.transaction_date;
           if (salesByDate[dateStr]) {
-            salesByDate[dateStr].sales += order.total_amount;
+            salesByDate[dateStr].sales += Number(transaction.amount);
             salesByDate[dateStr].orders += 1;
           }
         });
@@ -76,9 +75,8 @@ export function SalesTrendChart({ merchantId, days = 7 }: SalesTrendChartProps) 
         }));
 
         setData(chartData);
-      } catch {
-        // 静默处理查询错误
-        console.debug('SalesTrendChart: Failed to fetch sales data');
+      } catch (error) {
+        console.error('SalesTrendChart: Failed to fetch sales data:', error);
       } finally {
         setLoading(false);
       }

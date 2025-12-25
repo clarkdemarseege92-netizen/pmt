@@ -59,8 +59,8 @@ export function TopCategoriesChart({ merchantId, startDate, endDate, type }: Top
 
         if (categoryIds.length > 0) {
           const { data: categories, error: catError } = await supabase
-            .from('accounting_categories')
-            .select('category_id, name_en')
+            .from('account_categories')
+            .select('category_id, name, custom_name')
             .in('category_id', categoryIds);
 
           // Note: catError might be an empty object {} which is not a real error
@@ -72,7 +72,9 @@ export function TopCategoriesChart({ merchantId, startDate, endDate, type }: Top
           // Create category map for quick lookup
           // If some categories are missing, they'll just show as uncategorized
           categories?.forEach(cat => {
-            categoryNameMap[cat.category_id] = cat.name_en;
+            // Use custom_name if available, otherwise use name.en
+            const categoryName = cat.custom_name || (cat.name?.en) || 'Unknown';
+            categoryNameMap[cat.category_id] = categoryName;
           });
         }
 
